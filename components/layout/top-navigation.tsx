@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Home, Users, Package, Settings, HelpCircle, LogIn, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { createSupabaseBrowserClient } from "@/lib/supabase/client"
@@ -102,7 +102,8 @@ export function TopNavigation() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-              <Avatar className="h-10 w-10">
+              <Avatar className="h-10 w-10 bg-gray-950">
+                <AvatarImage src="/user.png" alt="User" />   {/* 👈 add this */}
                 <AvatarFallback>{userName.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
             </Button>
