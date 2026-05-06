@@ -158,9 +158,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             : "Invalid email or password."
         );
       }
+      // Session confirm ho gayi — router.push() ab immediately kaam karega
+      // fetchAppUser background mein hoga via onAuthStateChange
       if (data.user) {
-        const appUser = await fetchAppUser(data.user);
-        setUser(appUser);
+        // Optimistic set — fallback se turant user milega, full profile baad mein
+        setUser(buildUserFromAuth(data.user));
+        // Background mein full profile fetch karo
+        fetchAppUser(data.user)
+          .then(setUser)
+          .catch(() => {/* already set via buildUserFromAuth */ });
       }
     } finally {
       setIsLoading(false);

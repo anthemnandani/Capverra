@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -19,21 +20,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
-    setSuccess("");
     setLoading(true);
 
     try {
       if (isRegister) {
         const supabase = createSupabaseBrowserClient();
 
-        // 1. Signup
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -47,7 +45,6 @@ export default function LoginPage() {
 
         const user = signUpData.user;
 
-        // 2. Insert into public.users
         if (user) {
           await supabase.from("users").upsert({
             id: user.id,
@@ -57,31 +54,25 @@ export default function LoginPage() {
           });
         }
 
-        // 3. 🔥 FORCE LOGIN (important fix)
         const { error: loginError } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
         if (loginError) {
-          toast.success("Account created! Please login.");
+          toast.success("Account created! Please sign in.");
           setIsRegister(false);
           return;
         }
 
-        // 4. Redirect to dashboard
-        // toast.success("Account created! Welcome 🎉");
+        // Session set ho gayi — turant push
         router.push("/dashboard");
-        router.refresh();
-
         return;
       }
 
-      // Login flow
+      // Login flow — fetchAppUser ka wait mat karo, session set hote hi push
       await login(email, password);
-      toast.success("Welcome back!");
       router.push("/dashboard");
-      router.refresh();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Something went wrong.";
       setError(message);
@@ -107,7 +98,6 @@ export default function LoginPage() {
 
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
-            {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -122,7 +112,6 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Password */}
             <div className="space-y-2 relative">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -144,31 +133,17 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {/* Error */}
             {error && (
               <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 border border-red-200">
                 {error}
               </p>
             )}
 
-            {/* Success */}
-            {success && (
-              <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 border border-green-200">
-                {success}
-              </p>
-            )}
-
-            {/* Submit */}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading
-                ? "Processing..."
-                : isRegister
-                  ? "Create Account"
-                  : "Sign In"}
+              {loading ? "Processing..." : isRegister ? "Create Account" : "Sign In"}
             </Button>
           </form>
 
-          {/* Toggle */}
           <Button
             type="button"
             variant="ghost"
@@ -177,7 +152,6 @@ export default function LoginPage() {
             onClick={() => {
               setIsRegister((v) => !v);
               setError("");
-              setSuccess("");
             }}
           >
             {isRegister
