@@ -1,0 +1,238 @@
+"use client";
+
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { toast } from "sonner";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type UserRole = "admin" | "client";
+
+export interface AppUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  clientId?: string;
+  phone?: string;
+  avatar_url?: string;
+  notification_preferences?: Record<string, unknown>;
+  appearance_settings?: Record<string, unknown>;
+  createdAt?: Date;
+  updatedAt?: Date;
+  lastLogin?: Date;
+}
+
+interface AuthContextType {
+  user: AppUser | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (password: string) => Promise<void>;
+}
+
+// ─── Context ──────────────────────────────────────────────────────────────────
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// ─── Fallback: build AppUser directly from Supabase auth metadata ─────────────
+
+function buildUserFromAuth(supabaseUser: SupabaseUser): AppUser {
+  const meta = supabaseUser.user_metadata ?? {};
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email ?? "",
+    name: meta.name ?? meta.full_name ?? supabaseUser.email?.split("@")[0] ?? "User",
+    role: "client",
+    avatar_url: meta.avatar_url,
+  };
+}
+
+// ─── Fetch full profile from public.users ─────────────────────────────────────
+
+async function fetchAppUser(supabaseUser: SupabaseUser): Promise<AppUser> {
+  const supabase = createSupabaseBrowserClient();
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", supabaseUser.id)
+    .maybeSingle();
+
+  // ✅ If not found → create it (FIX)
+  if (!data) {
+    console.warn("[Auth] User not found in public.users → creating...");
+
+    const { error: insertError } = await supabase.from("users").upsert({
+      id: supabaseUser.id,
+      email: supabaseUser.email,
+      name:
+        supabaseUser.user_metadata?.name ||
+        supabaseUser.user_metadata?.full_name ||
+        supabaseUser.email?.split("@")[0],
+      role: "client",
+    });
+
+    if (insertError) {
+      console.error("User creation failed:", insertError.message);
+    }
+
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email ?? "",
+      name: supabaseUser.email?.split("@")[0] ?? "User",
+      role: "client",
+    };
+  }
+
+  return {
+    id: data.id,
+    email: data.email,
+    name: data.name,
+    role: data.role,
+    clientId: data.client_id,
+    phone: data.phone,
+    avatar_url: data.avatar_url,
+    notification_preferences: data.notification_preferences,
+    appearance_settings: data.appearance_settings,
+    createdAt: data.created_at ? new Date(data.created_at) : undefined,
+    updatedAt: data.updated_at ? new Date(data.updated_at) : undefined,
+    lastLogin: data.last_login ? new Date(data.last_login) : undefined,
+  };
+}
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const supabase = createSupabaseBrowserClient();
+
+  const handleSession = useCallback(
+    async (supabaseUser: SupabaseUser | null) => {
+      if (!supabaseUser) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const appUser = await fetchAppUser(supabaseUser);
+        setUser(appUser);
+      } catch (err) {
+        console.error("[AuthContext] handleSession error:", err);
+        setUser(buildUserFromAuth(supabaseUser));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleSession(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleSession(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [handleSession, supabase]);
+
+  const login = async (email: string, password: string) => {
+    if (!email || !password) throw new Error("Email and password are required");
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        throw new Error(
+          error.message.includes("Email not confirmed")
+            ? "Email not confirmed. Please check your inbox."
+            : "Invalid email or password."
+        );
+      }
+      if (data.user) {
+        const appUser = await fetchAppUser(data.user);
+        setUser(appUser);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setUser(null);
+      router.push("/auth/login");
+      router.refresh();
+      toast.success("Logged out successfully.");
+    } catch (error) {
+      console.error("[AuthContext] logout failed:", error);
+      toast.error("Logout failed. Please try again.");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const forgotPassword = async (email: string) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+      });
+      if (error) throw new Error(error.message);
+      toast.success("Password reset email sent. Please check your inbox.");
+    } catch (error) {
+      console.error("[AuthContext] forgotPassword failed:", error);
+      toast.error("Failed to send reset email. Please try again.");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (password: string) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw new Error(error.message);
+      toast.success("Password updated successfully. Please sign in.");
+      router.push("/auth/login");
+    } catch (error) {
+      console.error("[AuthContext] resetPassword failed:", error);
+      toast.error("Failed to reset password. The link may have expired.");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{ user, isAuthenticated: !!user, isLoading, login, logout, forgotPassword, resetPassword }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}
