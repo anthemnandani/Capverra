@@ -1,6 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext, useContext, useState,
+  useEffect, useCallback, useRef, useMemo,
+} from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
@@ -39,7 +42,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ─── Fallback: build AppUser directly from Supabase auth metadata ─────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function buildUserFromAuth(supabaseUser: SupabaseUser): AppUser {
   const meta = supabaseUser.user_metadata ?? {};
@@ -52,21 +55,17 @@ function buildUserFromAuth(supabaseUser: SupabaseUser): AppUser {
   };
 }
 
-// ─── Fetch full profile from public.users ─────────────────────────────────────
-
 async function fetchAppUser(supabaseUser: SupabaseUser): Promise<AppUser> {
   const supabase = createSupabaseBrowserClient();
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("users")
     .select("*")
     .eq("id", supabaseUser.id)
     .maybeSingle();
 
-  // ✅ If not found → create it (FIX)
   if (!data) {
     console.warn("[Auth] User not found in public.users → creating...");
-
     const { error: insertError } = await supabase.from("users").upsert({
       id: supabaseUser.id,
       email: supabaseUser.email,
@@ -76,10 +75,7 @@ async function fetchAppUser(supabaseUser: SupabaseUser): Promise<AppUser> {
         supabaseUser.email?.split("@")[0],
       role: "client",
     });
-
-    if (insertError) {
-      console.error("User creation failed:", insertError.message);
-    }
+    if (insertError) console.error("User creation failed:", insertError.message);
 
     return {
       id: supabaseUser.id,
@@ -112,7 +108,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const supabase = createSupabaseBrowserClient();
+  // login() ne already user set kar diya — onAuthStateChange ko skip karne ke liye
+  const skipNextAuthChange = useRef(false);
+
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const handleSession = useCallback(
     async (supabaseUser: SupabaseUser | null) => {
@@ -131,21 +130,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    [] // eslint-disable-line react-hooks/exhaustive-deps
+    [],
   );
 
   useEffect(() => {
+    // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
       handleSession(session?.user ?? null);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // login() ke baad SIGNED_IN event aata hai — skip karo
+      // kyunki login() ne already optimistic user set kar diya hai
+      if (event === "SIGNED_IN" && skipNextAuthChange.current) {
+        skipNextAuthChange.current = false;
+        return;
+      }
+
+      // SIGNED_OUT aur baaki events normally handle karo
       handleSession(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
   }, [handleSession, supabase]);
 
+  // ─── login ──────────────────────────────────────────────────────────────────
   const login = async (email: string, password: string) => {
     if (!email || !password) throw new Error("Email and password are required");
     setIsLoading(true);
@@ -158,29 +167,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             : "Invalid email or password."
         );
       }
-      // Session confirm ho gayi — router.push() ab immediately kaam karega
-      // fetchAppUser background mein hoga via onAuthStateChange
       if (data.user) {
-        // Optimistic set — fallback se turant user milega, full profile baad mein
+        // onAuthStateChange ko skip karo — hum khud manage kar rahe hain
+        skipNextAuthChange.current = true;
+
+        // Turant optimistic user set karo — koi DB wait nahi
         setUser(buildUserFromAuth(data.user));
-        // Background mein full profile fetch karo
+
+        // Background mein full profile fetch karo — re-render hoga par tab
+        // user dashboard par hoga, flash nahi hoga
         fetchAppUser(data.user)
           .then(setUser)
-          .catch(() => {/* already set via buildUserFromAuth */ });
+          .catch(() => { /* buildUserFromAuth already set hai */ });
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ─── logout ─────────────────────────────────────────────────────────────────
   const logout = async () => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
-      router.push("/auth/login");
-      router.refresh();
+      router.replace("/auth/login");
       toast.success("Logged out successfully.");
     } catch (error) {
       console.error("[AuthContext] logout failed:", error);
@@ -191,6 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // ─── forgotPassword ──────────────────────────────────────────────────────────
   const forgotPassword = async (email: string) => {
     setIsLoading(true);
     try {
@@ -208,13 +221,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // ─── resetPassword ───────────────────────────────────────────────────────────
   const resetPassword = async (password: string) => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw new Error(error.message);
       toast.success("Password updated successfully. Please sign in.");
-      router.push("/auth/login");
+      router.replace("/auth/login");
     } catch (error) {
       console.error("[AuthContext] resetPassword failed:", error);
       toast.error("Failed to reset password. The link may have expired.");
@@ -224,10 +238,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const value = useMemo(
+    () => ({ user, isAuthenticated: !!user, isLoading, login, logout, forgotPassword, resetPassword }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user, isLoading],
+  );
+
   return (
-    <AuthContext.Provider
-      value={{ user, isAuthenticated: !!user, isLoading, login, logout, forgotPassword, resetPassword }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
