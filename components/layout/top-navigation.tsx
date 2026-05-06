@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -14,7 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Home, Users, Package, Settings, HelpCircle, LogIn, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { createSupabaseBrowserClient } from "@/lib/supabase/client"
+import { useAuth } from "@/context"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -24,48 +23,7 @@ const navigation = [
 
 export function TopNavigation() {
   const pathname = usePathname()
-  const router = useRouter()
-  const [userName, setUserName] = useState("Demo User")
-  const [userEmail, setUserEmail] = useState("No email")
-  const [isDemoUser, setIsDemoUser] = useState(true)
-
-  useEffect(() => {
-    let mounted = true
-    const supabase = createSupabaseBrowserClient()
-
-    const loadUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!mounted) return
-
-      if (!user) {
-        setIsDemoUser(true)
-        setUserName("Demo User")
-        setUserEmail("No email")
-        return
-      }
-
-      setUserEmail(user.email ?? "No email")
-      const metadataName = String(user.user_metadata?.full_name ?? "").trim()
-      setUserName(metadataName || user.email?.split("@")[0] || "User")
-      setIsDemoUser(false)
-    }
-
-    loadUser()
-
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  const handleLogout = async () => {
-    const supabase = createSupabaseBrowserClient()
-    await supabase.auth.signOut()
-    router.push("/auth/login")
-    router.refresh()
-  }
+  const { user, isAuthenticated, isLoading, logout } = useAuth()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -78,72 +36,78 @@ export function TopNavigation() {
           <span className="font-bold text-xl">Capverra</span>
         </Link>
 
-        {/* Navigation Links */}
-        <nav className="hidden md:flex items-center space-x-1">
-          {navigation.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href
+        {/* Nav links — sirf authenticated users ke liye */}
+        {isAuthenticated && (
+          <nav className="hidden md:flex items-center space-x-1">
+            {navigation.map((item) => {
+              const Icon = item.icon
+              const isActive = pathname === item.href
+              return (
+                <Link key={item.name} href={item.href}>
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
+                    className={cn("flex items-center space-x-2", isActive && "bg-secondary")}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{item.name}</span>
+                  </Button>
+                </Link>
+              )
+            })}
+          </nav>
+        )}
 
-            return (
-              <Link key={item.name} href={item.href}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn("flex items-center space-x-2", isActive && "bg-secondary")}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.name}</span>
-                </Button>
-              </Link>
-            )
-          })}
-        </nav>
-
-        {/* User Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-              <Avatar className="h-10 w-10 bg-gray-950">
-                <AvatarImage src="/user.png" alt="User" />   {/* 👈 add this */}
-                <AvatarFallback>{userName.slice(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
-            <div className="flex items-center justify-start gap-2 p-2">
-              <div className="flex flex-col space-y-1 leading-none">
-                <p className="font-medium">{userName}</p>
-                <p className="w-[200px] truncate text-sm text-muted-foreground">{userEmail}</p>
+        {/* Right side — auth state ke hisaab se */}
+        {isLoading ? (
+          // Skeleton — flash prevent karne ke liye
+          <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
+        ) : isAuthenticated && user ? (
+          // Authenticated — profile dropdown
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={user.avatar_url ?? "/user.png"} alt={user.name} />
+                  <AvatarFallback>{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <div className="flex items-center justify-start gap-2 p-2">
+                <div className="flex flex-col space-y-1 leading-none">
+                  <p className="font-medium">{user.name}</p>
+                  <p className="w-[200px] truncate text-sm text-muted-foreground">{user.email}</p>
+                </div>
               </div>
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/help" className="flex items-center">
-                <HelpCircle className="mr-2 h-4 w-4" />
-                Help
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {isDemoUser ? (
+              <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/auth/login" className="flex items-center">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Log in
+                <Link href="/settings" className="flex items-center">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
                 </Link>
               </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem asChild>
+                <Link href="/help" className="flex items-center">
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  Help
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={logout} className="text-red-600 focus:text-red-600">
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
               </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          // Unauthenticated — simple login button
+          <Button asChild size="sm">
+            <Link href="/auth/login" className="flex items-center gap-2">
+              <LogIn className="h-4 w-4" />
+              Log in
+            </Link>
+          </Button>
+        )}
       </div>
     </header>
   )
