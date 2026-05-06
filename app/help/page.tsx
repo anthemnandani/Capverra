@@ -7,7 +7,7 @@ import { HelpCircle, Mail, MessageSquare, Phone } from "lucide-react"
 
 export default function HelpPage() {
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="container mx-auto sm:px-6 px-3 py-8 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Help & Support</h1>
         <p className="text-muted-foreground">Get help with your account and find answers to common questions.</p>

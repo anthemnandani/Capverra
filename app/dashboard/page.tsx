@@ -3,7 +3,7 @@ import { RecentActivity } from "@/components/dashboard/recent-activity"
 
 export default function DashboardPage() {
   return (
-    <div className="container mx-auto py-8 space-y-8">
+    <div className="container mx-auto sm:px-6 px-3 py-8 space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-balance">Dashboard</h1>
         <p className="text-muted-foreground mt-2 text-pretty">

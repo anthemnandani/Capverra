@@ -96,8 +96,35 @@ export function AssetsTable() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading assets...</p>
+          <div className="rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Asset Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Owner</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Purchase Value</TableHead>
+                  <TableHead>Purchase Date</TableHead>
+                  <TableHead>Latest Valuation</TableHead>
+                  <TableHead>Valuation Date</TableHead>
+                  <TableHead>Performance</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: 10 }).map((_, j) => (
+                      <TableCell key={j}>
+                        <div className="h-4 w-full animate-pulse rounded bg-gray-200" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         ) : null}
         {!loading && assets.length === 0 ? (

@@ -19,10 +19,6 @@ export function StatsCards() {
     const loadStats = async () => {
       try {
         const response = await fetch("/api/dashboard/stats", { cache: "no-store" })
-        if (!response.ok) {
-          throw new Error("Failed to fetch stats")
-        }
-
         const data = await response.json()
         setStats(data)
       } catch (error) {
@@ -33,44 +29,66 @@ export function StatsCards() {
     loadStats()
   }, [])
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value)
+  // ✅ Counter Hook
+  const useCounter = (end: number) => {
+    const [value, setValue] = useState(0)
+
+    useEffect(() => {
+      let start = 0
+      const duration = 800
+      const step = end / (duration / 16)
+
+      const timer = setInterval(() => {
+        start += step
+        if (start >= end) {
+          setValue(end)
+          clearInterval(timer)
+        } else {
+          setValue(Math.floor(start))
+        }
+      }, 16)
+
+      return () => clearInterval(timer)
+    }, [end])
+
+    return value
   }
 
-  const formatPercentage = (value: number) => {
-    return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`
-  }
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(value)
+
+  const formatPercentage = (value: number) =>
+    `${value > 0 ? "+" : ""}${value.toFixed(1)}%`
 
   const cards = [
     {
       title: "Total Identities",
-      value: stats.totalIdentities.toString(),
+      value: stats.totalIdentities,
       description: "Active client profiles",
       icon: Users,
       color: "text-blue-600",
     },
     {
       title: "Total Assets",
-      value: stats.totalAssets.toString(),
+      value: stats.totalAssets,
       description: "Assets under management",
       icon: Building2,
       color: "text-green-600",
     },
     {
       title: "Portfolio Value",
-      value: formatCurrency(stats.totalValue),
+      value: stats.totalValue,
       description: "Total asset valuation",
       icon: DollarSign,
       color: "text-purple-600",
     },
     {
       title: "Average Return",
-      value: formatPercentage(stats.averageReturn),
+      value: stats.averageReturn,
       description: "Portfolio performance",
       icon: TrendingUp,
       color: stats.averageReturn >= 0 ? "text-green-600" : "text-red-600",
@@ -79,18 +97,34 @@ export function StatsCards() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {cards.map((card) => (
-        <Card key={card.title}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
-            <card.icon className={cn("h-4 w-4", card.color)} />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{card.value}</div>
-            <p className="text-xs text-muted-foreground">{card.description}</p>
-          </CardContent>
-        </Card>
-      ))}
+      {cards.map((card) => {
+        const animated = useCounter(card.value)
+
+        return (
+          <Card key={card.title}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm text-muted-foreground">
+                {card.title}
+              </CardTitle>
+              <card.icon className={cn("h-4 w-4", card.color)} />
+            </CardHeader>
+
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {card.title === "Portfolio Value"
+                  ? formatCurrency(animated)
+                  : card.title === "Average Return"
+                  ? formatPercentage(animated)
+                  : animated}
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                {card.description}
+              </p>
+            </CardContent>
+          </Card>
+        )
+      })}
     </div>
   )
 }

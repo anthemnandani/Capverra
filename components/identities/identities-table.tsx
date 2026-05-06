@@ -80,8 +80,33 @@ export function IdentitiesTable() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading identities...</p>
+          <div className="rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Identity Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Citizenship</TableHead>
+                  <TableHead>Residency</TableHead>
+                  <TableHead>Risk Profile</TableHead>
+                  <TableHead>Goals</TableHead>
+                  <TableHead>Additional Info</TableHead>
+                  <TableHead>Notes</TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: 8 }).map((_, j) => (
+                      <TableCell key={j}>
+                        <div className="h-4 w-full animate-pulse rounded bg-gray-200" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         ) : null}
 

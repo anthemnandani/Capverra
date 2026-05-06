@@ -15,19 +15,18 @@ interface ActivityItem {
 
 export function RecentActivity() {
   const [activities, setActivities] = useState<ActivityItem[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadActivity = async () => {
       try {
         const response = await fetch("/api/dashboard/activity", { cache: "no-store" })
-        if (!response.ok) {
-          throw new Error("Failed to fetch activity")
-        }
-
         const data = await response.json()
         setActivities(data)
       } catch (error) {
         console.error("Failed to load activity:", error)
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -52,45 +51,35 @@ export function RecentActivity() {
   const getActivityBadge = (type: string) => {
     switch (type) {
       case "asset_added":
-        return (
-          <Badge variant="secondary" className="bg-green-100 text-green-800">
-            Asset
-          </Badge>
-        )
+        return <Badge className="bg-green-100 text-green-800">Asset</Badge>
       case "identity_added":
-        return (
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-            Identity
-          </Badge>
-        )
+        return <Badge className="bg-blue-100 text-blue-800">Identity</Badge>
       case "valuation_updated":
-        return (
-          <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-            Valuation
-          </Badge>
-        )
+        return <Badge className="bg-purple-100 text-purple-800">Valuation</Badge>
       case "optimization_generated":
-        return (
-          <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-            AI Analysis
-          </Badge>
-        )
+        return <Badge className="bg-orange-100 text-orange-800">AI Analysis</Badge>
       default:
-        return <Badge variant="secondary">Activity</Badge>
+        return <Badge>Activity</Badge>
     }
   }
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp)
     const now = new Date()
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+    const diffInMs = now.getTime() - date.getTime()
 
-    if (diffInHours < 1) {
+    const diffInSeconds = Math.floor(diffInMs / 1000)
+    const diffInMinutes = Math.floor(diffInSeconds / 60)
+    const diffInHours = Math.floor(diffInMinutes / 60)
+    const diffInDays = Math.floor(diffInHours / 24)
+
+    if (diffInSeconds < 60) {
       return "Just now"
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes} min ago`
     } else if (diffInHours < 24) {
       return `${diffInHours}h ago`
     } else {
-      const diffInDays = Math.floor(diffInHours / 24)
       return `${diffInDays}d ago`
     }
   }
@@ -100,8 +89,21 @@ export function RecentActivity() {
       <CardHeader>
         <CardTitle>Recent Activity</CardTitle>
       </CardHeader>
+
       <CardContent>
-        {activities.length === 0 ? (
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center space-x-3 animate-pulse">
+                <div className="h-4 w-4 bg-gray-300 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 bg-gray-300 rounded w-1/3" />
+                  <div className="h-3 bg-gray-200 rounded w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : activities.length === 0 ? (
           <div className="text-center py-8">
             <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">No recent activity</p>
@@ -110,15 +112,21 @@ export function RecentActivity() {
           <div className="space-y-4">
             {activities.map((activity) => (
               <div key={activity.id} className="flex items-start space-x-3">
-                <div className="flex-shrink-0 mt-1">{getActivityIcon(activity.type)}</div>
+                <div className="mt-1">{getActivityIcon(activity.type)}</div>
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-medium text-foreground">{activity.title}</p>
+                    <p className="text-sm font-medium">{activity.title}</p>
                     {getActivityBadge(activity.type)}
                   </div>
-                  <p className="text-sm text-muted-foreground">{activity.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {activity.description}
+                  </p>
                 </div>
-                <div className="flex-shrink-0 text-xs text-muted-foreground">{formatTimestamp(activity.timestamp)}</div>
+
+                <div className="text-xs text-muted-foreground">
+                  {formatTimestamp(activity.timestamp)}
+                </div>
               </div>
             ))}
           </div>
