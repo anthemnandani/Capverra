@@ -133,10 +133,16 @@ export async function POST(request: NextRequest) {
         name: body.name,
         type: body.type,
         owner_id: body.owner_id,
+
+        // NEW FIELDS
+        currency: body.currency,
+
         location_state: body.location_state,
         location_country: body.location_country,
+
         purchase_value: body.purchase_value,
         purchase_date: body.purchase_date,
+
         latest_valuation: body.latest_valuation,
         latest_valuation_date: body.latest_valuation_date,
       })
