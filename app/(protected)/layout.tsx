@@ -7,23 +7,16 @@ import { useAuth } from "@/context";
 import { AppShell } from "@/components/layout/app-shell";
 import { Loader2 } from "lucide-react";
 
-export default function ProtectedLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // isLoading khatam hone ke baad hi check karo
-    // warna first render pe always redirect hoga
     if (!isLoading && !isAuthenticated) {
       router.replace("/login");
     }
   }, [isAuthenticated, isLoading, router]);
 
-  // Auth check chal raha hai — spinner dikhao
   if (isLoading) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center">
@@ -32,11 +25,7 @@ export default function ProtectedLayout({
     );
   }
 
-  // Unauthenticated — redirect ho raha hai, kuch mat dikhao
-  if (!isAuthenticated) {
-    return null;
-  }
+  if (!isAuthenticated) return null;
 
-  // Authenticated — AppShell ke saath content dikhao
   return <AppShell>{children}</AppShell>;
 }
