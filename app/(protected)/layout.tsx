@@ -19,7 +19,7 @@ export default function ProtectedLayout({
     // isLoading khatam hone ke baad hi check karo
     // warna first render pe always redirect hoga
     if (!isLoading && !isAuthenticated) {
-      router.replace("/auth/login");
+      router.replace("/login");
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -38,5 +38,5 @@ export default function ProtectedLayout({
   }
 
   // Authenticated — AppShell ke saath content dikhao
-  return <>{children}</>;
+  return <AppShell>{children}</AppShell>;
 }

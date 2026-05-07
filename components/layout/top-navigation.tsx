@@ -102,7 +102,7 @@ export function TopNavigation() {
         ) : (
           // Unauthenticated — simple login button
           <Button asChild size="sm">
-            <Link href="/auth/login" className="flex items-center gap-2">
+            <Link href="/login" className="flex items-center gap-2">
               <LogIn className="h-4 w-4" />
               Log in
             </Link>

@@ -1,0 +1,37 @@
+@layer base {
+  .public-theme,
+  .public-theme body {
+    --color-background: oklch(0.15 0.02 250);
+    --color-foreground: oklch(0.92 0.03 85);
+    --color-card: oklch(0.18 0.02 250);
+    --color-card-foreground: oklch(0.92 0.03 85);
+    --color-popover: oklch(0.18 0.02 250);
+    --color-popover-foreground: oklch(0.92 0.03 85);
+    --color-primary: oklch(0.75 0.12 85);
+    --color-primary-foreground: oklch(0.15 0.02 250);
+    --color-secondary: oklch(0.22 0.02 250);
+    --color-secondary-foreground: oklch(0.85 0.08 85);
+    --color-muted: oklch(0.20 0.015 250);
+    --color-muted-foreground: oklch(0.65 0.02 250);
+    --color-accent: oklch(0.75 0.12 85);
+    --color-accent-foreground: oklch(0.15 0.02 250);
+    --color-destructive: oklch(0.577 0.245 27.325);
+    --color-destructive-foreground: oklch(0.985 0 0);
+    --color-border: oklch(0.28 0.02 250);
+    --color-input: oklch(0.22 0.02 250);
+    --color-ring: oklch(0.75 0.12 85);
+
+    background-color: oklch(0.15 0.02 250);
+    color: oklch(0.92 0.03 85);
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .public-theme * {
+    border-color: oklch(0.28 0.02 250);
+  }
+
+  /* Cards, popovers explicitly */
+  .public-theme [class*="bg-card"] { background-color: oklch(0.18 0.02 250); }
+  .public-theme [class*="bg-secondary"] { background-color: oklch(0.22 0.02 250); }
+  .public-theme [class*="bg-muted"] { background-color: oklch(0.20 0.015 250); }
+}

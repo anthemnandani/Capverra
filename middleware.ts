@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/auth/login", "/auth/signup", "/auth/callback"];
+const PUBLIC_PATHS = ["/login", "/signup", "/callback"];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -43,7 +43,7 @@ export async function middleware(request: NextRequest) {
   // Redirect unauthenticated users to login
   if (!user && !isPublicPath && !isRootPath) {
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
+    url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 

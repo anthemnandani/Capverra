@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-const publicPaths = ["/", "/auth/login"]
+const publicPaths = ["/", "/login"]
 
 export async function updateSession(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function updateSession(request: NextRequest) {
 
     if (!hasSupabaseAuthCookie && !isPublicPath && !isApiPath) {
       const redirectUrl = request.nextUrl.clone()
-      redirectUrl.pathname = "/auth/login"
+      redirectUrl.pathname = "/login"
       return NextResponse.redirect(redirectUrl)
     }
 

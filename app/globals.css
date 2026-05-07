@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* ── Protected / default light theme ─────────────────────────────────── */
 @theme inline {
   --color-background: hsl(0 0% 100%);
   --color-foreground: hsl(222.2 84% 4.9%);
@@ -20,22 +21,56 @@
   --color-border: hsl(214.3 31.8% 91.4%);
   --color-input: hsl(214.3 31.8% 91.4%);
   --color-ring: hsl(222.2 84% 4.9%);
-  --color-chart-1: hsl(12 76% 61%);
-  --color-chart-2: hsl(173 58% 39%);
-  --color-chart-3: hsl(197 37% 24%);
-  --color-chart-4: hsl(43 74% 66%);
-  --color-chart-5: hsl(27 87% 67%);
   --radius: 0.5rem;
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
 }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
+  * { border-color: var(--color-border); }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+}
+
+/* ── Public golden theme — .public-theme wrapper ke andar ─────────────── */
+@layer utilities {
+  .public-theme {
+    background-color: oklch(0.15 0.02 250) !important;
+    color: oklch(0.92 0.03 85) !important;
+    font-family: 'Playfair Display', Georgia, serif !important;
+    min-height: 100vh;
+  }
+
+  /* Tailwind bg-* classes override */
+  .public-theme .bg-background   { background-color: oklch(0.15 0.02 250) !important; }
+  .public-theme .bg-card         { background-color: oklch(0.18 0.02 250) !important; }
+  .public-theme .bg-secondary    { background-color: oklch(0.22 0.02 250) !important; }
+  .public-theme .bg-muted        { background-color: oklch(0.20 0.015 250) !important; }
+  .public-theme .bg-primary      { background-color: oklch(0.75 0.12 85) !important; }
+  .public-theme .bg-accent       { background-color: oklch(0.75 0.12 85) !important; }
+
+  /* Opacity variants */
+  .public-theme .bg-secondary\/30 { background-color: oklch(0.22 0.02 250 / 0.3) !important; }
+  .public-theme .bg-secondary\/50 { background-color: oklch(0.22 0.02 250 / 0.5) !important; }
+  .public-theme .bg-primary\/10  { background-color: oklch(0.75 0.12 85 / 0.1) !important; }
+  .public-theme .bg-primary\/90  { background-color: oklch(0.75 0.12 85 / 0.9) !important; }
+
+  /* Text overrides */
+  .public-theme .text-foreground      { color: oklch(0.92 0.03 85) !important; }
+  .public-theme .text-card-foreground { color: oklch(0.92 0.03 85) !important; }
+  .public-theme .text-muted-foreground { color: oklch(0.65 0.02 250) !important; }
+  .public-theme .text-primary         { color: oklch(0.75 0.12 85) !important; }
+  .public-theme .text-primary-foreground { color: oklch(0.15 0.02 250) !important; }
+
+  /* Border overrides */
+  .public-theme * { border-color: oklch(0.28 0.02 250); }
+  .public-theme .border-border  { border-color: oklch(0.28 0.02 250) !important; }
+  .public-theme .border-primary\/50 { border-color: oklch(0.75 0.12 85 / 0.5) !important; }
+
+  /* Hover overrides */
+  .public-theme .hover\:border-primary\/50:hover { border-color: oklch(0.75 0.12 85 / 0.5) !important; }
+  .public-theme .hover\:bg-secondary\/50:hover   { background-color: oklch(0.22 0.02 250 / 0.5) !important; }
+  .public-theme .hover\:bg-primary\/90:hover     { background-color: oklch(0.75 0.12 85 / 0.9) !important; }
 }

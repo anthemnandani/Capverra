@@ -192,7 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
-      router.replace("/auth/login");
+      router.replace("/login");
       toast.success("Logged out successfully.");
     } catch (error) {
       console.error("[AuthContext] logout failed:", error);
@@ -208,7 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+        redirectTo: `${window.location.origin}/callback?next=/reset-password`,
       });
       if (error) throw new Error(error.message);
       toast.success("Password reset email sent. Please check your inbox.");
@@ -228,7 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw new Error(error.message);
       toast.success("Password updated successfully. Please sign in.");
-      router.replace("/auth/login");
+      router.replace("/login");
     } catch (error) {
       console.error("[AuthContext] resetPassword failed:", error);
       toast.error("Failed to reset password. The link may have expired.");

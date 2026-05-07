@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   if (!code) {
     return NextResponse.redirect(
-      `${origin}/auth/login?error=auth_callback_error`
+      `${origin}/login?error=auth_callback_error`
     );
   }
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error("[auth/callback] exchangeCodeForSession error:", error.message);
       return NextResponse.redirect(
-        `${origin}/auth/login?error=auth_callback_error`
+        `${origin}/login?error=auth_callback_error`
       );
     }
 
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error("[auth/callback] Unexpected error:", err);
     return NextResponse.redirect(
-      `${origin}/auth/login?error=auth_callback_error`
+      `${origin}/login?error=auth_callback_error`
     );
   }
 }
