@@ -168,7 +168,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   disabled={loading}
-                  onClick={() => { setIsRegister((v) => !v); setError("") }}
+                  onClick={() => router.push("/contact")}
                   className="text-sm font-medium text-primary hover:text-primary/80 disabled:opacity-50"
                 >
                   {isRegister ? "Sign in instead" : "Contact us to get started"}
