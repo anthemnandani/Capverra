@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Mail, MapPin, Phone } from "lucide-react"
 import { useState } from "react"
+import { toast } from "sonner"
 
 const contactInfo = [
   {
@@ -37,12 +38,52 @@ export default function ContactPage() {
     company: "",
     message: "",
   })
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Handle form submission
-    console.log("[v0] Form submitted:", formData)
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+
+  try {
+    setLoading(true)
+
+    console.log("Submitting form...")
+
+    const response = await fetch("/api/contact", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    })
+
+    const data = await response.json()
+
+    console.log(data)
+
+    if (!response.ok) {
+      throw new Error(data.error || "Something went wrong")
+    }
+
+    toast.success("Message sent successfully!")
+
+    setFormData({
+      name: "",
+      email: "",
+      company: "",
+      message: "",
+    })
+  } catch (error) {
+    console.error("CONTACT FORM ERROR:", error)
+
+    toast.error(
+      error instanceof Error
+        ? error.message
+        : "Failed to send message"
+    )
+  } finally {
+    setLoading(false)
   }
+}
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -56,7 +97,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen">
       <Header />
-      
+
       <main className="pt-32 pb-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           {/* Header */}
@@ -146,9 +187,10 @@ export default function ContactPage() {
 
                 <Button
                   type="submit"
+                  disabled={loading}
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 >
-                  Send Message
+                  {loading ? "Sending..." : "Send Message"}
                 </Button>
               </form>
             </div>
@@ -160,8 +202,8 @@ export default function ContactPage() {
                   Get in touch
                 </h2>
                 <p className="mt-2 text-muted-foreground leading-relaxed">
-                  Whether you&apos;re looking to transform your business strategy, 
-                  explore partnership opportunities, or simply have a question, 
+                  Whether you&apos;re looking to transform your business strategy,
+                  explore partnership opportunities, or simply have a question,
                   our team is here to help.
                 </p>
               </div>
@@ -193,7 +235,7 @@ export default function ContactPage() {
                   Schedule a Consultation
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                  Prefer to speak directly with a strategist? Book a complimentary 
+                  Prefer to speak directly with a strategist? Book a complimentary
                   30-minute discovery call to discuss your business needs.
                 </p>
                 <Button
