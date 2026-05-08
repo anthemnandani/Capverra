@@ -29,9 +29,9 @@ export async function POST(request: NextRequest) {
     }
 
     await transporter.sendMail({
-      from: `"${process.env.SMTP_SENDER_NAME}" <${process.env.SMTP_SENDER_EMAIL}>`,
-      to: process.env.SMTP_SENDER_EMAIL,
-      replyTo: email || process.env.SMTP_SENDER_EMAIL,
+      from: `"${process.env.SMTP_SENDER_NAME}" <${process.env.SMTP_SENDER_NAME}>`,
+      to: process.env.SMTP_SENDER_NAME,
+      replyTo: email || process.env.SMTP_SENDER_NAME,
       subject: `Help Request: ${subject}`,
       html: `
 <!DOCTYPE html>
