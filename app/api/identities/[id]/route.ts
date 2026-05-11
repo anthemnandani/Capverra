@@ -25,13 +25,11 @@ export async function PATCH(
       return NextResponse.json({ error: "name cannot be empty" }, { status: 400 })
     }
 
-    // Map "high" → "aggressive" for DB constraint
-   const risk = body.risk_profile ?? "medium"
+    const risk = body.risk_profile ?? "medium"
 
     const updatePayload: Record<string, unknown> = {
       name:                   body.name?.trim(),
       type:                   body.type,
-      // legacy columns kept in sync
       citizenship:            body.primary_citizenship ? [body.primary_citizenship] : (body.citizenship ?? []),
       residency:              body.current_residency ?? body.residency ?? null,
       risk_profile:           risk,
@@ -39,11 +37,13 @@ export async function PATCH(
       additional_information: body.additional_information ?? null,
       notes:                  body.notes ?? null,
       updated_at:             new Date().toISOString(),
-      // new columns (require migration.sql to have been run)
       primary_citizenship:    body.primary_citizenship ?? null,
       other_citizenships:     body.other_citizenships  ?? [],
       current_residency:      body.current_residency   ?? null,
       state_province:         body.state_province      ?? null,
+      // new fields
+      tax_rate:               body.tax_rate != null ? Number(body.tax_rate) : null,
+      annual_income:          body.annual_income != null ? Number(body.annual_income) : null,
     }
 
     const { data: updated, error } = await supabase

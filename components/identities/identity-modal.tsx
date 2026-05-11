@@ -27,6 +27,8 @@ export interface IdentityModalShape {
   riskProfile: "low" | "medium" | "high"
   goals: string[]
   notes?: string
+  taxRate?: number | null       // NEW
+  annualIncome?: number | null  // NEW
   createdAt: Date
 }
 
@@ -94,6 +96,8 @@ export function IdentityModal({
   const [riskProfile,        setRiskProfile]        = useState<IdentityModalShape["riskProfile"]>("medium")
   const [selectedGoals,      setSelectedGoals]      = useState<string[]>([])
   const [notes,              setNotes]              = useState("")
+  const [taxRate,            setTaxRate]            = useState<string>("")   // NEW
+  const [annualIncome,       setAnnualIncome]       = useState<string>("")   // NEW
   const [goalsError,         setGoalsError]         = useState(false)
 
   useEffect(() => {
@@ -107,6 +111,8 @@ export function IdentityModal({
       setRiskProfile(identity.riskProfile ?? "medium")
       setSelectedGoals(identity.goals ?? [])
       setNotes(identity.notes ?? "")
+      setTaxRate(identity.taxRate != null ? String(identity.taxRate) : "")         // NEW
+      setAnnualIncome(identity.annualIncome != null ? String(identity.annualIncome) : "") // NEW
     } else {
       setName("")
       setType("")
@@ -116,6 +122,8 @@ export function IdentityModal({
       setRiskProfile("medium")
       setSelectedGoals([])
       setNotes("")
+      setTaxRate("")       // NEW
+      setAnnualIncome("")  // NEW
     }
     setGoalsError(false)
   }, [identity, isOpen])
@@ -143,6 +151,8 @@ export function IdentityModal({
       riskProfile,
       goals: selectedGoals,
       notes: notes || undefined,
+      taxRate: taxRate !== "" ? parseFloat(taxRate) : null,           // NEW
+      annualIncome: annualIncome !== "" ? parseFloat(annualIncome) : null, // NEW
     })
   }
 
@@ -284,6 +294,50 @@ export function IdentityModal({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Financial Details — NEW CARD */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Financial Details
+              </CardTitle>
+              <CardDescription>
+                Provide your tax rate and income to improve strategy recommendations
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="im-taxrate">Tax Rate (%)</Label>
+                  <Input
+                    id="im-taxrate"
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.01}
+                    placeholder="e.g. 28.5"
+                    value={taxRate}
+                    onChange={(e) => setTaxRate(e.target.value)}
+                    disabled={isSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="im-income">Annual Income</Label>
+                  <Input
+                    id="im-income"
+                    type="number"
+                    min={0}
+                    step={1}
+                    placeholder="e.g. 500000"
+                    value={annualIncome}
+                    onChange={(e) => setAnnualIncome(e.target.value)}
+                    disabled={isSaving}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
