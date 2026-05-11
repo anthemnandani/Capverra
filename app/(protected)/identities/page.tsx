@@ -23,43 +23,44 @@ interface Identity {
   name: string
   type: "individual" | "trust" | "llc" | "corporation" | "partnership" | "other"
   state_province: string | null
-  primary_citizenship: string | null    // ISO code
-  other_citizenships: string[]          // ISO codes
-  current_residency: string | null      // ISO code
+  primary_citizenship: string | null
+  other_citizenships: string[]
+  current_residency: string | null
   citizenship: string[]
   residency: string | null
-  risk_profile: "low" | "medium" | "high"
+  risk_profile: "low" | "medium" | "high" | "aggressive"
   goals: string[]
   additional_information: string | null
   notes: string | null
+  tax_rate: number | null
+  annual_income: number | null
   created_at: string
   updated_at: string
 }
 
-// ── Goal label lookup (mirrors modal) ────────────────────────────────────────
+// ── Goal label lookup ─────────────────────────────────────────────────────────
 const GOAL_LABELS: Record<string, string> = {
-  "reduce-taxes-now": "Reduce taxes now",
-  "inheritance-tax": "Inheritance tax",
-  "increase-cashflow": "Increase cash flow",
-  "asset-protection": "Asset protection",
+  "reduce-taxes-now":      "Reduce taxes now",
+  "inheritance-tax":       "Inheritance tax",
+  "increase-cashflow":     "Increase cash flow",
+  "asset-protection":      "Asset protection",
   "business-optimization": "Business optimization",
-  "retirement-planning": "Retirement planning",
-  "estate-planning": "Estate planning",
+  "retirement-planning":   "Retirement planning",
+  "estate-planning":       "Estate planning",
   "investment-efficiency": "Investment efficiency",
 }
 
 function goalLabel(id: string) {
-  // Support legacy free-text goals stored before IDs were standardised
   return GOAL_LABELS[id] ?? id.replace(/-/g, " ")
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getTypeIcon(type: string) {
   switch (type) {
-    case "individual": return <User className="h-4 w-4" />
-    case "trust": return <Shield className="h-4 w-4" />
-    case "partnership": return <Users className="h-4 w-4" />
-    default: return <Building2 className="h-4 w-4" />
+    case "individual":  return <User      className="h-4 w-4" />
+    case "trust":       return <Shield    className="h-4 w-4" />
+    case "partnership": return <Users     className="h-4 w-4" />
+    default:            return <Building2 className="h-4 w-4" />
   }
 }
 
@@ -70,66 +71,72 @@ function getTypeLabel(type: string) {
 
 function getRiskBadgeClass(profile: string) {
   switch (profile) {
-    case "low":
-      return "bg-green-100 text-green-900 dark:bg-green-100 dark:text-green-950"
-
-    case "medium":
-      return "bg-yellow-100 text-yellow-900 dark:bg-yellow-100 dark:text-yellow-950"
-
+    case "low":        return "bg-green-100 text-green-900 dark:bg-green-100 dark:text-green-950"
+    case "medium":     return "bg-yellow-100 text-yellow-900 dark:bg-yellow-100 dark:text-yellow-950"
     case "high":
-      return "bg-red-100 text-red-900 dark:bg-red-100 dark:text-red-950"
-
-    default:
-      return "bg-gray-100 text-gray-900 dark:bg-gray-100 dark:text-gray-950"
+    case "aggressive": return "bg-red-100 text-red-900 dark:bg-red-100 dark:text-red-950"
+    default:           return "bg-gray-100 text-gray-900 dark:bg-gray-100 dark:text-gray-950"
   }
+}
+
+function formatIncome(value: number | null) {
+  if (value == null) return "—"
+  return new Intl.NumberFormat("en-US").format(value)
+}
+
+function formatTaxRate(value: number | null) {
+  if (value == null) return "—"
+  return `${value}%`
 }
 
 /** API snake_case → modal camelCase */
 function identityToModalShape(identity: Identity): IdentityModalShape {
   return {
-    id: identity.id,
-    name: identity.name,
-    type: identity.type,
-    stateProvince: identity.state_province ?? "",
+    id:                 identity.id,
+    name:               identity.name,
+    type:               identity.type,
+    stateProvince:      identity.state_province ?? "",
     primaryCitizenship: identity.primary_citizenship ?? "",
-    otherCitizenships: identity.other_citizenships ?? [],
-    currentResidency: identity.current_residency ?? "",
-    // DB may store "aggressive" — modal only knows low/medium/high
-    riskProfile: identity.risk_profile === "aggressive" ? "high" : identity.risk_profile,
-    goals: identity.goals ?? [],
-    notes: identity.notes ?? "",
-    createdAt: new Date(identity.created_at),
+    otherCitizenships:  identity.other_citizenships ?? [],
+    currentResidency:   identity.current_residency ?? "",
+    riskProfile:        identity.risk_profile === "aggressive" ? "high" : identity.risk_profile,
+    goals:              identity.goals ?? [],
+    notes:              identity.notes ?? "",
+    taxRate:            identity.tax_rate ?? null,
+    annualIncome:       identity.annual_income ?? null,
+    createdAt:          new Date(identity.created_at),
   }
 }
 
 /** Modal camelCase → API snake_case payload */
 function formDataToPayload(data: IdentityFormData) {
   return {
-    name: data.name,
-    type: data.type,
-    state_province: data.stateProvince || null,
-    primary_citizenship: data.primaryCitizenship || null,
-    other_citizenships: data.otherCitizenships ?? [],
-    current_residency: data.currentResidency || null,
-    // Keep legacy fields in sync
-    citizenship: data.primaryCitizenship ? [data.primaryCitizenship] : [],
-    residency: data.currentResidency || null,
-    risk_profile: data.riskProfile,
-    goals: data.goals ?? [],
+    name:                   data.name,
+    type:                   data.type,
+    state_province:         data.stateProvince || null,
+    primary_citizenship:    data.primaryCitizenship || null,
+    other_citizenships:     data.otherCitizenships ?? [],
+    current_residency:      data.currentResidency || null,
+    citizenship:            data.primaryCitizenship ? [data.primaryCitizenship] : [],
+    residency:              data.currentResidency || null,
+    risk_profile:           data.riskProfile,
+    goals:                  data.goals ?? [],
     additional_information: null,
-    notes: data.notes || null,
+    notes:                  data.notes || null,
+    tax_rate:               data.taxRate ?? null,
+    annual_income:          data.annualIncome ?? null,
   }
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function IdentitiesPage() {
-  const [identities, setIdentities] = useState<Identity[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingIdentity, setEditingIdentity] = useState<Identity | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
+  const [identities,     setIdentities]     = useState<Identity[]>([])
+  const [loading,        setLoading]        = useState(true)
+  const [error,          setError]          = useState<string | null>(null)
+  const [isModalOpen,    setIsModalOpen]    = useState(false)
+  const [editingIdentity,setEditingIdentity]= useState<Identity | null>(null)
+  const [deletingId,     setDeletingId]     = useState<string | null>(null)
+  const [saving,         setSaving]         = useState(false)
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchIdentities = useCallback(async () => {
@@ -137,7 +144,10 @@ export default function IdentitiesPage() {
       setLoading(true)
       setError(null)
       const res = await fetch("/api/identities", { cache: "no-store" })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? `HTTP ${res.status}`)
+      }
       const data = await res.json()
       setIdentities(Array.isArray(data) ? data : [])
     } catch (err) {
@@ -150,21 +160,9 @@ export default function IdentitiesPage() {
   useEffect(() => { fetchIdentities() }, [fetchIdentities])
 
   // ── Modal helpers ─────────────────────────────────────────────────────────
-  const handleAddIdentity = () => {
-    setEditingIdentity(null)
-    setIsModalOpen(true)
-  }
-
-  const handleEditIdentity = (identity: Identity) => {
-    setEditingIdentity(identity)
-    setIsModalOpen(true)
-  }
-
-  const handleCloseModal = () => {
-    if (saving) return          // prevent closing mid-save
-    setIsModalOpen(false)
-    setEditingIdentity(null)
-  }
+  const handleAddIdentity   = () => { setEditingIdentity(null); setIsModalOpen(true) }
+  const handleEditIdentity  = (identity: Identity) => { setEditingIdentity(identity); setIsModalOpen(true) }
+  const handleCloseModal    = () => { if (saving) return; setIsModalOpen(false); setEditingIdentity(null) }
 
   // ── Save (create or update) ───────────────────────────────────────────────
   const handleSaveIdentity = async (formData: IdentityFormData) => {
@@ -174,25 +172,31 @@ export default function IdentitiesPage() {
 
     try {
       if (editingIdentity) {
+        // ── UPDATE ──
         const res = await fetch(`/api/identities/${editingIdentity.id}`, {
-          method: "PATCH",
+          method:  "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body:    JSON.stringify(payload),
         })
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
+          // 503 = Supabase timeout — show friendly message
+          if (res.status === 503) throw new Error("Auth service temporarily unavailable. Please retry.")
           throw new Error(body.error ?? `HTTP ${res.status}`)
         }
         const updated: Identity = await res.json()
         setIdentities((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))
       } else {
+        // ── CREATE ──
         const res = await fetch("/api/identities", {
-          method: "POST",
+          method:  "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body:    JSON.stringify(payload),
         })
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
+          if (res.status === 503) throw new Error("Auth service temporarily unavailable. Please retry.")
+          if (res.status === 401) throw new Error("Session expired. Please refresh the page and log in again.")
           throw new Error(body.error ?? `HTTP ${res.status}`)
         }
         const created: Identity = await res.json()
@@ -200,7 +204,6 @@ export default function IdentitiesPage() {
       }
       handleCloseModal()
     } catch (err) {
-      // Keep modal open so user can retry
       setError(err instanceof Error ? err.message : "Save failed")
     } finally {
       setSaving(false)
@@ -209,17 +212,17 @@ export default function IdentitiesPage() {
 
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleDeleteIdentity = async (id: string) => {
-    if (deletingId) return        // prevent double-delete
+    if (deletingId) return
     setDeletingId(id)
-
-    // Optimistic removal
-    setIdentities((prev) => prev.filter((i) => i.id !== id))
+    setIdentities((prev) => prev.filter((i) => i.id !== id))  // optimistic
 
     try {
       const res = await fetch(`/api/identities/${id}`, { method: "DELETE" })
       if (!res.ok) {
-        await fetchIdentities()   // roll back on failure
+        await fetchIdentities()  // roll back
         const body = await res.json().catch(() => ({}))
+        if (res.status === 503) throw new Error("Auth service temporarily unavailable. Please retry.")
+        if (res.status === 401) throw new Error("Session expired. Please refresh the page and log in again.")
         throw new Error(body.error ?? `HTTP ${res.status}`)
       }
     } catch (err) {
@@ -250,7 +253,7 @@ export default function IdentitiesPage() {
           </div>
         </div>
 
-        {/* Inline error banner */}
+        {/* Error banner */}
         {error && (
           <div className="mb-4 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
             <AlertCircle className="h-4 w-4 shrink-0" />
@@ -300,6 +303,8 @@ export default function IdentitiesPage() {
                         <TableHead>Citizenship</TableHead>
                         <TableHead>Residency</TableHead>
                         <TableHead>Risk Profile</TableHead>
+                        <TableHead>Tax Rate</TableHead>
+                        <TableHead>Annual Income</TableHead>
                         <TableHead>Goals</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -324,7 +329,7 @@ export default function IdentitiesPage() {
                           {/* State/Province */}
                           <TableCell>{identity.state_province || "—"}</TableCell>
 
-                          {/* Citizenship — stored as ISO code, display as name */}
+                          {/* Citizenship */}
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {identity.primary_citizenship && (
@@ -358,9 +363,15 @@ export default function IdentitiesPage() {
                           {/* Risk Profile */}
                           <TableCell>
                             <Badge className={getRiskBadgeClass(identity.risk_profile)}>
-                              {identity.risk_profile}
+                              {identity.risk_profile === "aggressive" ? "high" : identity.risk_profile}
                             </Badge>
                           </TableCell>
+
+                          {/* Tax Rate */}
+                          <TableCell>{formatTaxRate(identity.tax_rate)}</TableCell>
+
+                          {/* Annual Income */}
+                          <TableCell>{formatIncome(identity.annual_income)}</TableCell>
 
                           {/* Goals */}
                           <TableCell>
@@ -382,16 +393,14 @@ export default function IdentitiesPage() {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Button
-                                variant="ghost"
-                                size="sm"
+                                variant="ghost" size="sm"
                                 disabled={!!deletingId || saving}
                                 onClick={() => handleEditIdentity(identity)}
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
                               <Button
-                                variant="ghost"
-                                size="sm"
+                                variant="ghost" size="sm"
                                 disabled={!!deletingId || saving}
                                 onClick={() => handleDeleteIdentity(identity.id)}
                               >
