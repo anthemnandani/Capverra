@@ -79,7 +79,6 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-
       <main className="flex flex-1 items-center justify-center px-6 pt-32 pb-12">
         <div className="w-full max-w-md">
           <div className="rounded-xl border border-border bg-card p-8 shadow-lg">
