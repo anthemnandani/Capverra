@@ -3,10 +3,10 @@ import Image from "next/image"
 import Link from "next/link"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { PortableText } from "@/components/blog/portable-text"
 import { client, postBySlugQuery, postSlugsQuery, urlFor } from "@/sanity/lib"
 import type { Post } from "@/sanity/lib"
 import { ArrowLeft, Calendar, User } from "lucide-react"
+import { PortableText } from "@/components/landing/blog/portable-text"
 
 export const revalidate = 60
 
