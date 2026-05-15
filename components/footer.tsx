@@ -1,3 +1,5 @@
+// Updated Footer Component (Old UI → New UI Design)
+
 import Link from "next/link"
 import Image from "next/image"
 
@@ -9,57 +11,63 @@ const navigation = {
     { name: "Contact", href: "/contact" },
   ],
   legal: [
-    { name: "Privacy Policy", href: "#" },
-    { name: "Terms of Service", href: "#" },
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Terms of Service", href: "/terms" },
   ],
 }
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-background">
-      <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
-        <div className="flex flex-col items-center gap-8 md:flex-row md:justify-between">
-          <div className="flex flex-col items-center gap-4 md:items-start">
-            <Image
-              src="/logo.png"
-              alt="Capverra Strategy"
-              width={180}
-              height={45}
-              className="h-10 w-auto"
-            />
-            <p className="text-sm text-muted-foreground">
+    <footer className="border-t border-border/50 bg-background py-12">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
+          {/* Logo and tagline */}
+          <div>
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/images/capverra-logo.png"
+                alt="Capverra Strategy"
+                width={280}
+                height={72}
+                className="h-20 w-auto"
+              />
+            </Link>
+
+            <p className="mt-4 text-sm text-muted-foreground">
               Tax Optimization for High Net Worth Clients.
             </p>
           </div>
-          <nav className="flex flex-wrap justify-center gap-x-8 gap-y-4">
+
+          {/* Navigation */}
+          <nav className="flex gap-6">
             {navigation.main.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 {item.name}
               </Link>
             ))}
           </nav>
         </div>
-        <div className="mt-8 border-t border-border pt-8">
-          <div className="flex flex-col items-center gap-4 md:flex-row md:justify-between">
-            <p className="text-xs text-muted-foreground">
-              &copy; {new Date().getFullYear()} Capverra Strategy. All rights reserved.
-            </p>
-            <nav className="flex gap-x-6">
-              {navigation.legal.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="text-xs text-muted-foreground transition-colors hover:text-primary"
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </nav>
-          </div>
+
+        <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-border/50 pt-8 sm:flex-row sm:items-center">
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} Capverra Strategy. All rights reserved.
+          </p>
+
+          <nav className="flex gap-6">
+            {navigation.legal.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {item.name}
+              </Link>
+            ))}
+          </nav>
         </div>
       </div>
     </footer>
