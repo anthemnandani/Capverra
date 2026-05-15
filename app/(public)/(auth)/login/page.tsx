@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { createSupabaseBrowserClient } from "@/lib/supabase/client"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -13,10 +12,11 @@ import { Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { useAuth } from "@/context"
+import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
-  const router = useRouter()
   const { login } = useAuth()
+  const router = useRouter()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -59,12 +59,14 @@ export default function LoginPage() {
           return
         }
 
-        router.replace("/dashboard")
+        // Hard navigation — public CSS bundle unload ho, protected fresh load ho
+        window.location.href = "/dashboard"
         return
       }
 
       await login(email, password)
-      router.replace("/dashboard")
+      // Hard navigation — public CSS bundle unload ho, protected fresh load ho
+      window.location.href = "/dashboard"
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Something went wrong."
       setError(message)
@@ -183,4 +185,3 @@ export default function LoginPage() {
     </div>
   )
 }
-

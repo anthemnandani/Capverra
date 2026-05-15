@@ -2,25 +2,23 @@
 
 import type React from "react";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/context";
 import "./globals-public.css";
 
-
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace("/dashboard");
+      // router.replace ki jagah hard navigation — taaki public CSS bundle
+      // unload ho aur protected bundle fresh load ho (golden theme leak band)
+      window.location.href = "/dashboard";
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading]);
 
-  // Authenticated hai — redirect ho raha hai, kuch mat dikhao
   if (!isLoading && isAuthenticated) {
     return null;
   }
 
-  return <div className="public-theme">{children}</div>;
+  return <>{children}</>;
 }
