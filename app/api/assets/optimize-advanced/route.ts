@@ -20,11 +20,13 @@
  * 3. EXPONENTIAL BACKOFF RETRY — 3 attempts, 4 s / 8 s delay with ±1 s
  *    jitter.  Covers transient spikes without hammering the API.
  *
- * 4. MINIMAL PROMPT — system prompt trimmed to ~200 tokens; user prompt
- *    uses compact inline format to stay well within the 10 000-token input
- *    limit of the Haiku tier.  The JSON schema is embedded only once.
+ * 4. COMPACT PROMPT — summaries capped at 30 words, arrays at 3 items.
+ *    Keeps output well within 5 000-token budget on the Haiku tier.
  *
- * 5. PROPER HTTP STATUS CODES
+ * 5. SAFE JSON EXTRACTION — slices from first `{` to last `}` so stray
+ *    preamble / trailing text never breaks JSON.parse.
+ *
+ * 6. PROPER HTTP STATUS CODES
  *    503 → overloaded (client shows "try again in 30–60 s")
  *    429 → rate-limited
  *    401 → unauthenticated
@@ -111,7 +113,7 @@ function buildPrompts(
   jurisdictions: JurisdictionInput[],
 ): { system: string; user: string } {
   // ── system prompt — intentionally short ──────────────────────────────────
-  const system = `You are an expert international tax strategist. Advise on LEGAL tax optimization only. Respond ONLY with a single valid JSON object — no markdown, no commentary.`
+  const system = `You are an expert international tax strategist. Advise on LEGAL tax optimization only. Respond ONLY with a single valid JSON object — no markdown, no commentary, no trailing text.`
 
   // ── compact identity lines ────────────────────────────────────────────────
   const idLines = identities
@@ -157,6 +159,9 @@ Rules:
 - savingsVsBaseline is POSITIVE when cheaper than baseline, NEGATIVE when more expensive.
 - All advice must be legal. Add disclaimer in currentIdentitySummary.summary.
 - Populate ALL array fields; do not return empty arrays.
+- Keep every summary field under 30 words.
+- Maximum 3 items in any array (advantages, disadvantages, keyBenefits, considerations, nextSteps, goals).
+- Be concise — short values keep the JSON well within token limits.
 
 Respond with ONLY the JSON object matching this exact schema (replace 0 and "str" with real values):
 ${schema}`
@@ -205,8 +210,9 @@ export async function POST(request: NextRequest) {
   try {
     message = await withRetry(() =>
       anthropic.messages.create({
-        model:      "claude-haiku-4-5-20251001",
-        max_tokens: 3000,           // enough for the full JSON; keeps output-token budget healthy
+        model:       "claude-haiku-4-5-20251001",
+        max_tokens:  5000,   // FIX: raised from 3000 — large schema needs headroom
+        temperature: 0.2,    // FIX: low temperature reduces stray formatting
         system,
         messages: [{ role: "user", content: userPrompt }],
       }),
@@ -246,23 +252,37 @@ export async function POST(request: NextRequest) {
     .replace(/\s*```$/i, "")
     .trim()
 
-  // Validate it is parseable JSON before sending to client
-  try {
-    JSON.parse(cleaned)
-  } catch {
-    console.error("[optimize-advanced] Model returned non-JSON:", cleaned.slice(0, 300))
+  // ── FIX: safe JSON extraction — slice from first { to last } ─────────────
+  // Handles preamble text, trailing commentary, or minor truncation artifacts.
+  const firstBrace = cleaned.indexOf("{")
+  const lastBrace  = cleaned.lastIndexOf("}")
+
+  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+    console.error("[optimize-advanced] No JSON object found in response:", cleaned.slice(0, 300))
     return NextResponse.json(
       { error: "AI returned an unexpected response format. Please try again." },
       { status: 500 },
     )
   }
 
-  // ── Return JSON directly (no streaming) ───────────────────────────────────
-  return new NextResponse(cleaned, {
-    status: 200,
-    headers: {
-      "Content-Type":  "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-    },
+  const jsonString = cleaned.slice(firstBrace, lastBrace + 1)
+
+  // ── Parse and validate ────────────────────────────────────────────────────
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(jsonString)
+  } catch (parseErr) {
+    console.error("[optimize-advanced] JSON.parse failed:", parseErr)
+    console.error("[optimize-advanced] Extracted string (first 500 chars):", jsonString.slice(0, 500))
+    return NextResponse.json(
+      { error: "AI returned malformed JSON. Please try again." },
+      { status: 500 },
+    )
+  }
+
+  // ── Return parsed object as JSON (avoids double-stringify issues) ─────────
+  return NextResponse.json(parsed, {
+    status:  200,
+    headers: { "Cache-Control": "no-store" },
   })
 }
