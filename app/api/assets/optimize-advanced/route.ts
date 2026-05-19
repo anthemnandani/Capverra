@@ -1,210 +1,268 @@
+/**
+ * POST /api/assets/optimize-advanced
+ *
+ * Production-grade tax optimization using claude-haiku-4-5-20251001.
+ *
+ * Key design decisions vs the previous version:
+ *
+ * 1. NON-STREAMING  — `messages.create` instead of `messages.stream`.
+ *    Reason: With streaming, an "overloaded_error" arrives *inside* the SSE
+ *    stream after the HTTP 200 header is already sent, so the client has no
+ *    way to distinguish it from a successful (but truncated) JSON payload.
+ *    Non-streaming surfaces the error *before* we write a single byte to the
+ *    client, letting us return a proper HTTP 503 that the client can handle.
+ *
+ * 2. CORRECT OVERLOAD DETECTION — the Anthropic SDK wraps the overloaded
+ *    error in an APIError whose `.status` is `undefined` (because the error
+ *    comes from the SSE body, not the HTTP status line).  We must check
+ *    `err.error?.type` or `err.type` instead of `err.status === 529`.
+ *
+ * 3. EXPONENTIAL BACKOFF RETRY — 3 attempts, 4 s / 8 s delay with ±1 s
+ *    jitter.  Covers transient spikes without hammering the API.
+ *
+ * 4. MINIMAL PROMPT — system prompt trimmed to ~200 tokens; user prompt
+ *    uses compact inline format to stay well within the 10 000-token input
+ *    limit of the Haiku tier.  The JSON schema is embedded only once.
+ *
+ * 5. PROPER HTTP STATUS CODES
+ *    503 → overloaded (client shows "try again in 30–60 s")
+ *    429 → rate-limited
+ *    401 → unauthenticated
+ *    400 → bad request
+ *    500 → unexpected server error
+ */
+
 import { type NextRequest, NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
-export const dynamic = "force-dynamic"
+export const dynamic    = "force-dynamic"
+export const maxDuration = 60   // seconds — needed for Vercel
 
-const client = new Anthropic()
+// ── Singleton client ──────────────────────────────────────────────────────────
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-export async function POST(request: NextRequest) {
-  try {
-    // ── Auth guard ────────────────────────────────────────────────────────────
-    const supabase = await createSupabaseServerClient()
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-
-    if (userError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const { asset, identities, jurisdictions } = await request.json()
-
-    // ── Build prompts ─────────────────────────────────────────────────────────
-    const identitiesInfo = identities
-      .map(
-        (
-          id: {
-            name: string
-            type: string
-            location: string
-            risk_profile?: string
-            goals?: string[]
-            tax_rate?: number | null
-            annual_income?: number | null
-          },
-          index: number,
-        ) =>
-          `Identity ${index + 1}:
-  - Name: ${id.name}
-  - Type: ${id.type}
-  - Location: ${id.location}
-  - Risk Profile: ${id.risk_profile ?? "medium"}
-  - Goals: ${(id.goals ?? []).join(", ") || "not specified"}
-  ${id.tax_rate != null ? `- Current Tax Rate: ${id.tax_rate}%` : ""}
-  ${id.annual_income != null ? `- Annual Income: $${id.annual_income.toLocaleString()}` : ""}`,
-      )
-      .join("\n\n")
-
-    const jurisdictionsInfo =
-      jurisdictions.map((j: { name: string; code: string }) => j.name).join(", ") ||
-      "BVI, Cayman Islands"
-
-    const systemPrompt = `You are an expert international tax strategist and wealth structuring advisor with deep knowledge of global jurisdictions, holding structures, trust law, corporate vehicles, and cross-border tax treaties. You advise ultra-high-net-worth individuals on legal tax optimization strategies.
-
-IMPORTANT RULES:
-- Never ask clarifying questions. Make reasonable assumptions where data is missing and state them clearly.
-- All advice must be legal and compliant. Never suggest tax evasion — only lawful avoidance and optimization.
-- Always note that the user should seek qualified legal and tax counsel before implementing any strategy.
-- Use actual dollar figures in all examples. Base them on the data provided, and where you must assume, state the assumption explicitly.
-- Format your response as valid JSON that can be parsed.`
-
-    const prompt = `## IDENTITIES TO COMPARE
-
-The user has selected the following identities to compare tax liability against:
-
-${identitiesInfo}
-
-## OFFSHORE JURISDICTIONS TO ANALYZE
-
-The user wants analysis of these specific jurisdictions: ${jurisdictionsInfo}
-
-## ASSET TO OPTIMIZE
-
-- Asset Name: ${asset.name}
-- Asset Type: ${asset.type}
-- Current Location: ${asset.location_state ?? ""}, ${asset.location_country ?? ""}
-- Currency: ${asset.currency ?? "USD"}
-- Purchase Value: ${asset.purchase_value}
-- Purchase Date: ${asset.purchase_date}
-- Latest Valuation: ${asset.latest_valuation}
-- Latest Valuation Date: ${asset.latest_valuation_date}
-- Current Owner: ${asset.owner?.name ?? "Unknown"} (${asset.owner?.type ?? "Unknown"})
-
----
-
-You must respond with a JSON object in exactly this format. Do not include any text before or after the JSON:
-
-{
-  "baseline": {
-    "identityName": "string - name of the baseline/current identity",
-    "identityType": "string - trust/individual/company",
-    "location": "string - location",
-    "effectiveTaxRate": "string - e.g. 37%",
-    "annualTaxLiability": number,
-    "capitalGainsTax": number,
-    "estateTaxExposure": number,
-    "totalTenYearBurden": number,
-    "summary": "string - 2-3 sentence executive summary of the baseline situation"
-  },
-  "identityComparisons": [
-    {
-      "identityName": "string",
-      "identityType": "string",
-      "location": "string",
-      "effectiveTaxRate": "string",
-      "annualTaxLiability": number,
-      "capitalGainsTax": number,
-      "estateTaxExposure": number,
-      "totalTenYearBurden": number,
-      "savingsVsBaseline": number,
-      "savingsPercentage": "string - e.g. 15%",
-      "summary": "string - 2-3 sentence executive summary",
-      "advantages": ["string array of 2-3 key advantages"],
-      "disadvantages": ["string array of 1-2 key disadvantages"],
-      "recommendedStructure": "string - recommended holding structure"
-    }
-  ],
-  "jurisdictionAnalysis": [
-    {
-      "jurisdiction": "string - jurisdiction name",
-      "code": "string - country code",
-      "recommendedVehicle": "string - e.g. IBC, LLC, Trust",
-      "effectiveTaxRate": "string",
-      "annualTaxLiability": number,
-      "capitalGainsTax": number,
-      "estateTaxExposure": number,
-      "totalTenYearBurden": number,
-      "savingsVsBaseline": number,
-      "savingsPercentage": "string",
-      "summary": "string - 2-3 sentence executive summary of why this jurisdiction works",
-      "keyBenefits": ["string array of 3-4 key benefits"],
-      "considerations": ["string array of 2-3 considerations or risks"],
-      "treatyAdvantages": "string - relevant tax treaties"
-    }
-  ],
-  "timeHorizonAnalysis": {
-    "fiveYear": {
-      "baselineTax": number,
-      "optimizedTax": number,
-      "savings": number
-    },
-    "tenYear": {
-      "baselineTax": number,
-      "optimizedTax": number,
-      "savings": number
-    },
-    "twentyYear": {
-      "baselineTax": number,
-      "optimizedTax": number,
-      "savings": number
-    },
-    "holdUntilDeath": {
-      "baselineTax": number,
-      "optimizedTax": number,
-      "savings": number
-    }
-  },
-  "recommendation": {
-    "bestStructure": "string - name of the best overall structure",
-    "reasoning": "string - 2-3 sentences explaining why",
-    "estimatedLifetimeSavings": number,
-    "nextSteps": ["string array of 3-5 actionable next steps"]
-  }
+// ── Type helpers ──────────────────────────────────────────────────────────────
+interface IdentityInput {
+  name:          string
+  type:          string
+  location:      string
+  risk_profile?: string
+  goals?:        string[]
+  tax_rate?:     number | null
+  annual_income?: number | null
 }
 
-Provide realistic tax figures based on the asset value and jurisdictions. Make reasonable assumptions and be specific with dollar amounts.`
+interface JurisdictionInput { name: string; code: string }
 
-    // ── Stream via Anthropic SDK ───────────────────────────────────────────────
-    const stream = await client.messages.stream({
-      model:      "claude-sonnet-4-5",
-      max_tokens: 4000,
-      system:     systemPrompt,
-      messages:   [{ role: "user", content: prompt }],
-    })
+// ── Overload / rate-limit detector ────────────────────────────────────────────
+/**
+ * The Anthropic SDK throws an APIError for both HTTP-level and SSE-level
+ * errors.  For overloaded_error the HTTP status is sometimes `undefined`
+ * because the error arrives in the SSE stream after a 200 is already sent.
+ * We must inspect `err.error.type` (the nested API error object) as well.
+ */
+function classifyError(err: unknown): "overloaded" | "rateLimit" | "other" {
+  if (!(err instanceof Anthropic.APIError)) return "other"
 
-    // Pipe the text stream directly to the response
-    const encoder = new TextEncoder()
-    const readable = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of stream) {
-            if (
-              chunk.type === "content_block_delta" &&
-              chunk.delta.type === "text_delta"
-            ) {
-              controller.enqueue(encoder.encode(chunk.delta.text))
-            }
-          }
-        } finally {
-          controller.close()
-        }
-      },
-    })
+  const nestedType = (err as any).error?.error?.type ?? (err as any).error?.type ?? ""
+  const topType    = (err as any).type ?? ""
 
-    return new NextResponse(readable, {
-      headers: {
-        "Content-Type":  "text/plain; charset=utf-8",
-        "Cache-Control": "no-cache",
-        "Transfer-Encoding": "chunked",
-      },
+  if (
+    err.status === 529 ||
+    err.status === 503 ||
+    nestedType === "overloaded_error" ||
+    topType    === "overloaded_error"
+  ) return "overloaded"
+
+  if (err.status === 429) return "rateLimit"
+
+  return "other"
+}
+
+// ── Retry wrapper ─────────────────────────────────────────────────────────────
+async function withRetry<T>(
+  fn:            () => Promise<T>,
+  maxAttempts  = 3,
+  baseDelayMs  = 4_000,
+): Promise<T> {
+  let lastErr: unknown
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn()
+    } catch (err) {
+      lastErr = err
+      const kind = classifyError(err)
+      if ((kind !== "overloaded" && kind !== "rateLimit") || attempt === maxAttempts) throw err
+      const delay = baseDelayMs * 2 ** (attempt - 1) + Math.random() * 1_000
+      console.warn(
+        `[optimize-advanced] attempt ${attempt} → ${kind}. Retrying in ${Math.round(delay)} ms…`,
+      )
+      await new Promise((r) => setTimeout(r, delay))
+    }
+  }
+  throw lastErr
+}
+
+// ── Prompt builder ────────────────────────────────────────────────────────────
+function buildPrompts(
+  asset:         Record<string, unknown>,
+  identities:    IdentityInput[],
+  jurisdictions: JurisdictionInput[],
+): { system: string; user: string } {
+  // ── system prompt — intentionally short ──────────────────────────────────
+  const system = `You are an expert international tax strategist. Advise on LEGAL tax optimization only. Respond ONLY with a single valid JSON object — no markdown, no commentary.`
+
+  // ── compact identity lines ────────────────────────────────────────────────
+  const idLines = identities
+    .map((id, i) => {
+      const parts = [
+        `${i + 1}. ${id.name} (${id.type}) @ ${id.location || "unknown"}`,
+        `risk:${id.risk_profile ?? "medium"}`,
+        id.tax_rate     != null ? `tax:${id.tax_rate}%`                              : null,
+        id.annual_income != null ? `income:$${Math.round(id.annual_income)}`          : null,
+        (id.goals ?? []).length ? `goals:${id.goals!.slice(0, 3).join("|")}`         : null,
+      ].filter(Boolean)
+      return parts.join(" | ")
     })
-  } catch (error) {
-    console.error("Error generating advanced optimization:", error)
+    .join("\n")
+
+  const jurLines = jurisdictions.map((j) => j.name).join(", ")
+
+  const assetPv  = asset.purchase_value  != null ? `$${Math.round(Number(asset.purchase_value))}`  : "unknown"
+  const assetLv  = asset.latest_valuation != null ? `$${Math.round(Number(asset.latest_valuation))}` : "unknown"
+  const assetLoc = [asset.location_state, asset.location_country].filter(Boolean).join(", ") || "unknown"
+  const owner    = `${(asset.owner as any)?.name ?? "unknown"} (${(asset.owner as any)?.type ?? "unknown"})`
+
+  // ── JSON schema — embedded once ───────────────────────────────────────────
+  const schema = `{
+  "assetSummary":{"name":"str","type":"str","location":"str","purchaseValue":0,"currentValue":0,"performance":"str","currency":"str"},
+  "currentIdentitySummary":{"identityName":"str","identityType":"str","location":"str","taxRate":"str","annualIncome":"str","riskProfile":"str","goals":["str"],"summary":"str"},
+  "baseline":{"identityName":"str","identityType":"str","location":"str","effectiveTaxRate":"str","annualTaxLiability":0,"capitalGainsTax":0,"estateTaxExposure":0,"totalTenYearBurden":0,"summary":"str"},
+  "identityComparisons":[{"identityName":"str","identityType":"str","location":"str","effectiveTaxRate":"str","annualTaxLiability":0,"capitalGainsTax":0,"estateTaxExposure":0,"totalTenYearBurden":0,"savingsVsBaseline":0,"savingsPercentage":"str","summary":"str","advantages":["str"],"disadvantages":["str"],"recommendedStructure":"str"}],
+  "jurisdictionAnalysis":[{"jurisdiction":"str","code":"str","recommendedVehicle":"str","effectiveTaxRate":"str","annualTaxLiability":0,"capitalGainsTax":0,"estateTaxExposure":0,"totalTenYearBurden":0,"savingsVsBaseline":0,"savingsPercentage":"str","summary":"str","keyBenefits":["str"],"considerations":["str"],"treatyAdvantages":"str"}],
+  "timeHorizonAnalysis":{"fiveYear":{"baselineTax":0,"optimizedTax":0,"savings":0},"tenYear":{"baselineTax":0,"optimizedTax":0,"savings":0},"twentyYear":{"baselineTax":0,"optimizedTax":0,"savings":0},"holdUntilDeath":{"baselineTax":0,"optimizedTax":0,"savings":0}},
+  "recommendation":{"bestStructure":"str","reasoning":"str","estimatedLifetimeSavings":0,"nextSteps":["str"]}
+}`
+
+  const user = `ASSET: ${asset.name} | type:${asset.type} | loc:${assetLoc} | currency:${asset.currency ?? "USD"} | purchased:${assetPv} on ${asset.purchase_date ?? "?"} | current:${assetLv} on ${asset.latest_valuation_date ?? "?"} | owner:${owner}
+
+IDENTITIES (index 0 = baseline/current owner):
+${idLines || "0. " + owner + " (current owner)"}
+
+JURISDICTIONS TO ANALYZE: ${jurLines || "BVI, Cayman Islands"}
+
+Rules:
+- Use realistic dollar integers (no decimals).
+- savingsVsBaseline is POSITIVE when cheaper than baseline, NEGATIVE when more expensive.
+- All advice must be legal. Add disclaimer in currentIdentitySummary.summary.
+- Populate ALL array fields; do not return empty arrays.
+
+Respond with ONLY the JSON object matching this exact schema (replace 0 and "str" with real values):
+${schema}`
+
+  return { system, user }
+}
+
+// ── Route handler ─────────────────────────────────────────────────────────────
+export async function POST(request: NextRequest) {
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  const supabase = await createSupabaseServerClient()
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  // ── Parse body ────────────────────────────────────────────────────────────
+  let asset: Record<string, unknown>
+  let identities: IdentityInput[]
+  let jurisdictions: JurisdictionInput[]
+
+  try {
+    const body = await request.json()
+    asset         = body.asset
+    identities    = body.identities    ?? []
+    jurisdictions = body.jurisdictions ?? []
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
+  }
+
+  if (!asset?.name) {
+    return NextResponse.json({ error: "asset.name is required" }, { status: 400 })
+  }
+  if (jurisdictions.length === 0) {
     return NextResponse.json(
-      { error: "Failed to generate optimization analysis" },
+      { error: "Select at least one jurisdiction before optimizing." },
+      { status: 400 },
+    )
+  }
+
+  // ── Build prompts ─────────────────────────────────────────────────────────
+  const { system, user: userPrompt } = buildPrompts(asset, identities, jurisdictions)
+
+  // ── Call Anthropic (non-streaming, with retry) ────────────────────────────
+  let message: Anthropic.Message
+  try {
+    message = await withRetry(() =>
+      anthropic.messages.create({
+        model:      "claude-haiku-4-5-20251001",
+        max_tokens: 3000,           // enough for the full JSON; keeps output-token budget healthy
+        system,
+        messages: [{ role: "user", content: userPrompt }],
+      }),
+    )
+  } catch (err) {
+    const kind = classifyError(err)
+    console.error(`[optimize-advanced] Final error (${kind}):`, err)
+
+    if (kind === "overloaded") {
+      return NextResponse.json(
+        { error: "The AI service is currently overloaded. Please wait 30–60 seconds and try again." },
+        { status: 503 },
+      )
+    }
+    if (kind === "rateLimit") {
+      return NextResponse.json(
+        { error: "Rate limit reached. Please wait a minute before trying again." },
+        { status: 429 },
+      )
+    }
+    return NextResponse.json(
+      { error: "Failed to generate optimization analysis. Please try again." },
       { status: 500 },
     )
   }
+
+  // ── Extract text ──────────────────────────────────────────────────────────
+  const rawText = message.content
+    .filter((b): b is Anthropic.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("")
+
+  // Strip accidental markdown fences
+  const cleaned = rawText
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim()
+
+  // Validate it is parseable JSON before sending to client
+  try {
+    JSON.parse(cleaned)
+  } catch {
+    console.error("[optimize-advanced] Model returned non-JSON:", cleaned.slice(0, 300))
+    return NextResponse.json(
+      { error: "AI returned an unexpected response format. Please try again." },
+      { status: 500 },
+    )
+  }
+
+  // ── Return JSON directly (no streaming) ───────────────────────────────────
+  return new NextResponse(cleaned, {
+    status: 200,
+    headers: {
+      "Content-Type":  "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  })
 }

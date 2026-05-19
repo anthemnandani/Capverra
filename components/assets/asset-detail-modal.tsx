@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, Users, Building2, User, MapPin, Sparkles } from "lucide-react"
+import { Check, Users, Building2, User, MapPin, Sparkles, AlertCircle } from "lucide-react"
 import { OptimizationResultsModal } from "@/components/assets/optimization-results-modal"
 import {
   Dialog,
@@ -24,34 +24,43 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { countries } from "@/lib/countries"
 import type { AssetWithCalculations, Identity } from "@/lib/types"
 
-// ── Jurisdictions ────────────────────────────────────────────────────────────
+// ── Jurisdictions ─────────────────────────────────────────────────────────────
 const JURISDICTIONS = [
-  { id: "bvi",           name: "British Virgin Islands (BVI)", code: "VG" },
-  { id: "cayman",        name: "Cayman Islands",               code: "KY" },
-  { id: "isle-of-man",   name: "Isle of Man",                  code: "IM" },
-  { id: "mauritius",     name: "Mauritius",                    code: "MU" },
-  { id: "luxembourg",    name: "Luxembourg",                   code: "LU" },
-  { id: "singapore",     name: "Singapore",                    code: "SG" },
-  { id: "hong-kong",     name: "Hong Kong",                    code: "HK" },
-  { id: "cyprus",        name: "Cyprus",                       code: "CY" },
-  { id: "malta",         name: "Malta",                        code: "MT" },
-  { id: "jersey-guernsey", name: "Jersey / Guernsey",          code: "JE" },
-  { id: "panama",        name: "Panama",                       code: "PA" },
-  { id: "liechtenstein", name: "Liechtenstein",                code: "LI" },
-  { id: "other",         name: "Other Suitable Jurisdiction",  code: "XX" },
+  { id: "bvi",             name: "British Virgin Islands (BVI)", code: "VG" },
+  { id: "cayman",          name: "Cayman Islands",               code: "KY" },
+  { id: "isle-of-man",     name: "Isle of Man",                  code: "IM" },
+  { id: "mauritius",       name: "Mauritius",                    code: "MU" },
+  { id: "luxembourg",      name: "Luxembourg",                   code: "LU" },
+  { id: "singapore",       name: "Singapore",                    code: "SG" },
+  { id: "hong-kong",       name: "Hong Kong",                    code: "HK" },
+  { id: "cyprus",          name: "Cyprus",                       code: "CY" },
+  { id: "malta",           name: "Malta",                        code: "MT" },
+  { id: "jersey-guernsey", name: "Jersey / Guernsey",            code: "JE" },
+  { id: "panama",          name: "Panama",                       code: "PA" },
+  { id: "liechtenstein",   name: "Liechtenstein",                code: "LI" },
+  { id: "other",           name: "Other Suitable Jurisdiction",  code: "XX" },
 ]
+
+// ── FIX: resolve country code → country name for display ─────────────────────
+const getCountryName = (code: string | null | undefined): string => {
+  if (!code) return ""
+  const found = countries.find((c) => c.code === code)
+  return found ? found.name : code
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const ownerTypeIcons: Record<string, React.ReactNode> = {
-  Individual: <User  className="size-3.5" />,
-  LLC:        <Building2 className="size-3.5" />,
-  Trust:      <Users className="size-3.5" />,
-  individual: <User  className="size-3.5" />,
-  corporation:<Building2 className="size-3.5" />,
-  partnership:<Building2 className="size-3.5" />,
-  trust:      <Users className="size-3.5" />,
+  Individual:  <User      className="size-3.5" />,
+  LLC:         <Building2 className="size-3.5" />,
+  Trust:       <Users     className="size-3.5" />,
+  individual:  <User      className="size-3.5" />,
+  corporation: <Building2 className="size-3.5" />,
+  partnership: <Building2 className="size-3.5" />,
+  trust:       <Users     className="size-3.5" />,
+  entity:      <Building2 className="size-3.5" />,
 }
 
 const identityTypeBadgeStyles: Record<string, string> = {
@@ -63,14 +72,15 @@ const identityTypeBadgeStyles: Record<string, string> = {
   llc:         "bg-purple-100 text-purple-700",
   corporation: "bg-purple-100 text-purple-700",
   partnership: "bg-amber-100  text-amber-700",
+  entity:      "bg-purple-100 text-purple-700",
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 interface AssetDetailModalProps {
-  asset: AssetWithCalculations | null
-  allIdentities: Identity[]          // all identities from your DB
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  asset:         AssetWithCalculations | null
+  allIdentities: Identity[]
+  open:          boolean
+  onOpenChange:  (open: boolean) => void
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -80,15 +90,17 @@ export function AssetDetailModal({
   open,
   onOpenChange,
 }: AssetDetailModalProps) {
-  const [selectedIdentities, setSelectedIdentities] = useState<string[]>([])
+  const [selectedIdentities,    setSelectedIdentities]    = useState<string[]>([])
   const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>([])
-  const [showResults, setShowResults] = useState(false)
+  const [showResults,           setShowResults]           = useState(false)
+  // FIX: validation error state
+  const [jurisdictionError,     setJurisdictionError]     = useState(false)
 
   if (!asset) return null
 
   const currentIdentityId = asset.owner_id ?? ""
-  const otherIdentities    = allIdentities.filter((i) => i.id !== currentIdentityId)
-  const currentIdentity    = allIdentities.find((i)  => i.id === currentIdentityId)
+  const otherIdentities   = allIdentities.filter((i) => i.id !== currentIdentityId)
+  const currentIdentity   = allIdentities.find((i)  => i.id === currentIdentityId)
 
   // ── Toggles ────────────────────────────────────────────────────────────────
   const handleIdentityToggle = (id: string) => {
@@ -100,11 +112,22 @@ export function AssetDetailModal({
   }
 
   const handleJurisdictionToggle = (id: string) => {
+    setJurisdictionError(false) // FIX: clear error on interaction
     setSelectedJurisdictions((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id)
       if (prev.length >= 2)  return prev
       return [...prev, id]
     })
+  }
+
+  // ── FIX: validate before opening results ──────────────────────────────────
+  const handleOptimizeNow = () => {
+    if (selectedJurisdictions.length === 0) {
+      setJurisdictionError(true)
+      return
+    }
+    setJurisdictionError(false)
+    setShowResults(true)
   }
 
   // ── Derived selections ─────────────────────────────────────────────────────
@@ -122,6 +145,22 @@ export function AssetDetailModal({
   // ── Performance display ────────────────────────────────────────────────────
   const pct = asset.value_change_percentage
   const isPositive = (pct ?? 0) >= 0
+
+  const formatCurrency = (v: number | null | undefined) =>
+    v != null
+      ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v)
+      : "—"
+
+  // FIX: build identity location string correctly
+  // state_province is a free-text field, current_residency is a country code
+  const buildIdentityLocation = (identity: Identity | undefined): string => {
+    if (!identity) return "—"
+    const parts = [
+      identity.state_province,
+      getCountryName(identity.current_residency),
+    ].filter(Boolean)
+    return parts.join(", ") || "—"
+  }
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -163,24 +202,18 @@ export function AssetDetailModal({
                   <TableRow>
                     <TableCell className="font-medium text-sm py-2">Location</TableCell>
                     <TableCell className="text-sm py-2">
-                      {[asset.location_state, asset.location_country].filter(Boolean).join(", ")}
+                      {/* FIX: resolve country code to name */}
+                      {[asset.location_state, getCountryName(asset.location_country)]
+                        .filter(Boolean).join(", ") || "—"}
                     </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium text-sm py-2">Purchase Value</TableCell>
-                    <TableCell className="text-sm py-2">
-                      {asset.purchase_value != null
-                        ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(asset.purchase_value)
-                        : "—"}
-                    </TableCell>
+                    <TableCell className="text-sm py-2">{formatCurrency(asset.purchase_value)}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium text-sm py-2">Latest Valuation</TableCell>
-                    <TableCell className="text-sm py-2">
-                      {asset.latest_valuation != null
-                        ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(asset.latest_valuation)
-                        : "—"}
-                    </TableCell>
+                    <TableCell className="text-sm py-2">{formatCurrency(asset.latest_valuation)}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium text-sm py-2">Performance</TableCell>
@@ -239,19 +272,51 @@ export function AssetDetailModal({
                     <TableCell className="py-2">
                       <span className="flex items-center gap-1.5 text-sm">
                         <MapPin className="size-3 text-muted-foreground" />
-                        {currentIdentity
-                          ? [currentIdentity.state_province, currentIdentity.current_residency]
-                              .filter(Boolean).join(", ")
-                          : "—"}
+                        {/* FIX: use corrected location builder */}
+                        {buildIdentityLocation(currentIdentity)}
                       </span>
                     </TableCell>
                   </TableRow>
+                  {currentIdentity?.tax_rate != null && (
+                    <TableRow>
+                      <TableCell className="font-medium text-sm py-2">Tax Rate</TableCell>
+                      <TableCell className="text-sm py-2">{currentIdentity.tax_rate}%</TableCell>
+                    </TableRow>
+                  )}
+                  {currentIdentity?.annual_income != null && (
+                    <TableRow>
+                      <TableCell className="font-medium text-sm py-2">Annual Income</TableCell>
+                      <TableCell className="text-sm py-2">
+                        {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })
+                          .format(Math.round(currentIdentity.annual_income))} {/* FIX: round */}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {(currentIdentity?.goals ?? []).length > 0 && (
+                    <TableRow>
+                      <TableCell className="font-medium text-sm py-2">Goals</TableCell>
+                      <TableCell className="py-2">
+                        <div className="flex flex-wrap gap-1">
+                          {(currentIdentity?.goals ?? []).slice(0, 3).map((g) => (
+                            <Badge key={g} variant="secondary" className="text-xs capitalize">
+                              {g.replace(/-/g, " ")}
+                            </Badge>
+                          ))}
+                          {(currentIdentity?.goals ?? []).length > 3 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{currentIdentity!.goals.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
           </div>
 
-          {/* ── Other identities selection ── */}
+          {/* ── All other identities — select up to 2 to compare ── */}
           {otherIdentities.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -259,24 +324,24 @@ export function AssetDetailModal({
                   Compare Other Identities
                 </h3>
                 <span className="text-xs text-muted-foreground">
-                  Select up to 3 total:{" "}
+                  Select up to 2 additional:{" "}
                   <span className="font-medium text-foreground">
-                    {1 + selectedIdentities.length}/3
+                    {selectedIdentities.length}/2
                   </span>
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {otherIdentities.map((identity) => {
-                  const isSelected  = selectedIdentities.includes(identity.id)
-                  const isDisabled  = !isSelected && selectedIdentities.length >= 2
+                  const isSelected = selectedIdentities.includes(identity.id)
+                  const isDisabled = !isSelected && selectedIdentities.length >= 2
 
                   return (
                     <Card
                       key={identity.id}
                       className={cn(
                         "cursor-pointer transition-all hover:border-primary/50",
-                        isSelected && "border-primary bg-primary/5",
-                        isDisabled && "opacity-50 cursor-not-allowed",
+                        isSelected  && "border-primary bg-primary/5",
+                        isDisabled  && "opacity-50 cursor-not-allowed",
                       )}
                       onClick={() => !isDisabled && handleIdentityToggle(identity.id)}
                     >
@@ -302,9 +367,14 @@ export function AssetDetailModal({
                             </div>
                             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 truncate">
                               <MapPin className="size-2.5 shrink-0" />
-                              {[identity.state_province, identity.current_residency]
-                                .filter(Boolean).join(", ") || "—"}
+                              {/* FIX: use corrected location builder */}
+                              {buildIdentityLocation(identity)}
                             </p>
+                            {identity.tax_rate != null && (
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Tax Rate: {identity.tax_rate}%
+                              </p>
+                            )}
                           </div>
                           {isSelected && (
                             <div className="p-0.5 rounded-full bg-primary text-primary-foreground shrink-0">
@@ -333,7 +403,17 @@ export function AssetDetailModal({
                 </span>
               </span>
             </div>
-            <div className="border rounded-lg p-4">
+            {/* FIX: show validation error if no jurisdiction selected */}
+            {jurisdictionError && (
+              <div className="flex items-center gap-2 text-sm text-red-600 mb-2 px-1">
+                <AlertCircle className="size-4 shrink-0" />
+                Please select at least one jurisdiction to run the optimization.
+              </div>
+            )}
+            <div className={cn(
+              "border rounded-lg p-4",
+              jurisdictionError && "border-red-300 bg-red-50/30"
+            )}>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3">
                 {JURISDICTIONS.map((jurisdiction) => {
                   const isSelected = selectedJurisdictions.includes(jurisdiction.id)
@@ -368,7 +448,8 @@ export function AssetDetailModal({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setShowResults(true)} className="gap-2">
+            {/* FIX: use validated handler */}
+            <Button onClick={handleOptimizeNow} className="gap-2">
               <Sparkles className="size-4" />
               Optimize Now
             </Button>
@@ -376,7 +457,7 @@ export function AssetDetailModal({
         </div>
       </DialogContent>
 
-      {/* Optimization results modal (opened from here) */}
+      {/* Optimization results modal */}
       <OptimizationResultsModal
         asset={asset}
         identities={selectedIdentityObjects}
