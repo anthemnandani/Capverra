@@ -25,8 +25,48 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Session refresh — cookies update karo, bas
-  await supabase.auth.getUser();
+  // Session refresh
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Admin route protection (except login page)
+  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+  const isAdminLoginRoute = request.nextUrl.pathname === "/admin/login";
+
+  if (isAdminRoute && !isAdminLoginRoute) {
+    // Check if user is logged in
+    if (!user) {
+      const loginUrl = new URL("/admin/login", request.url);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Check if user is an admin (this is a basic check, full verification happens in layout)
+    const { data: adminUser } = await supabase
+      .from("admin_users")
+      .select("id, is_active")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .single();
+
+    if (!adminUser) {
+      const loginUrl = new URL("/admin/login", request.url);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // Redirect logged-in admins away from admin login page
+  if (isAdminLoginRoute && user) {
+    const { data: adminUser } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .single();
+
+    if (adminUser) {
+      const dashboardUrl = new URL("/admin/dashboard", request.url);
+      return NextResponse.redirect(dashboardUrl);
+    }
+  }
 
   return supabaseResponse;
 }
