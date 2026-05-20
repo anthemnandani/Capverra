@@ -169,10 +169,10 @@ export default function LoginPage() {
                 <button
                   type="button"
                   disabled={loading}
-                  onClick={() => router.push("/contact")}
+                  onClick={() => router.push(isRegister ? "/login" : "/signup")}
                   className="text-sm font-medium text-primary hover:text-primary/80 disabled:opacity-50"
                 >
-                  {isRegister ? "Sign in instead" : "Contact us to get started"}
+                  {isRegister ? "Sign in instead" : "Create an account"}
                 </button>
               </div>
             </div>
