@@ -8,7 +8,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, Shield, FlaskConical, Copy, Check, Sparkles } from "lucide-react"
+import { Eye, EyeOff, Shield, FlaskConical } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
@@ -18,7 +18,6 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [copied, setCopied] = useState<"email" | "password" | null>(null)
   const [isSeeding, setIsSeeding] = useState(false)
 
   // Test admin credentials
@@ -52,14 +51,6 @@ export default function AdminLoginPage() {
     } finally {
       setIsSeeding(false)
     }
-  }
-
-  const handleCopy = async (type: "email" | "password") => {
-    const value = type === "email" ? testCredentials.email : testCredentials.password
-    await navigator.clipboard.writeText(value)
-    setCopied(type)
-    toast.success(`${type === "email" ? "Email" : "Password"} copied!`)
-    setTimeout(() => setCopied(null), 2000)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -164,72 +155,25 @@ export default function AdminLoginPage() {
 
             {/* Test Credentials Section */}
             <div className="mt-6 pt-6 border-t border-border">
-              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 rounded-md bg-amber-500/10">
-                    <FlaskConical className="w-4 h-4 text-amber-500" />
-                  </div>
-                  <span className="text-sm font-medium text-amber-600 dark:text-amber-400">Test Admin Credentials</span>
-                </div>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between bg-background/50 rounded-md px-3 py-2">
-                    <div>
-                      <span className="text-muted-foreground text-xs">Email:</span>
-                      <p className="text-foreground font-mono text-xs">{testCredentials.email}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy("email")}
-                      className="p-1.5 hover:bg-accent rounded-md transition-colors"
-                    >
-                      {copied === "email" ? (
-                        <Check className="w-3.5 h-3.5 text-green-500" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-                      )}
-                    </button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between bg-background/50 rounded-md px-3 py-2">
-                    <div>
-                      <span className="text-muted-foreground text-xs">Password:</span>
-                      <p className="text-foreground font-mono text-xs">{testCredentials.password}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy("password")}
-                      className="p-1.5 hover:bg-accent rounded-md transition-colors"
-                    >
-                      {copied === "password" ? (
-                        <Check className="w-3.5 h-3.5 text-green-500" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                
-                <Button
-                  type="button"
-                  onClick={handleFillTestCredentials}
-                  disabled={isSeeding}
-                  variant="outline"
-                  className="w-full mt-3 h-9 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-                >
-                  {isSeeding ? (
-                    <span className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
-                      Setting up...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      Use Test Credentials
-                    </span>
-                  )}
-                </Button>
-              </div>
+              <Button
+                type="button"
+                onClick={handleFillTestCredentials}
+                disabled={isSeeding}
+                variant="outline"
+                className="w-full h-10 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+              >
+                {isSeeding ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+                    Setting up...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <FlaskConical className="w-4 h-4" />
+                    Use Test Credentials
+                  </span>
+                )}
+              </Button>
             </div>
 
             {/* Back to User Login */}
