@@ -136,18 +136,18 @@ function MetricCard({
           className={`absolute -inset-0.5 bg-gradient-to-r ${colors.bg} rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
         />
 
-        <Card className="relative bg-slate-900/50 border-white/5 backdrop-blur-xl overflow-hidden">
+        <Card className="relative bg-card border-border backdrop-blur-xl overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-5">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-foreground to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
           </div>
 
           <CardContent className="p-6 relative">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
-                <p className="text-gray-400 text-sm font-medium">{title}</p>
+                <p className="text-muted-foreground text-sm font-medium">{title}</p>
                 <motion.p
-                  className="text-3xl lg:text-4xl font-bold text-white"
+                  className="text-3xl lg:text-4xl font-bold text-foreground"
                   initial={{ scale: 0.5 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: delay + 0.2, type: "spring" }}
@@ -157,19 +157,19 @@ function MetricCard({
                 {change !== undefined && (
                   <div className="flex items-center gap-1">
                     {change >= 0 ? (
-                      <TrendingUp className="w-4 h-4 text-emerald-400" />
+                      <TrendingUp className="w-4 h-4 text-emerald-500" />
                     ) : (
-                      <TrendingDown className="w-4 h-4 text-rose-400" />
+                      <TrendingDown className="w-4 h-4 text-rose-500" />
                     )}
                     <span
                       className={`text-sm font-medium ${
-                        change >= 0 ? "text-emerald-400" : "text-rose-400"
+                        change >= 0 ? "text-emerald-500" : "text-rose-500"
                       }`}
                     >
                       {change >= 0 ? "+" : ""}
                       {change}%
                     </span>
-                    <span className="text-gray-500 text-sm">vs last week</span>
+                    <span className="text-muted-foreground text-sm">vs last week</span>
                   </div>
                 )}
               </div>
@@ -208,21 +208,21 @@ function ActivityItem({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.1 }}
-      className="flex items-center gap-4 p-4 rounded-xl hover:bg-white/5 transition-colors group"
+      className="flex items-center gap-4 p-4 rounded-xl hover:bg-accent transition-colors group"
     >
       <div className="relative">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
-          <Activity className="w-5 h-5 text-indigo-400" />
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+          <Activity className="w-5 h-5 text-primary" />
         </div>
         {index < 4 && (
-          <div className="absolute top-10 left-1/2 -translate-x-1/2 w-px h-8 bg-gradient-to-b from-indigo-500/30 to-transparent" />
+          <div className="absolute top-10 left-1/2 -translate-x-1/2 w-px h-8 bg-gradient-to-b from-primary/30 to-transparent" />
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-white text-sm font-medium truncate">{action}</p>
-        <p className="text-gray-500 text-xs truncate">{resource}</p>
+        <p className="text-foreground text-sm font-medium truncate">{action}</p>
+        <p className="text-muted-foreground text-xs truncate">{resource}</p>
       </div>
-      <div className="flex items-center gap-2 text-gray-500 text-xs">
+      <div className="flex items-center gap-2 text-muted-foreground text-xs">
         <Clock className="w-3 h-3" />
         {time}
       </div>
@@ -253,7 +253,7 @@ function QuickAction({
       <Link href={href}>
         <Button
           variant="outline"
-          className={`h-auto py-4 px-6 flex flex-col items-center gap-2 bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 group`}
+          className={`h-auto py-4 px-6 flex flex-col items-center gap-2 bg-accent/50 border-border hover:bg-accent transition-all duration-300 group`}
         >
           <motion.div
             whileHover={{ rotate: 360, scale: 1.2 }}
@@ -262,7 +262,7 @@ function QuickAction({
           >
             <Icon className="w-5 h-5 text-white" />
           </motion.div>
-          <span className="text-gray-300 text-sm font-medium group-hover:text-white transition-colors">
+          <span className="text-muted-foreground text-sm font-medium group-hover:text-foreground transition-colors">
             {label}
           </span>
         </Button>
@@ -366,7 +366,7 @@ export default function AdminDashboard() {
           className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
         >
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-white flex items-center gap-3">
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-3">
               Welcome back, {adminUser?.name || "Admin"}
               <motion.span
                 animate={{ rotate: [0, 14, -8, 14, -4, 10, 0] }}
@@ -375,7 +375,7 @@ export default function AdminDashboard() {
                 <span role="img" aria-label="wave">{"("}</span>
               </motion.span>
             </h1>
-            <p className="text-gray-400 mt-1">
+            <p className="text-muted-foreground mt-1">
               Here&apos;s what&apos;s happening with your platform today
             </p>
           </div>
@@ -449,10 +449,10 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <Card className="bg-slate-900/50 border-white/5 backdrop-blur-xl h-full">
+            <Card className="bg-card border-border backdrop-blur-xl h-full">
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Target className="w-5 h-5 text-indigo-400" />
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <Target className="w-5 h-5 text-primary" />
                   Quick Actions
                 </CardTitle>
               </CardHeader>
@@ -496,15 +496,15 @@ export default function AdminDashboard() {
             transition={{ delay: 0.5 }}
             className="lg:col-span-2"
           >
-            <Card className="bg-slate-900/50 border-white/5 backdrop-blur-xl h-full">
+            <Card className="bg-card border-border backdrop-blur-xl h-full">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-emerald-400" />
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-emerald-500" />
                   Recent Activity
                 </CardTitle>
                 <Link
                   href="/admin/reports"
-                  className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 group"
+                  className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1 group"
                 >
                   View all
                   <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -523,9 +523,9 @@ export default function AdminDashboard() {
                   ))
                 ) : (
                   <div className="text-center py-8">
-                    <Eye className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-500">No recent activity</p>
-                    <p className="text-gray-600 text-sm">
+                    <Eye className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                    <p className="text-muted-foreground">No recent activity</p>
+                    <p className="text-muted-foreground/70 text-sm">
                       Activity will appear here as admins take actions
                     </p>
                   </div>
@@ -543,10 +543,10 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
           >
-            <Card className="bg-slate-900/50 border-white/5 backdrop-blur-xl">
+            <Card className="bg-card border-border backdrop-blur-xl">
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-indigo-400" />
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-primary" />
                   User Growth Trend
                 </CardTitle>
               </CardHeader>
@@ -561,12 +561,12 @@ export default function AdminDashboard() {
                         duration: 2,
                         repeat: Infinity,
                       }}
-                      className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4"
+                      className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4"
                     >
-                      <BarChart3 className="w-8 h-8 text-indigo-400" />
+                      <BarChart3 className="w-8 h-8 text-primary" />
                     </motion.div>
-                    <p className="text-gray-400">Analytics visualization</p>
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-muted-foreground">Analytics visualization</p>
+                    <p className="text-muted-foreground/70 text-sm">
                       Detailed charts coming soon
                     </p>
                   </div>
@@ -581,10 +581,10 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
           >
-            <Card className="bg-slate-900/50 border-white/5 backdrop-blur-xl">
+            <Card className="bg-card border-border backdrop-blur-xl">
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <PieChart className="w-5 h-5 text-amber-400" />
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <PieChart className="w-5 h-5 text-amber-500" />
                   Asset Distribution
                 </CardTitle>
               </CardHeader>
@@ -600,12 +600,12 @@ export default function AdminDashboard() {
                         repeat: Infinity,
                         ease: "linear",
                       }}
-                      className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500/20 to-rose-500/20 flex items-center justify-center mx-auto mb-4"
+                      className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4"
                     >
-                      <PieChart className="w-8 h-8 text-amber-400" />
+                      <PieChart className="w-8 h-8 text-amber-500" />
                     </motion.div>
-                    <p className="text-gray-400">Asset breakdown</p>
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-muted-foreground">Asset breakdown</p>
+                    <p className="text-muted-foreground/70 text-sm">
                       Visual distribution coming soon
                     </p>
                   </div>

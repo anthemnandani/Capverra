@@ -19,7 +19,6 @@ import {
   ChevronRight,
   Bell,
   Search,
-  Sparkles,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface NavItem {
   href: string
@@ -68,7 +68,7 @@ function AdminSidebar({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
             onClick={onClose}
           />
         )}
@@ -81,26 +81,26 @@ function AdminSidebar({
           x: isOpen ? 0 : "-100%",
         }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className={`fixed left-0 top-0 h-full w-72 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-r border-white/5 z-50 lg:translate-x-0 lg:static`}
+        className={`fixed left-0 top-0 h-full w-72 bg-card border-r border-border z-50 lg:translate-x-0 lg:static`}
       >
         {/* Logo Section */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-white/5">
+        <div className="h-16 flex items-center justify-between px-6 border-b border-border">
           <Link href="/admin/dashboard" className="flex items-center gap-3">
             <motion.div
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30"
-              whileHover={{ scale: 1.05, rotate: 5 }}
+              className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center"
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Shield className="w-5 h-5 text-white" />
+              <Shield className="w-5 h-5 text-primary" />
             </motion.div>
             <div>
-              <h1 className="text-white font-bold text-lg tracking-tight">Capverra</h1>
-              <p className="text-xs text-indigo-400 -mt-0.5">Admin Portal</p>
+              <h1 className="text-foreground font-bold text-lg tracking-tight">Capverra</h1>
+              <p className="text-xs text-primary -mt-0.5">Admin Portal</p>
             </div>
           </Link>
           <button
             onClick={onClose}
-            className="lg:hidden text-gray-400 hover:text-white transition-colors"
+            className="lg:hidden text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -122,31 +122,27 @@ function AdminSidebar({
                   onClick={onClose}
                   className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden ${
                     isActive
-                      ? "bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   }`}
                 >
                   {/* Active Indicator */}
                   {isActive && (
                     <motion.div
                       layoutId="activeNav"
-                      className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"
+                      className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-full"
                     />
                   )}
 
-                  {/* Icon with glow effect */}
-                  <span className={`relative ${isActive ? "text-indigo-400" : ""}`}>
+                  <span className={isActive ? "text-primary" : ""}>
                     {item.icon}
-                    {isActive && (
-                      <span className="absolute inset-0 blur-md bg-indigo-400/50" />
-                    )}
                   </span>
 
                   <span className="font-medium">{item.label}</span>
 
                   {/* Badge */}
                   {item.badge && (
-                    <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-indigo-500/20 text-indigo-400">
+                    <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
                       {item.badge}
                     </span>
                   )}
@@ -170,27 +166,27 @@ function AdminSidebar({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="p-4 rounded-xl bg-gradient-to-br from-white/5 to-white/0 border border-white/5"
+              className="p-4 rounded-xl bg-accent/50 border border-border"
             >
               <div className="flex items-center gap-3">
-                <Avatar className="w-10 h-10 border-2 border-indigo-500/30">
-                  <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-sm font-semibold">
+                <Avatar className="w-10 h-10 border-2 border-primary/30">
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
                     {adminUser.name?.[0]?.toUpperCase() || adminUser.email[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate text-sm">
+                  <p className="text-foreground font-medium truncate text-sm">
                     {adminUser.name || "Admin"}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">{adminUser.email}</p>
+                  <p className="text-xs text-muted-foreground truncate">{adminUser.email}</p>
                 </div>
               </div>
               <div className="mt-3 flex items-center gap-2">
-                <span className="px-2 py-1 rounded-md bg-indigo-500/20 text-indigo-400 text-xs font-medium capitalize">
+                <span className="px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium capitalize">
                   {adminUser.role.replace("_", " ")}
                 </span>
-                <span className="flex items-center gap-1 text-emerald-400 text-xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="flex items-center gap-1 text-emerald-500 text-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Active
                 </span>
               </div>
@@ -213,7 +209,6 @@ function AdminHeader({
 }) {
   const pathname = usePathname()
 
-  // Get current page title
   const getPageTitle = () => {
     const current = navItems.find(
       (item) => pathname === item.href || pathname.startsWith(item.href + "/")
@@ -222,13 +217,13 @@ function AdminHeader({
   }
 
   return (
-    <header className="h-16 border-b border-white/5 bg-slate-900/50 backdrop-blur-xl sticky top-0 z-30">
+    <header className="h-16 border-b border-border bg-card/50 backdrop-blur-xl sticky top-0 z-30">
       <div className="h-full px-4 lg:px-8 flex items-center justify-between">
         {/* Left Section */}
         <div className="flex items-center gap-4">
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+            className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -238,9 +233,8 @@ function AdminHeader({
               key={getPageTitle()}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-lg font-semibold text-white flex items-center gap-2"
+              className="text-lg font-semibold text-foreground"
             >
-              <Sparkles className="w-4 h-4 text-indigo-400" />
               {getPageTitle()}
             </motion.h2>
           </div>
@@ -249,24 +243,27 @@ function AdminHeader({
         {/* Search Bar */}
         <div className="hidden md:flex flex-1 max-w-md mx-8">
           <div className="relative w-full group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-indigo-400 transition-colors" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <Input
               placeholder="Search users, assets, reports..."
-              className="w-full pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-indigo-500 focus:ring-indigo-500/30 rounded-xl h-10"
+              className="w-full pl-10 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary rounded-xl h-10"
             />
           </div>
         </div>
 
         {/* Right Section */}
         <div className="flex items-center gap-3">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           {/* Notifications */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="relative p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+            className="relative p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
           </motion.button>
 
           {/* User Menu */}
@@ -275,37 +272,37 @@ function AdminHeader({
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-2 p-1.5 pr-3 rounded-xl hover:bg-white/5 transition-colors"
+                className="flex items-center gap-2 p-1.5 pr-3 rounded-xl hover:bg-accent transition-colors"
               >
-                <Avatar className="w-8 h-8 border-2 border-indigo-500/30">
-                  <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-xs font-semibold">
+                <Avatar className="w-8 h-8 border-2 border-primary/30">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                     {adminUser?.name?.[0]?.toUpperCase() || adminUser?.email[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <ChevronRight className="w-4 h-4 text-gray-400 rotate-90" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground rotate-90" />
               </motion.button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-56 bg-slate-900 border-white/10 text-white"
+              className="w-56 bg-card border-border"
             >
-              <div className="px-3 py-2 border-b border-white/5">
-                <p className="font-medium text-sm">{adminUser?.name || "Admin"}</p>
-                <p className="text-xs text-gray-500">{adminUser?.email}</p>
+              <div className="px-3 py-2 border-b border-border">
+                <p className="font-medium text-sm text-foreground">{adminUser?.name || "Admin"}</p>
+                <p className="text-xs text-muted-foreground">{adminUser?.email}</p>
               </div>
               <DropdownMenuItem asChild>
                 <Link
                   href="/admin/settings"
-                  className="flex items-center gap-2 cursor-pointer hover:bg-white/5"
+                  className="flex items-center gap-2 cursor-pointer"
                 >
                   <Settings className="w-4 h-4" />
                   Settings
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-white/5" />
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={onLogout}
-                className="flex items-center gap-2 cursor-pointer text-red-400 hover:bg-red-500/10 hover:text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive"
               >
                 <LogOut className="w-4 h-4" />
                 Sign out
@@ -355,21 +352,21 @@ export default function AdminLayout({
       await adminLogout()
       toast.success("Logged out successfully")
       window.location.href = "/admin/login"
-    } catch (error) {
+    } catch {
       toast.error("Failed to logout")
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <motion.div
           className="flex flex-col items-center gap-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
           <motion.div
-            className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center"
+            className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center"
             animate={{
               rotate: [0, 180, 360],
               scale: [1, 1.1, 1],
@@ -380,16 +377,16 @@ export default function AdminLayout({
               ease: "easeInOut",
             }}
           >
-            <Shield className="w-8 h-8 text-white" />
+            <Shield className="w-8 h-8 text-primary" />
           </motion.div>
-          <p className="text-gray-400">Verifying admin access...</p>
+          <p className="text-muted-foreground">Verifying admin access...</p>
         </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex">
+    <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       <AdminSidebar
         isOpen={sidebarOpen}

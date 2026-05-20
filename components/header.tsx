@@ -7,6 +7,7 @@ import Image from "next/image"
 import { Menu, X } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 const navigation = [
   { name: "Home", href: "/" },
@@ -47,7 +48,8 @@ export function Header() {
         </div>
 
         {/* Login Button */}
-        <div className="hidden lg:block">
+        <div className="hidden lg:flex items-center gap-3">
+          <ThemeToggle />
           <Link href="/login">
             <Button
               variant="outline"
@@ -87,14 +89,17 @@ export function Header() {
               </Link>
             ))}
 
-            <Link href="/login">
-              <Button
-                variant="outline"
-                className="w-fit border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-              >
-                Login
-              </Button>
-            </Link>
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <Link href="/login">
+                <Button
+                  variant="outline"
+                  className="w-fit border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                >
+                  Login
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       )}
