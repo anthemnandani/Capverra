@@ -15,10 +15,11 @@ import {
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import type { AssetWithCalculations, Identity } from "@/lib/types"
+import { PrintReportButton } from "./printable-report"
 
 // ── Jurisdiction shape ────────────────────────────────────────────────────────
 interface Jurisdiction {
-  id:   string
+  id: string
   name: string
   code: string
 }
@@ -26,91 +27,91 @@ interface Jurisdiction {
 // ── AI response shape ─────────────────────────────────────────────────────────
 interface OptimizationData {
   assetSummary: {
-    name:          string
-    type:          string
-    location:      string
+    name: string
+    type: string
+    location: string
     purchaseValue: number
-    currentValue:  number
-    performance:   string
-    currency:      string
+    currentValue: number
+    performance: string
+    currency: string
   }
   currentIdentitySummary: {
     identityName: string
     identityType: string
-    location:     string
-    taxRate:      string
+    location: string
+    taxRate: string
     annualIncome: string
-    riskProfile:  string
-    goals:        string[]
-    summary:      string
+    riskProfile: string
+    goals: string[]
+    summary: string
   }
   baseline: {
-    identityName:       string
-    identityType:       string
-    location:           string
-    effectiveTaxRate:   string
+    identityName: string
+    identityType: string
+    location: string
+    effectiveTaxRate: string
     annualTaxLiability: number
-    capitalGainsTax:    number
-    estateTaxExposure:  number
+    capitalGainsTax: number
+    estateTaxExposure: number
     totalTenYearBurden: number
-    summary:            string
+    summary: string
   }
   identityComparisons: Array<{
-    identityName:         string
-    identityType:         string
-    location:             string
-    effectiveTaxRate:     string
-    annualTaxLiability:   number
-    capitalGainsTax:      number
-    estateTaxExposure:    number
-    totalTenYearBurden:   number
-    savingsVsBaseline:    number
-    savingsPercentage:    string
-    summary:              string
-    advantages:           string[]
-    disadvantages:        string[]
+    identityName: string
+    identityType: string
+    location: string
+    effectiveTaxRate: string
+    annualTaxLiability: number
+    capitalGainsTax: number
+    estateTaxExposure: number
+    totalTenYearBurden: number
+    savingsVsBaseline: number
+    savingsPercentage: string
+    summary: string
+    advantages: string[]
+    disadvantages: string[]
     recommendedStructure: string
   }>
   jurisdictionAnalysis: Array<{
-    jurisdiction:       string
-    code:               string
+    jurisdiction: string
+    code: string
     recommendedVehicle: string
-    effectiveTaxRate:   string
+    effectiveTaxRate: string
     annualTaxLiability: number
-    capitalGainsTax:    number
-    estateTaxExposure:  number
+    capitalGainsTax: number
+    estateTaxExposure: number
     totalTenYearBurden: number
-    savingsVsBaseline:  number
-    savingsPercentage:  string
-    summary:            string
-    keyBenefits:        string[]
-    considerations:     string[]
-    treatyAdvantages:   string
+    savingsVsBaseline: number
+    savingsPercentage: string
+    summary: string
+    keyBenefits: string[]
+    considerations: string[]
+    treatyAdvantages: string
   }>
   timeHorizonAnalysis: {
-    fiveYear:       { baselineTax: number; optimizedTax: number; savings: number }
-    tenYear:        { baselineTax: number; optimizedTax: number; savings: number }
-    twentyYear:     { baselineTax: number; optimizedTax: number; savings: number }
+    fiveYear: { baselineTax: number; optimizedTax: number; savings: number }
+    tenYear: { baselineTax: number; optimizedTax: number; savings: number }
+    twentyYear: { baselineTax: number; optimizedTax: number; savings: number }
     holdUntilDeath: { baselineTax: number; optimizedTax: number; savings: number }
   }
   recommendation: {
-    bestStructure:            string
-    reasoning:                string
+    bestStructure: string
+    reasoning: string
     estimatedLifetimeSavings: number
-    nextSteps:                string[]
+    nextSteps: string[]
   }
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 interface OptimizationResultsModalProps {
-  asset:         AssetWithCalculations | null
-  identities:    Identity[]
+  asset: AssetWithCalculations | null
+  identities: Identity[]
   jurisdictions: Jurisdiction[]
-  open:          boolean
-  onOpenChange:  (open: boolean) => void
-  onBack:        () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onBack: () => void
   /** Pre-loaded data for history view mode */
-  initialData?:  OptimizationData | null
+  initialData?: OptimizationData | null
 }
 
 // ── Loading steps ─────────────────────────────────────────────────────────────
@@ -125,13 +126,13 @@ const LOADING_STEPS = [
 
 // ── Goal label map ────────────────────────────────────────────────────────────
 const GOAL_LABELS: Record<string, string> = {
-  "reduce-taxes-now":      "Reduce current tax burden",
-  "inheritance-tax":       "Minimize inheritance tax",
-  "increase-cashflow":     "Increase cash flow",
-  "asset-protection":      "Asset protection",
+  "reduce-taxes-now": "Reduce current tax burden",
+  "inheritance-tax": "Minimize inheritance tax",
+  "increase-cashflow": "Increase cash flow",
+  "asset-protection": "Asset protection",
   "business-optimization": "Business structure optimization",
-  "retirement-planning":   "Retirement planning",
-  "estate-planning":       "Estate planning",
+  "retirement-planning": "Retirement planning",
+  "estate-planning": "Estate planning",
   "investment-efficiency": "Investment tax efficiency",
 }
 const humanizeGoal = (g: string) => GOAL_LABELS[g] ?? g.replace(/-/g, " ")
@@ -140,15 +141,15 @@ const humanizeGoal = (g: string) => GOAL_LABELS[g] ?? g.replace(/-/g, " ")
 export function OptimizationResultsModal({
   asset, identities, jurisdictions, open, onOpenChange, onBack, initialData,
 }: OptimizationResultsModalProps) {
-  const [isLoading,    setIsLoading]    = useState(false)
-  const [loadingStep,  setLoadingStep]  = useState(0)
-  const [data,         setData]         = useState<OptimizationData | null>(initialData ?? null)
-  const [error,        setError]        = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [loadingStep, setLoadingStep] = useState(0)
+  const [data, setData] = useState<OptimizationData | null>(initialData ?? null)
+  const [error, setError] = useState<string | null>(null)
   const [hasGenerated, setHasGenerated] = useState(!!initialData)
-  const [isSaving,     setIsSaving]     = useState(false)
-  const [savedId,      setSavedId]      = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [savedId, setSavedId] = useState<string | null>(null)
 
-  const abortRef   = useRef<AbortController | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
   const isViewMode = !!initialData
 
   const fmt = (v: number) =>
@@ -185,13 +186,13 @@ export function OptimizationResultsModal({
 
       if (!parsed.assetSummary) {
         parsed.assetSummary = {
-          name:          asset?.name ?? "",
-          type:          asset?.type ?? "",
-          location:      [asset?.location_state, asset?.location_country].filter(Boolean).join(", ") || "—",
+          name: asset?.name ?? "",
+          type: asset?.type ?? "",
+          location: [asset?.location_state, asset?.location_country].filter(Boolean).join(", ") || "—",
           purchaseValue: asset?.purchase_value ?? 0,
-          currentValue:  asset?.latest_valuation ?? 0,
-          performance:   assetPerf,
-          currency:      (asset as any)?.currency ?? "USD",
+          currentValue: asset?.latest_valuation ?? 0,
+          performance: assetPerf,
+          currency: (asset as any)?.currency ?? "USD",
         }
       }
 
@@ -200,14 +201,14 @@ export function OptimizationResultsModal({
         parsed.currentIdentitySummary = {
           identityName: ci?.name ?? asset?.owner?.name ?? "Unknown",
           identityType: ci?.type ?? asset?.owner?.type ?? "individual",
-          location:     [ci?.state_province, ci?.current_residency].filter(Boolean).join(", ") || "—",
-          taxRate:      ci?.tax_rate != null ? `${ci.tax_rate}%` : "Unknown",
+          location: [ci?.state_province, ci?.current_residency].filter(Boolean).join(", ") || "—",
+          taxRate: ci?.tax_rate != null ? `${ci.tax_rate}%` : "Unknown",
           annualIncome: ci?.annual_income != null
             ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(ci.annual_income)
             : "Unknown",
-          riskProfile:  ci?.risk_profile ?? "medium",
-          goals:        (ci?.goals ?? []).map(humanizeGoal),
-          summary:      parsed.baseline?.summary ?? "",
+          riskProfile: ci?.risk_profile ?? "medium",
+          goals: (ci?.goals ?? []).map(humanizeGoal),
+          summary: parsed.baseline?.summary ?? "",
         }
       }
 
@@ -223,17 +224,17 @@ export function OptimizationResultsModal({
       setIsSaving(true)
       try {
         const res = await fetch("/api/assets/reports", {
-          method:  "POST",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            asset_id:          asset.id,
-            asset_name:        asset.name,
+            asset_id: asset.id,
+            asset_name: asset.name,
             estimated_savings: reportData.recommendation?.estimatedLifetimeSavings ?? 0,
-            currency:          (asset as any).currency ?? "USD",
-            summary:           reportData.recommendation?.reasoning ?? reportData.currentIdentitySummary?.summary ?? "",
-            identities:        identities.map((i) => ({ name: i.name, type: i.type })),
-            jurisdictions:     jurisdictions.map((j) => ({ name: j.name, code: j.code })),
-            report_data:       reportData,
+            currency: (asset as any).currency ?? "USD",
+            summary: reportData.recommendation?.reasoning ?? reportData.currentIdentitySummary?.summary ?? "",
+            identities: identities.map((i) => ({ name: i.name, type: i.type })),
+            jurisdictions: jurisdictions.map((j) => ({ name: j.name, code: j.code })),
+            report_data: reportData,
           }),
         })
         if (res.ok) {
@@ -265,29 +266,29 @@ export function OptimizationResultsModal({
 
     try {
       const res = await fetch("/api/assets/optimize-advanced", {
-        method:  "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal:  ctrl.signal,
+        signal: ctrl.signal,
         body: JSON.stringify({
           asset: {
-            name:                  asset.name,
-            type:                  asset.type,
-            location_state:        asset.location_state,
-            location_country:      asset.location_country,
-            currency:              (asset as any).currency ?? "USD",
-            purchase_value:        asset.purchase_value,
-            purchase_date:         asset.purchase_date,
-            latest_valuation:      asset.latest_valuation,
+            name: asset.name,
+            type: asset.type,
+            location_state: asset.location_state,
+            location_country: asset.location_country,
+            currency: (asset as any).currency ?? "USD",
+            purchase_value: asset.purchase_value,
+            purchase_date: asset.purchase_date,
+            latest_valuation: asset.latest_valuation,
             latest_valuation_date: asset.latest_valuation_date,
-            owner:                 asset.owner,
+            owner: asset.owner,
           },
           identities: identities.map((id) => ({
-            name:          id.name,
-            type:          id.type,
-            location:      [id.state_province, id.current_residency].filter(Boolean).join(", "),
-            risk_profile:  id.risk_profile,
-            goals:         id.goals,
-            tax_rate:      id.tax_rate,
+            name: id.name,
+            type: id.type,
+            location: [id.state_province, id.current_residency].filter(Boolean).join(", "),
+            risk_profile: id.risk_profile,
+            goals: id.goals,
+            tax_rate: id.tax_rate,
             annual_income: id.annual_income != null ? Math.round(id.annual_income) : null,
           })),
           jurisdictions,
@@ -405,13 +406,11 @@ export function OptimizationResultsModal({
                 </Button>
               )}
               {data && !isLoading && (
-                <Button
-                  variant="ghost" size="sm"
-                  className="text-white hover:bg-white/10"
-                  onClick={() => window.print()}
-                >
-                  <Printer className="size-4 mr-1" /> Print Report
-                </Button>
+                <PrintReportButton
+                  data={data}
+                  assetName={asset.name}
+                  className="inline-flex items-center text-sm text-white hover:bg-white/10 px-3 py-1.5 rounded-md transition-colors"
+                />
               )}
             </div>
           </div>
@@ -431,7 +430,7 @@ export function OptimizationResultsModal({
               <span className="font-medium ml-1">
                 {asset.latest_valuation != null
                   ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })
-                      .format(asset.latest_valuation)
+                    .format(asset.latest_valuation)
                   : "—"}
               </span>
             </span>
@@ -522,9 +521,9 @@ export function OptimizationResultsModal({
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
                     {[
                       { label: "Asset Name", value: data.assetSummary.name },
-                      { label: "Type",       value: data.assetSummary.type },
-                      { label: "Location",   value: data.assetSummary.location },
-                      { label: "Currency",   value: data.assetSummary.currency },
+                      { label: "Type", value: data.assetSummary.type },
+                      { label: "Location", value: data.assetSummary.location },
+                      { label: "Currency", value: data.assetSummary.currency },
                       {
                         label: "Purchase Value",
                         value: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })
@@ -541,7 +540,7 @@ export function OptimizationResultsModal({
                         className: data.assetSummary.performance.startsWith("+")
                           ? "text-emerald-600"
                           : data.assetSummary.performance.startsWith("-")
-                          ? "text-red-600" : "",
+                            ? "text-red-600" : "",
                       },
                     ].map(({ label, value, className }: { label: string; value: string; className?: string }) => (
                       <div key={label}>
@@ -569,11 +568,11 @@ export function OptimizationResultsModal({
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
                     {[
-                      { label: "Type",          value: data.currentIdentitySummary.identityType },
-                      { label: "Location",      value: data.currentIdentitySummary.location },
-                      { label: "Tax Rate",      value: data.currentIdentitySummary.taxRate },
+                      { label: "Type", value: data.currentIdentitySummary.identityType },
+                      { label: "Location", value: data.currentIdentitySummary.location },
+                      { label: "Tax Rate", value: data.currentIdentitySummary.taxRate },
                       { label: "Annual Income", value: data.currentIdentitySummary.annualIncome },
-                      { label: "Risk Profile",  value: data.currentIdentitySummary.riskProfile },
+                      { label: "Risk Profile", value: data.currentIdentitySummary.riskProfile },
                     ].map(({ label, value }) => (
                       <div key={label}>
                         <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
@@ -857,7 +856,7 @@ export function OptimizationResultsModal({
                     <TableBody>
                       {(
                         [
-                          ["Sell in 5 Years",  data.timeHorizonAnalysis.fiveYear],
+                          ["Sell in 5 Years", data.timeHorizonAnalysis.fiveYear],
                           ["Sell in 10 Years", data.timeHorizonAnalysis.tenYear],
                           ["Sell in 20 Years", data.timeHorizonAnalysis.twentyYear],
                           ["Hold Until Death", data.timeHorizonAnalysis.holdUntilDeath],
