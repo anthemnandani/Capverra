@@ -106,7 +106,7 @@ export function TopNavigation() {
 
               <DropdownMenuContent
                 align="end"
-                className="w-[80vw] max-w-sm rounded-2xl px-2 py-4 md:hidden"
+                className="w-[80vw] max-w-sm rounded-xl px-2 py-4 md:hidden"
               >
                 {navigation.map((item) => {
                   const Icon = item.icon
@@ -156,7 +156,7 @@ export function TopNavigation() {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent
-                className="w-[80vw] max-w-sm rounded-2xl"
+                className="w-[80vw] max-w-sm rounded-xl"
                 align="end"
                 forceMount
               >
