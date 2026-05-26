@@ -72,18 +72,13 @@ export function TopNavigation() {
                   href={item.href}
                 >
                   <Button
-                    variant={
-                      isActive
-                        ? "secondary"
-                        : "ghost"
-                    }
+                    variant={isActive ? "secondary" : "ghost"}
                     className={cn(
                       "flex items-center space-x-2",
                       isActive && "bg-secondary"
                     )}
                   >
                     <Icon className="h-4 w-4" />
-
                     <span>{item.name}</span>
                   </Button>
                 </Link>
@@ -97,28 +92,21 @@ export function TopNavigation() {
           <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
         ) : isAuthenticated && user ? (
           <div className="flex items-center gap-2">
+
             {/* Mobile Hamburger Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="md:hidden flex items-center justify-center rounded-xl"
-                  style={{
-                    width: "20px",
-                    height: "20px",
-                    margin: "10px"
-                  }}
+                  className="md:hidden flex items-center justify-center rounded-xl p-2 min-w-[44px] min-h-[44px] outline-none"
                 >
-                  <Menu
-                    size={20}
-                    strokeWidth={3}
-                  />
+                  <Menu size={24} strokeWidth={2.5} />
                 </button>
               </DropdownMenuTrigger>
 
               <DropdownMenuContent
                 align="end"
-                className="w-64 rounded-xl p-2 md:hidden"
+                className="w-[80vw] max-w-sm rounded-2xl px-2 py-4 md:hidden"
               >
                 {navigation.map((item) => {
                   const Icon = item.icon
@@ -133,11 +121,13 @@ export function TopNavigation() {
                       <Link
                         href={item.href}
                         className={cn(
-                          "flex w-full items-center gap-3 rounded-lg px-3 py-3 text-base transition-colors",
-                          isActive && "bg-muted font-semibold"
+                          "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-lg font-medium transition-colors",
+                          isActive
+                            ? "bg-muted font-semibold"
+                            : "hover:bg-muted/60"
                         )}
                       >
-                        <Icon className="h-5 w-5" />
+                        <Icon className="h-6 w-6 shrink-0" />
                         {item.name}
                       </Link>
                     </DropdownMenuItem>
@@ -151,38 +141,43 @@ export function TopNavigation() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="relative h-10 w-10 rounded-full"
+                  className="relative h-11 w-11 rounded-full outline-none"
                 >
-                  <Avatar className="h-10 w-10">
+                  <Avatar className="h-11 w-11">
                     <AvatarImage
-                      src={
-                        user.avatar_url ??
-                        "/user.png"
-                      }
+                      src={user.avatar_url ?? "/user.png"}
                       alt={user.name}
                     />
-
-                    <AvatarFallback>
-                      {user.name
-                        .slice(0, 2)
-                        .toUpperCase()}
+                    <AvatarFallback className="text-base font-semibold">
+                      {user.name.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
 
               <DropdownMenuContent
-                className="w-56 rounded-xl"
+                className="w-[80vw] max-w-sm rounded-2xl"
                 align="end"
                 forceMount
               >
-                <div className="flex items-center justify-start gap-2 p-3">
-                  <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium">
+                {/* User info header */}
+                <div className="flex items-center justify-start gap-3 p-3">
+                  <Avatar className="h-12 w-12 shrink-0">
+                    <AvatarImage
+                      src={user.avatar_url ?? "/user.png"}
+                      alt={user.name}
+                    />
+                    <AvatarFallback className="text-base font-semibold">
+                      {user.name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col space-y-0.5 leading-none min-w-0">
+                    {/* ✅ CHANGED: Added text-base font-semibold */}
+                    <p className="font-semibold text-base truncate">
                       {user.name}
                     </p>
-
-                    <p className="w-[200px] truncate text-sm text-muted-foreground">
+                    {/* ✅ CHANGED: text-sm → text-sm (kept), w-[200px] → w-full */}
+                    <p className="w-full truncate text-sm text-muted-foreground">
                       {user.email}
                     </p>
                   </div>
@@ -193,10 +188,10 @@ export function TopNavigation() {
                 <DropdownMenuItem asChild>
                   <Link
                     href="/settings"
-                    className="flex items-center gap-2 py-2"
+                    // ✅ CHANGED: py-2 → py-4 px-4, text-base, larger icon
+                    className="flex items-center gap-3 py-3 px-3 text-base cursor-pointer"
                   >
-                    <Settings className="h-4 w-4" />
-
+                    <Settings className="h-5 w-5 shrink-0" />
                     Settings
                   </Link>
                 </DropdownMenuItem>
@@ -204,10 +199,9 @@ export function TopNavigation() {
                 <DropdownMenuItem asChild>
                   <Link
                     href="/help"
-                    className="flex items-center gap-2 py-2"
+                    className="flex items-center gap-3 py-3 px-3 text-base cursor-pointer"
                   >
-                    <HelpCircle className="h-4 w-4" />
-
+                    <HelpCircle className="h-5 w-5 shrink-0" />
                     Help
                   </Link>
                 </DropdownMenuItem>
@@ -216,14 +210,15 @@ export function TopNavigation() {
 
                 <DropdownMenuItem
                   onClick={logout}
-                  className="py-2 text-red-600 focus:text-red-600"
+                  // ✅ CHANGED: py-2 → py-4 px-4, text-base
+                  className="py-3 px-3 text-base text-red-600 focus:text-red-600 cursor-pointer"
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
-
+                  <LogOut className="mr-3 h-5 w-5" />
                   Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
           </div>
         ) : (
           <Button asChild size="sm">
@@ -232,7 +227,6 @@ export function TopNavigation() {
               className="flex items-center gap-2"
             >
               <LogIn className="h-4 w-4" />
-
               Log in
             </Link>
           </Button>
