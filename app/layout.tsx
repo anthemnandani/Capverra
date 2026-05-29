@@ -56,6 +56,7 @@ export default function RootLayout({
 
                 gtag('js', new Date());
                 gtag('config', '${GA_ID}');
+                 console.log('Google Analytics ID:', '${GA_ID}');
               `}
             </Script>
           </>
