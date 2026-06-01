@@ -2,6 +2,7 @@
 
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useEffect, useState, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { getDashboardStats, checkAdminStatus } from "@/lib/admin-actions"
 import type { DashboardStats, AdminUser } from "@/lib/admin-types"
 import {
@@ -65,6 +66,7 @@ function MetricCard({
   icon: Icon,
   color,
   delay = 0,
+  onClick,
 }: {
   title: string
   value: number
@@ -72,6 +74,7 @@ function MetricCard({
   icon: React.ElementType
   color: "indigo" | "emerald" | "amber" | "rose" | "cyan" | "purple"
   delay?: number
+  onClick?: () => void
 }) {
   const [isHovered, setIsHovered] = useState(false)
 
@@ -117,13 +120,15 @@ function MetricCard({
   const colors = colorClasses[color]
 
   return (
-    <motion.div
+    <motion.button
+      onClick={onClick}
+      disabled={!onClick}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5, ease: "easeOut" }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className="relative group"
+      className={`relative group w-full text-left ${onClick ? "cursor-pointer" : ""}`}
     >
       <motion.div
         animate={{
@@ -191,7 +196,7 @@ function MetricCard({
           </CardContent>
         </Card>
       </motion.div>
-    </motion.div>
+    </motion.button>
   )
 }
 
@@ -329,6 +334,7 @@ interface AnalyticsData {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
   const [loading, setLoading] = useState(true)
@@ -431,6 +437,7 @@ export default function AdminDashboard() {
             icon={Users}
             color="indigo"
             delay={0}
+            onClick={() => router.push("/admin/users")}
           />
           <MetricCard
             title="Active Users"
@@ -438,6 +445,7 @@ export default function AdminDashboard() {
             icon={Activity}
             color="emerald"
             delay={0.1}
+            onClick={() => router.push("/admin/users")}
           />
           <MetricCard
             title="Total Assets"
@@ -446,6 +454,7 @@ export default function AdminDashboard() {
             icon={FolderOpen}
             color="amber"
             delay={0.2}
+            onClick={() => router.push("/admin/assets")}
           />
           <MetricCard
             title="Identities"
@@ -453,6 +462,7 @@ export default function AdminDashboard() {
             icon={Shield}
             color="cyan"
             delay={0.3}
+            onClick={() => router.push("/admin/dashboard")}
           />
         </div>
 
