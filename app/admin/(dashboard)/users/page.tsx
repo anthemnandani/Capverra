@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useCallback } from "react"
 import { getAllUsers } from "@/lib/admin-actions"
-import { createSupabaseAdminClient } from "@/lib/supabase/server"
 import type { UserWithAssets } from "@/lib/admin-types"
 import {
   Users,
@@ -71,22 +70,13 @@ function UserDetailModal({
     if (!user) return
     setLoadingDetails(true)
     try {
-      // Fetch user's assets and identities
-      const adminClient = createSupabaseAdminClient()
-      
-      const [assetsResult, identitiesResult] = await Promise.all([
-        adminClient
-          .from("assets")
-          .select("*")
-          .eq("user_id", user.id),
-        adminClient
-          .from("identities")
-          .select("*")
-          .eq("user_id", user.id),
-      ])
-
-      setAssets(assetsResult.data || [])
-      setIdentities(identitiesResult.data || [])
+      // Fetch user's assets and identities via API
+      const response = await fetch(`/api/admin/users/${user.id}/details`)
+      if (response.ok) {
+        const data = await response.json()
+        setAssets(data.assets || [])
+        setIdentities(data.identities || [])
+      }
     } catch (error) {
       console.error("Error loading user details:", error)
     } finally {
