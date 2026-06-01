@@ -59,6 +59,9 @@ export async function GET(request: Request) {
         performance = ((asset.latest_valuation - asset.purchase_value) / asset.purchase_value) * 100
       }
 
+      const ownerName = user?.user_metadata?.name || "—"
+      const ownerEmail = user?.email || "N/A"
+
       assets.push({
         id: asset.id,
         name: asset.name,
@@ -72,11 +75,14 @@ export async function GET(request: Request) {
         performance: performance,
         created_at: asset.created_at,
         updated_at: asset.updated_at,
+        user_id: asset.user_id,
+        user_email: ownerEmail,
+        user_name: ownerName,
         owner: user
           ? {
               id: user.id,
-              name: user.user_metadata?.name || "—",
-              email: user.email,
+              name: ownerName,
+              email: ownerEmail,
             }
           : null,
       })

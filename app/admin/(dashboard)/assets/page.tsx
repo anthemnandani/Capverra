@@ -239,7 +239,7 @@ function AssetCard({
           {/* Owner */}
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <User className="w-3 h-3" />
-            <span className="truncate">{asset.user_email}</span>
+            <span className="truncate">{asset.owner?.email || asset.user_email || "N/A"}</span>
           </div>
 
           {/* Date */}
@@ -299,10 +299,10 @@ function AssetTableRow({
       <TableCell>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500/50 to-purple-500/50 flex items-center justify-center text-white text-xs font-medium">
-            {asset.owner?.name?.[0]?.toUpperCase() || asset.owner?.email[0].toUpperCase()}
+            {(asset.owner?.name || asset.owner?.email || asset.user_email || "?")[0]?.toUpperCase()}
           </div>
           <span className="text-gray-400 text-sm truncate max-w-[150px]">
-            {asset.owner?.email}
+            {asset.owner?.email || asset.user_email || "N/A"}
           </span>
         </div>
       </TableCell>
