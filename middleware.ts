@@ -36,41 +36,91 @@ export async function middleware(request: NextRequest) {
   // Session refresh
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Admin route protection (except login page)
-  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
-  const isAdminLoginRoute = request.nextUrl.pathname === "/admin/login";
+  const pathname = request.nextUrl.pathname;
+  
+  // Route type checks
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isAdminLoginRoute = pathname === "/admin/login";
+  const isUserLoginRoute = pathname === "/login";
+  const isUserProtectedRoute = pathname.startsWith("/dashboard") || 
+                               pathname.startsWith("/assets") || 
+                               pathname.startsWith("/identities") ||
+                               pathname.startsWith("/reports") ||
+                               pathname.startsWith("/settings") ||
+                               pathname.startsWith("/profile");
 
-  if (isAdminRoute && !isAdminLoginRoute) {
-    // Check if user is logged in
-    if (!user) {
-      const loginUrl = new URL("/admin/login", request.url);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    // Check if user is an admin (this is a basic check, full verification happens in layout)
+  // Helper function to check if user is admin
+  const checkIsAdmin = async (userId: string) => {
     const { data: adminUser } = await supabase
       .from("admin_users")
       .select("id, is_active")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("is_active", true)
       .single();
+    return !!adminUser;
+  };
 
-    if (!adminUser) {
+  // CASE 1: Admin routes (except admin login)
+  if (isAdminRoute && !isAdminLoginRoute) {
+    if (!user) {
+      // Not logged in - redirect to admin login
       const loginUrl = new URL("/admin/login", request.url);
       return NextResponse.redirect(loginUrl);
     }
+
+    // Check if user is an admin
+    const isAdmin = await checkIsAdmin(user.id);
+    if (!isAdmin) {
+      // Regular user trying to access admin - redirect to user dashboard
+      const dashboardUrl = new URL("/dashboard", request.url);
+      return NextResponse.redirect(dashboardUrl);
+    }
   }
 
-  // Redirect logged-in admins away from admin login page
-  if (isAdminLoginRoute && user) {
-    const { data: adminUser } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .single();
+  // CASE 2: Admin login page
+  if (isAdminLoginRoute) {
+    if (user) {
+      const isAdmin = await checkIsAdmin(user.id);
+      if (isAdmin) {
+        // Admin already logged in - redirect to admin dashboard
+        const dashboardUrl = new URL("/admin/dashboard", request.url);
+        return NextResponse.redirect(dashboardUrl);
+      } else {
+        // Regular user on admin login page - redirect to user dashboard
+        const dashboardUrl = new URL("/dashboard", request.url);
+        return NextResponse.redirect(dashboardUrl);
+      }
+    }
+  }
 
-    if (adminUser) {
+  // CASE 3: User login page
+  if (isUserLoginRoute) {
+    if (user) {
+      const isAdmin = await checkIsAdmin(user.id);
+      if (isAdmin) {
+        // Admin on user login page - redirect to admin dashboard
+        const dashboardUrl = new URL("/admin/dashboard", request.url);
+        return NextResponse.redirect(dashboardUrl);
+      } else {
+        // Regular user already logged in - redirect to user dashboard
+        const dashboardUrl = new URL("/dashboard", request.url);
+        return NextResponse.redirect(dashboardUrl);
+      }
+    }
+  }
+
+  // CASE 4: User protected routes (dashboard, assets, etc.)
+  if (isUserProtectedRoute) {
+    if (!user) {
+      // Not logged in - redirect to user login
+      const loginUrl = new URL("/login", request.url);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Check if user is an admin trying to access user dashboard
+    const isAdmin = await checkIsAdmin(user.id);
+    if (isAdmin) {
+      // Admin trying to access user dashboard - redirect to admin dashboard
       const dashboardUrl = new URL("/admin/dashboard", request.url);
       return NextResponse.redirect(dashboardUrl);
     }
