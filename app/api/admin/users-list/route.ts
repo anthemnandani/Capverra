@@ -11,47 +11,49 @@ export async function GET(request: Request) {
     const adminClient = createSupabaseAdminClient()
     const offset = (page - 1) * limit
 
-    let query = adminClient
-      .from("users")
-      .select(
-        `
-        id,
-        email,
-        name,
-        role,
-        created_at,
-        assets(count),
-        identities(count)
-      `,
-        { count: "exact" }
-      )
-
-    if (search) {
-      query = query.or(`email.ilike.%${search}%,name.ilike.%${search}%`)
-    }
-
-    const { data, count, error } = await query
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1)
+    // Get users from auth.users table
+    const { data: users, count, error } = await adminClient.auth.admin.listUsers({
+      perPage: limit,
+      page: page,
+    })
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    const users = (data || []).map((user: any) => ({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      created_at: user.created_at,
-      asset_count: Array.isArray(user.assets) ? (user.assets[0] as any)?.count || 0 : 0,
-      identity_count: Array.isArray(user.identities) ? (user.identities[0] as any)?.count || 0 : 0,
-    }))
+    // Get asset and identity counts separately for each user
+    const userData = []
+    for (const user of users.users || []) {
+      // Check if user matches search filter
+      if (search && !user.email?.toLowerCase().includes(search.toLowerCase())) {
+        continue
+      }
+
+      const { count: assetCount } = await adminClient
+        .from("assets")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+
+      const { count: identityCount } = await adminClient
+        .from("identities")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+
+      userData.push({
+        id: user.id,
+        email: user.email,
+        name: user.user_metadata?.name || "—",
+        role: user.user_metadata?.role || "user",
+        created_at: user.created_at,
+        asset_count: assetCount || 0,
+        identity_count: identityCount || 0,
+      })
+    }
 
     return NextResponse.json({
-      users,
-      total: count || 0,
-      totalPages: Math.ceil((count || 0) / limit),
+      users: userData.slice(offset, offset + limit),
+      total: users.users?.length || 0,
+      totalPages: Math.ceil((users.users?.length || 0) / limit),
     })
   } catch (error) {
     console.error("Error fetching users:", error)

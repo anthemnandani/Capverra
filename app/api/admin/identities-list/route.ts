@@ -24,8 +24,7 @@ export async function GET(request: Request) {
         risk_profile,
         goals,
         created_at,
-        updated_at,
-        users!identities_user_id_fkey(id, email, name)
+        updated_at
       `,
         { count: "exact" }
       )
@@ -42,20 +41,27 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    const identities = (data || []).map((identity: any) => ({
-      id: identity.id,
-      user_id: identity.user_id,
-      name: identity.name,
-      type: identity.type,
-      citizenship: identity.citizenship,
-      residency: identity.residency,
-      risk_profile: identity.risk_profile,
-      goals: identity.goals,
-      created_at: identity.created_at,
-      updated_at: identity.updated_at,
-      user_email: identity.users?.email,
-      user_name: identity.users?.name,
-    }))
+    // Get user information separately for each identity
+    const identities = []
+    for (const identity of data || []) {
+      // Get user email from auth
+      const { data: user } = await adminClient.auth.admin.getUserById(identity.user_id)
+
+      identities.push({
+        id: identity.id,
+        user_id: identity.user_id,
+        name: identity.name,
+        type: identity.type,
+        citizenship: identity.citizenship,
+        residency: identity.residency,
+        risk_profile: identity.risk_profile,
+        goals: identity.goals,
+        created_at: identity.created_at,
+        updated_at: identity.updated_at,
+        user_email: user?.email,
+        user_name: user?.user_metadata?.name,
+      })
+    }
 
     return NextResponse.json({
       identities,
