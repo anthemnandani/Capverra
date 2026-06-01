@@ -2,7 +2,6 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useCallback } from "react"
-import { getAllAssets, getAssetTypes } from "@/lib/admin-actions"
 import type { AssetWithOwner } from "@/lib/admin-types"
 import {
   FolderOpen,
@@ -329,13 +328,22 @@ export default function AdminAssetsPage() {
   const loadAssets = useCallback(async () => {
     setLoading(true)
     try {
-      const [assetsData, types] = await Promise.all([
-        getAllAssets(page, limit, search || undefined, selectedType),
-        getAssetTypes(),
-      ])
-      setAssets(assetsData.assets)
-      setTotal(assetsData.total)
-      setAssetTypes(types)
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      })
+      if (search) params.append("search", search)
+      if (selectedType && selectedType !== "all") params.append("type", selectedType)
+
+      const response = await fetch(`/api/admin/assets-list?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setAssets(data.assets)
+        setTotal(data.total)
+        // Extract unique asset types from the fetched data
+        const types = Array.from(new Set(data.assets.map((a: any) => a.type)))
+        setAssetTypes(types as string[])
+      }
     } catch (error) {
       console.error("Error loading assets:", error)
     } finally {
