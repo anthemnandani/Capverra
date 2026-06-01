@@ -2,8 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useCallback } from "react"
-import { getAllReports, createReport, checkAdminStatus } from "@/lib/admin-actions"
-import type { AdminReport, AdminUser } from "@/lib/admin-types"
+import type { AdminReport } from "@/lib/admin-types"
 import {
   FileText,
   Search,
@@ -304,24 +303,27 @@ function ReportCard({
 
 export default function AdminReportsPage() {
   const [reports, setReports] = useState<AdminReport[]>([])
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [selectedType, setSelectedType] = useState<string>("all")
   const [loading, setLoading] = useState(true)
-  const [createModalOpen, setCreateModalOpen] = useState(false)
   const limit = 12
 
   const loadReports = useCallback(async () => {
     setLoading(true)
     try {
-      const [reportsData, { adminUser }] = await Promise.all([
-        getAllReports(page, limit, selectedType),
-        checkAdminStatus(),
-      ])
-      setReports(reportsData.reports)
-      setTotal(reportsData.total)
-      setAdminUser(adminUser)
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      })
+      if (selectedType && selectedType !== "all") params.append("type", selectedType)
+
+      const response = await fetch(`/api/admin/reports-list?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setReports(data.reports)
+        setTotal(data.total)
+      }
     } catch (error) {
       console.error("Error loading reports:", error)
     } finally {
@@ -362,14 +364,6 @@ export default function AdminReportsPage() {
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => setCreateModalOpen(true)}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Report
           </Button>
         </div>
       </motion.div>
