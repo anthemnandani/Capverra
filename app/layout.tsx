@@ -21,6 +21,11 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 export const metadata: Metadata = {
   title: "Capverra - Identity & Asset Management",
   description: "Professional platform for managing identities and assets",
+  icons: {
+    icon: "/images/favicon.png",
+    shortcut: "/images/favicon.png",
+    apple: "/images/favicon.png",
+  },
 };
 
 export const viewport: Viewport = {
