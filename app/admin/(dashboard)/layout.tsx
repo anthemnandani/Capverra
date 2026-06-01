@@ -41,11 +41,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-  { href: "/admin/users", label: "Users", icon: <Users className="w-5 h-5" /> },
-  { href: "/admin/assets", label: "Assets", icon: <FolderOpen className="w-5 h-5" /> },
-  { href: "/admin/reports", label: "Reports", icon: <FileText className="w-5 h-5" /> },
-  { href: "/admin/settings", label: "Settings", icon: <Settings className="w-5 h-5" /> },
+  { href: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
+  { href: "/admin/users", label: "Users", icon: <Users className="w-4 h-4" /> },
+  { href: "/admin/assets", label: "Assets", icon: <FolderOpen className="w-4 h-4" /> },
+  { href: "/admin/reports", label: "Reports", icon: <FileText className="w-4 h-4" /> },
+  { href: "/admin/settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
 ]
 
 function AdminSidebar({
@@ -217,38 +217,44 @@ function AdminHeader({
   }
 
   return (
-    <header className="h-16 border-b border-border bg-card/50 backdrop-blur-xl sticky top-0 z-30">
-      <div className="h-full px-4 lg:px-8 flex items-center justify-between">
-        {/* Left Section */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-
-          <div className="hidden sm:block">
-            <motion.h2
-              key={getPageTitle()}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-lg font-semibold text-foreground"
+    <header className="border-b border-border bg-card/50 backdrop-blur-xl sticky top-0 z-30">
+      <div className="px-4 lg:px-8 flex items-center justify-between h-16">
+        {/* Left Section - Logo & Nav */}
+        <div className="flex items-center gap-8">
+          <Link href="/admin/dashboard" className="flex items-center gap-3 flex-shrink-0">
+            <motion.div
+              className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              {getPageTitle()}
-            </motion.h2>
-          </div>
-        </div>
+              <Shield className="w-5 h-5 text-primary" />
+            </motion.div>
+            <div>
+              <h1 className="text-foreground font-bold text-lg tracking-tight">Capverra</h1>
+              <p className="text-xs text-primary -mt-0.5">Admin</p>
+            </div>
+          </Link>
 
-        {/* Search Bar */}
-        <div className="hidden md:flex flex-1 max-w-md mx-8">
-          <div className="relative w-full group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-            <Input
-              placeholder="Search users, assets, reports..."
-              className="w-full pl-10 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary rounded-xl h-10"
-            />
-          </div>
+          {/* Navigation Menu */}
+          <nav className="hidden lg:flex items-center gap-1">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 text-sm font-medium ${
+                    isActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  }`}
+                >
+                  {item.icon}
+                  {item.label}
+                </Link>
+              )
+            })}
+          </nav>
         </div>
 
         {/* Right Section */}
@@ -265,6 +271,14 @@ function AdminHeader({
             <Bell className="w-5 h-5" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
           </motion.button>
+
+          {/* Mobile Menu */}
+          <button
+            onClick={onMenuClick}
+            className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
 
           {/* User Menu */}
           <DropdownMenu>
@@ -386,23 +400,15 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <AdminSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+    <div className="min-h-screen bg-background flex flex-col">
+      <AdminHeader
+        onMenuClick={() => setSidebarOpen(true)}
         adminUser={adminUser}
+        onLogout={handleLogout}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <AdminHeader
-          onMenuClick={() => setSidebarOpen(true)}
-          adminUser={adminUser}
-          onLogout={handleLogout}
-        />
-
-        {/* Page Content */}
+      {/* Main Content - Full Width */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <main className="flex-1 overflow-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
