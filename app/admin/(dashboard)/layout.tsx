@@ -44,6 +44,7 @@ const navItems: NavItem[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
   { href: "/admin/users", label: "Users", icon: <Users className="w-4 h-4" /> },
   { href: "/admin/assets", label: "Assets", icon: <FolderOpen className="w-4 h-4" /> },
+  { href: "/admin/identities", label: "Identities", icon: <Shield className="w-4 h-4" /> },
   { href: "/admin/reports", label: "Reports", icon: <FileText className="w-4 h-4" /> },
   { href: "/admin/settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
 ]

@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useCallback } from "react"
 import { getAllUsers } from "@/lib/admin-actions"
+import { createSupabaseAdminClient } from "@/lib/supabase/server"
 import type { UserWithAssets } from "@/lib/admin-types"
 import {
   Users,
@@ -56,11 +57,48 @@ function UserDetailModal({
   open: boolean
   onClose: () => void
 }) {
+  const [assets, setAssets] = useState<any[]>([])
+  const [identities, setIdentities] = useState<any[]>([])
+  const [loadingDetails, setLoadingDetails] = useState(false)
+
+  useEffect(() => {
+    if (open && user) {
+      loadUserDetails()
+    }
+  }, [open, user])
+
+  const loadUserDetails = async () => {
+    if (!user) return
+    setLoadingDetails(true)
+    try {
+      // Fetch user's assets and identities
+      const adminClient = createSupabaseAdminClient()
+      
+      const [assetsResult, identitiesResult] = await Promise.all([
+        adminClient
+          .from("assets")
+          .select("*")
+          .eq("user_id", user.id),
+        adminClient
+          .from("identities")
+          .select("*")
+          .eq("user_id", user.id),
+      ])
+
+      setAssets(assetsResult.data || [])
+      setIdentities(identitiesResult.data || [])
+    } catch (error) {
+      console.error("Error loading user details:", error)
+    } finally {
+      setLoadingDetails(false)
+    }
+  }
+
   if (!user) return null
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-slate-900 border-white/10 text-white max-w-lg">
+      <DialogContent className="bg-slate-900 border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="w-12 h-12 border-2 border-indigo-500/30">
@@ -78,63 +116,127 @@ function UserDetailModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="p-4 rounded-xl bg-white/5 border border-white/5"
-            >
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Role</p>
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-indigo-400" />
-                <span className="text-white font-medium capitalize">{user.role}</span>
-              </div>
-            </motion.div>
+        <div className="mt-6 space-y-6">
+          {/* Basic Info */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-gray-300 uppercase">Basic Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="p-4 rounded-xl bg-white/5 border border-white/5"
+              >
+                <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Role</p>
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-indigo-400" />
+                  <span className="text-white font-medium capitalize">{user.role}</span>
+                </div>
+              </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="p-4 rounded-xl bg-white/5 border border-white/5"
-            >
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Joined</p>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-emerald-400" />
-                <span className="text-white font-medium">
-                  {new Date(user.created_at).toLocaleDateString()}
-                </span>
-              </div>
-            </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="p-4 rounded-xl bg-white/5 border border-white/5"
+              >
+                <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Joined</p>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-emerald-400" />
+                  <span className="text-white font-medium">
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </motion.div>
+            </div>
+          </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="p-4 rounded-xl bg-white/5 border border-white/5"
-            >
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Assets</p>
-              <div className="flex items-center gap-2">
-                <FolderOpen className="w-4 h-4 text-amber-400" />
-                <span className="text-white font-medium">{user.asset_count}</span>
+          {/* Assets Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-300 uppercase">Assets ({assets.length})</h3>
+            </div>
+            {loadingDetails ? (
+              <div className="flex justify-center py-4">
+                <RefreshCw className="w-5 h-5 animate-spin text-gray-400" />
               </div>
-            </motion.div>
+            ) : assets.length > 0 ? (
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {assets.map((asset, idx) => (
+                  <motion.div
+                    key={asset.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-white font-medium text-sm">{asset.name}</p>
+                        <p className="text-gray-400 text-xs mt-0.5">Type: {asset.type}</p>
+                        {asset.location_country && (
+                          <p className="text-gray-500 text-xs mt-0.5">Location: {asset.location_country}</p>
+                        )}
+                      </div>
+                      {asset.latest_valuation && (
+                        <div className="text-right">
+                          <p className="text-emerald-400 font-semibold text-sm">
+                            ${asset.latest_valuation.toLocaleString()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm py-4">No assets found for this user</p>
+            )}
+          </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 }}
-              className="p-4 rounded-xl bg-white/5 border border-white/5"
-            >
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">
-                Identities
-              </p>
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-cyan-400" />
-                <span className="text-white font-medium">{user.identity_count}</span>
+          {/* Identities Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-300 uppercase">Identities ({identities.length})</h3>
+            </div>
+            {identities.length > 0 ? (
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {identities.map((identity, idx) => (
+                  <motion.div
+                    key={identity.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-white font-medium text-sm">{identity.name}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="capitalize bg-indigo-500/10 border-indigo-500/50 text-indigo-400 text-xs">
+                            {identity.type}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className={`capitalize text-xs ${
+                              identity.risk_profile === "low"
+                                ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
+                                : identity.risk_profile === "medium"
+                                ? "border-amber-500/50 text-amber-400 bg-amber-500/10"
+                                : "border-rose-500/50 text-rose-400 bg-rose-500/10"
+                            }`}
+                          >
+                            {identity.risk_profile}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
-            </motion.div>
+            ) : (
+              <p className="text-gray-500 text-sm py-4">No identities found for this user</p>
+            )}
           </div>
 
           <motion.div
@@ -143,8 +245,8 @@ function UserDetailModal({
             transition={{ delay: 0.3 }}
             className="p-4 rounded-xl bg-white/5 border border-white/5"
           >
-            <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">User ID</p>
-            <code className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded">
+            <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">User ID</p>
+            <code className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded break-all">
               {user.id}
             </code>
           </motion.div>
@@ -199,16 +301,22 @@ function UserTableRow({
         </Badge>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-2">
-          <FolderOpen className="w-4 h-4 text-amber-400" />
-          <span className="text-white">{user.asset_count}</span>
-        </div>
+        <button
+          onClick={() => onView(user)}
+          className="flex items-center gap-2 text-amber-400 hover:text-amber-300 transition-colors cursor-pointer font-medium hover:underline"
+        >
+          <FolderOpen className="w-4 h-4" />
+          <span>{user.asset_count}</span>
+        </button>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4 text-cyan-400" />
-          <span className="text-white">{user.identity_count}</span>
-        </div>
+        <button
+          onClick={() => onView(user)}
+          className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer font-medium hover:underline"
+        >
+          <Shield className="w-4 h-4" />
+          <span>{user.identity_count}</span>
+        </button>
       </TableCell>
       <TableCell className="text-gray-400">
         {new Date(user.created_at).toLocaleDateString()}
