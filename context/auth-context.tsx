@@ -58,6 +58,11 @@ function buildUserFromAuth(supabaseUser: SupabaseUser): AppUser {
 async function fetchAppUser(supabaseUser: SupabaseUser): Promise<AppUser> {
   const supabase = createSupabaseBrowserClient();
 
+  if (!supabase) {
+    console.warn("[Auth] Supabase client not available → using fallback user");
+    return buildUserFromAuth(supabaseUser);
+  }
+
   const { data } = await supabase
     .from("users")
     .select("*")
@@ -111,7 +116,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // login() ne already user set kar diya — onAuthStateChange ko skip karne ke liye
   const skipNextAuthChange = useRef(false);
 
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const supabase = useMemo(() => {
+    try {
+      return createSupabaseBrowserClient();
+    } catch (error) {
+      console.error("[AuthContext] Failed to create Supabase client:", error);
+      // Return null - will be handled in useEffect
+      return null;
+    }
+  }, []);
 
   const handleSession = useCallback(
     async (supabaseUser: SupabaseUser | null) => {
@@ -134,9 +147,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
+    // If Supabase client failed to initialize, just set loading to false
+    if (!supabase) {
+      console.warn("[AuthContext] Supabase client not available");
+      setIsLoading(false);
+      return;
+    }
+
     // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
       handleSession(session?.user ?? null);
+    }).catch((error) => {
+      console.error("[AuthContext] Error getting session:", error);
+      setIsLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -157,6 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ─── login ──────────────────────────────────────────────────────────────────
   const login = async (email: string, password: string) => {
     if (!email || !password) throw new Error("Email and password are required");
+    if (!supabase) throw new Error("Authentication service not available");
     setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -189,6 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     setIsLoading(true);
     try {
+      if (!supabase) throw new Error("Authentication service not available");
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
@@ -203,10 +228,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ─── forgotPassword ──────────────────────────────────────────────────────────
+  // ─── forgotPassword ────────────────────���─────────────────────────────────────
   const forgotPassword = async (email: string) => {
     setIsLoading(true);
     try {
+      if (!supabase) throw new Error("Authentication service not available");
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/callback?next=/reset-password`,
       });
@@ -225,6 +251,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const resetPassword = async (password: string) => {
     setIsLoading(true);
     try {
+      if (!supabase) throw new Error("Authentication service not available");
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw new Error(error.message);
       toast.success("Password updated successfully. Please sign in.");
