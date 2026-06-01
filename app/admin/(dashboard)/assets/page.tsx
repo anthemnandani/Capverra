@@ -262,9 +262,64 @@ function AssetTableRow({
           </div>
           <div>
             <p className="text-white font-medium">{asset.name}</p>
-            <p className="text-gray-500 text-xs capitalize">{asset.type}</p>
           </div>
         </div>
+      </TableCell>
+      <TableCell className="text-gray-400 capitalize">{asset.type}</TableCell>
+      <TableCell className="text-gray-400">{asset.location_country}{asset.location_state ? `, ${asset.location_state}` : ""}</TableCell>
+      <TableCell className="text-gray-400">
+        {asset.purchase_value ? `$${(asset.purchase_value).toLocaleString()}` : "—"}
+      </TableCell>
+      <TableCell className="text-gray-400">
+        {asset.latest_valuation ? `$${(asset.latest_valuation).toLocaleString()}` : "—"}
+      </TableCell>
+      <TableCell>
+        {asset.performance !== null ? (
+          <span className={asset.performance >= 0 ? "text-emerald-400" : "text-rose-400"}>
+            {asset.performance >= 0 ? "+" : ""}{asset.performance.toFixed(1)}%
+          </span>
+        ) : (
+          <span className="text-gray-500">—</span>
+        )}
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500/50 to-purple-500/50 flex items-center justify-center text-white text-xs font-medium">
+            {asset.owner?.name?.[0]?.toUpperCase() || asset.owner?.email[0].toUpperCase()}
+          </div>
+          <span className="text-gray-400 text-sm truncate max-w-[150px]">
+            {asset.owner?.email}
+          </span>
+        </div>
+      </TableCell>
+      <TableCell>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-gray-400 hover:text-white hover:bg-white/10"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="bg-slate-900 border-white/10 text-white"
+          >
+            <DropdownMenuItem
+              onClick={() => onView(asset)}
+              className="cursor-pointer hover:bg-white/5"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer hover:bg-white/5">
+              <Download className="w-4 h-4 mr-2" />
+              Export Data
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </TableCell>
       <TableCell>{getStatusBadge(asset.status)}</TableCell>
       <TableCell>
@@ -507,11 +562,14 @@ export default function AdminAssetsPage() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-white/5 hover:bg-transparent">
-                      <TableHead className="text-gray-400">Asset</TableHead>
-                      <TableHead className="text-gray-400">Status</TableHead>
+                    <TableRow>
+                      <TableHead className="text-gray-400">Asset Name</TableHead>
+                      <TableHead className="text-gray-400">Type</TableHead>
+                      <TableHead className="text-gray-400">Location</TableHead>
+                      <TableHead className="text-gray-400">Purchase Value</TableHead>
+                      <TableHead className="text-gray-400">Current Value</TableHead>
+                      <TableHead className="text-gray-400">Performance</TableHead>
                       <TableHead className="text-gray-400">Owner</TableHead>
-                      <TableHead className="text-gray-400">Created</TableHead>
                       <TableHead className="text-gray-400 w-12"></TableHead>
                     </TableRow>
                   </TableHeader>

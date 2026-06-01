@@ -1,3 +1,4 @@
+import { createSupabaseAdminClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from 'next/server'
 
 interface AnalyticsData {
@@ -13,7 +14,7 @@ interface AnalyticsData {
   }
 }
 
-// Generate mock analytics data
+// Generate mock analytics data for Google Analytics-style dashboard
 function generateAnalyticsData(days: number = 30): AnalyticsData {
   const now = new Date()
   const pageViewsData = []
@@ -113,3 +114,5 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+
