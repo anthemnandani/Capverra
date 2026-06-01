@@ -2,7 +2,6 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useCallback } from "react"
-import { getAllUsers } from "@/lib/admin-actions"
 import type { UserWithAssets } from "@/lib/admin-types"
 import {
   Users,
@@ -356,9 +355,18 @@ export default function AdminUsersPage() {
   const loadUsers = useCallback(async () => {
     setLoading(true)
     try {
-      const { users, total } = await getAllUsers(page, limit, search || undefined)
-      setUsers(users)
-      setTotal(total)
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      })
+      if (search) params.append("search", search)
+
+      const response = await fetch(`/api/admin/users-list?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setUsers(data.users)
+        setTotal(data.total)
+      }
     } catch (error) {
       console.error("Error loading users:", error)
     } finally {
