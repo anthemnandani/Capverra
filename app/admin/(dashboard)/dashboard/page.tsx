@@ -21,10 +21,14 @@ import {
   Sparkles,
   Target,
   Eye,
+  AlertCircle,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { AnalyticsCharts } from "@/components/admin/analytics-charts"
+import { AnalyticsSummary } from "@/components/admin/analytics-summary"
+import { DateRangePicker } from "@/components/admin/date-range-picker"
 
 // Animated counter component
 function AnimatedCounter({ value, duration = 2 }: { value: number; duration?: number }) {
@@ -311,10 +315,26 @@ function LiveIndicator() {
   )
 }
 
+interface AnalyticsData {
+  pageViews: Array<{ date: string; views: number; sessions: number }>
+  topPages: Array<{ url: string; views: number; avgSessionDuration: number; bounceRate: number }>
+  trafficSources: Array<{ source: string; visits: number; percentage: number }>
+  summaryMetrics: {
+    totalPageViews: number
+    totalSessions: number
+    avgSessionDuration: number
+    bounceRate: number
+    newUsers: number
+  }
+}
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
+  const [selectedDays, setSelectedDays] = useState(30)
 
   useEffect(() => {
     const loadData = async () => {
@@ -334,6 +354,26 @@ export default function AdminDashboard() {
 
     loadData()
   }, [])
+
+  // Fetch analytics data
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      setAnalyticsLoading(true)
+      try {
+        const response = await fetch(`/api/admin/analytics?days=${selectedDays}`)
+        if (response.ok) {
+          const data: AnalyticsData = await response.json()
+          setAnalyticsData(data)
+        }
+      } catch (error) {
+        console.error("Error fetching analytics:", error)
+      } finally {
+        setAnalyticsLoading(false)
+      }
+    }
+
+    fetchAnalytics()
+  }, [selectedDays])
 
   if (loading) {
     return (
@@ -535,85 +575,126 @@ export default function AdminDashboard() {
           </motion.div>
         </div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* User Growth Chart Placeholder */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-          >
-            <Card className="bg-card border-border backdrop-blur-xl">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-primary" />
-                  User Growth Trend
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 flex items-center justify-center">
-                  <div className="text-center">
-                    <motion.div
-                      animate={{
-                        scale: [1, 1.1, 1],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                      }}
-                      className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4"
-                    >
-                      <BarChart3 className="w-8 h-8 text-primary" />
-                    </motion.div>
-                    <p className="text-muted-foreground">Analytics visualization</p>
-                    <p className="text-muted-foreground/70 text-sm">
-                      Detailed charts coming soon
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+        {/* Analytics Section */}
+        {analyticsData && (
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              <DateRangePicker
+                selectedDays={selectedDays}
+                onDaysChange={setSelectedDays}
+                onRefresh={() => window.location.reload()}
+                onExport={() => {
+                  const csv = [
+                    ['Date', 'Page Views', 'Sessions'],
+                    ...analyticsData.pageViews.map(d => [d.date, d.views, d.sessions])
+                  ].map(row => row.join(',')).join('\n')
+                  const blob = new Blob([csv], { type: 'text/csv' })
+                  const url = window.URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `analytics-${selectedDays}days.csv`
+                  a.click()
+                }}
+                isLoading={analyticsLoading}
+              />
+            </motion.div>
 
-          {/* Asset Distribution Chart Placeholder */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-          >
-            <Card className="bg-card border-border backdrop-blur-xl">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <PieChart className="w-5 h-5 text-amber-500" />
-                  Asset Distribution
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 flex items-center justify-center">
-                  <div className="text-center">
-                    <motion.div
-                      animate={{
-                        rotate: 360,
-                      }}
-                      transition={{
-                        duration: 20,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                      className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4"
-                    >
-                      <PieChart className="w-8 h-8 text-amber-500" />
-                    </motion.div>
-                    <p className="text-muted-foreground">Asset breakdown</p>
-                    <p className="text-muted-foreground/70 text-sm">
-                      Visual distribution coming soon
-                    </p>
+            <AnalyticsSummary metrics={analyticsData.summaryMetrics} delay={0.8} />
+
+            <AnalyticsCharts
+              pageViews={analyticsData.pageViews}
+              topPages={analyticsData.topPages}
+              trafficSources={analyticsData.trafficSources}
+              delay={0.9}
+            />
+          </>
+        )}
+
+        {/* Charts Section */}
+        {!analyticsData && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* User Growth Chart Placeholder */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Card className="bg-card border-border backdrop-blur-xl">
+                <CardHeader>
+                  <CardTitle className="text-foreground flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                    User Growth Trend
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64 flex items-center justify-center">
+                    <div className="text-center">
+                      <motion.div
+                        animate={{
+                          scale: [1, 1.1, 1],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                        }}
+                        className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4"
+                      >
+                        <BarChart3 className="w-8 h-8 text-primary" />
+                      </motion.div>
+                      <p className="text-muted-foreground">Analytics visualization</p>
+                      <p className="text-muted-foreground/70 text-sm">
+                        Loading charts...
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Asset Distribution Chart Placeholder */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              <Card className="bg-card border-border backdrop-blur-xl">
+                <CardHeader>
+                  <CardTitle className="text-foreground flex items-center gap-2">
+                    <PieChart className="w-5 h-5 text-amber-500" />
+                    Asset Distribution
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64 flex items-center justify-center">
+                    <div className="text-center">
+                      <motion.div
+                        animate={{
+                          rotate: 360,
+                        }}
+                        transition={{
+                          duration: 20,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                        className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4"
+                      >
+                        <PieChart className="w-8 h-8 text-amber-500" />
+                      </motion.div>
+                      <p className="text-muted-foreground">Asset breakdown</p>
+                      <p className="text-muted-foreground/70 text-sm">
+                        Loading distribution...
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        )}
       </div>
     </div>
   )
