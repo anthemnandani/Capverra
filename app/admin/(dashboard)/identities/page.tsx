@@ -73,14 +73,20 @@ export default function IdentitiesPage() {
       if (searchTerm) params.append("search", searchTerm)
 
       const response = await fetch(`/api/admin/identities-list?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setIdentities(data.identities)
-        setTotal(data.total)
-        setTotalPages(data.totalPages)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`[v0] API error: ${response.status}`, errorText)
+        return
       }
+      
+      const data = await response.json()
+      console.log("[v0] Identities data loaded:", { total: data.total, count: data.identities?.length })
+      setIdentities(data.identities || [])
+      setTotal(data.total || 0)
+      setTotalPages(data.totalPages || 1)
     } catch (error) {
-      console.error("Error loading identities:", error)
+      console.error("[v0] Error loading identities:", error)
     } finally {
       setLoading(false)
     }

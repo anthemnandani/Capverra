@@ -362,13 +362,19 @@ export default function AdminUsersPage() {
       if (search) params.append("search", search)
 
       const response = await fetch(`/api/admin/users-list?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setUsers(data.users)
-        setTotal(data.total)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`[v0] API error: ${response.status}`, errorText)
+        return
       }
+      
+      const data = await response.json()
+      console.log("[v0] Users data loaded:", { total: data.total, count: data.users?.length })
+      setUsers(data.users || [])
+      setTotal(data.total || 0)
     } catch (error) {
-      console.error("Error loading users:", error)
+      console.error("[v0] Error loading users:", error)
     } finally {
       setLoading(false)
     }

@@ -340,27 +340,39 @@ export default function AdminLayout({
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const verifyAdmin = useCallback(async () => {
-    try {
-      const { isAdmin, adminUser } = await checkAdminStatus()
-      
-      if (!isAdmin) {
-        router.push("/admin/login")
-        return
-      }
-      
-      setAdminUser(adminUser)
-    } catch (error) {
-      console.error("Error verifying admin:", error)
-      router.push("/admin/login")
-    } finally {
-      setLoading(false)
-    }
-  }, [router])
-
   useEffect(() => {
+    let isMounted = true
+
+    const verifyAdmin = async () => {
+      try {
+        const { isAdmin, adminUser } = await checkAdminStatus()
+        
+        if (!isMounted) return
+        
+        if (!isAdmin) {
+          router.push("/admin/login")
+          return
+        }
+        
+        setAdminUser(adminUser)
+      } catch (error) {
+        console.error("Error verifying admin:", error)
+        if (isMounted) {
+          router.push("/admin/login")
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
     verifyAdmin()
-  }, [verifyAdmin])
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const handleLogout = async () => {
     try {
