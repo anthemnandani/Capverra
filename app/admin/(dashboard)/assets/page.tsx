@@ -72,32 +72,6 @@ const getAssetIcon = (type: string) => {
   return <File className="w-5 h-5 text-indigo-400" />
 }
 
-const getStatusBadge = (status: string) => {
-  const lower = status.toLowerCase()
-  if (lower === "active" || lower === "verified") {
-    return (
-      <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20">
-        <CheckCircle className="w-3 h-3 mr-1" />
-        {status}
-      </Badge>
-    )
-  }
-  if (lower === "pending") {
-    return (
-      <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20">
-        <Clock className="w-3 h-3 mr-1" />
-        {status}
-      </Badge>
-    )
-  }
-  return (
-    <Badge className="bg-gray-500/10 text-gray-400 border-gray-500/30 hover:bg-gray-500/20">
-      <AlertCircle className="w-3 h-3 mr-1" />
-      {status}
-    </Badge>
-  )
-}
-
 function AssetDetailModal({
   asset,
   open,
@@ -108,6 +82,9 @@ function AssetDetailModal({
   onClose: () => void
 }) {
   if (!asset) return null
+
+  const ownerName = asset.owner?.name || asset.user_name || "Unnamed"
+  const ownerEmail = asset.owner?.email || asset.user_email || "N/A"
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -135,8 +112,10 @@ function AssetDetailModal({
               transition={{ delay: 0.1 }}
               className="p-4 rounded-xl bg-white/5 border border-white/5"
             >
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Status</p>
-              {getStatusBadge(asset.status)}
+              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Type</p>
+              <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/30 capitalize">
+                {asset.type}
+              </Badge>
             </motion.div>
 
             <motion.div
@@ -155,20 +134,51 @@ function AssetDetailModal({
             </motion.div>
           </div>
 
+          {asset.purchase_value && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="p-4 rounded-xl bg-white/5 border border-white/5"
+            >
+              <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Purchase Value</p>
+              <p className="text-white font-medium">${asset.purchase_value.toLocaleString()}</p>
+            </motion.div>
+          )}
+
+          {asset.latest_valuation && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="p-4 rounded-xl bg-white/5 border border-white/5"
+            >
+              <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Current Valuation</p>
+              <div className="flex items-center gap-2">
+                <p className="text-white font-medium">${asset.latest_valuation.toLocaleString()}</p>
+                {asset.performance !== null && (
+                  <span className={asset.performance >= 0 ? "text-emerald-400" : "text-rose-400"}>
+                    {asset.performance >= 0 ? "+" : ""}{asset.performance.toFixed(1)}%
+                  </span>
+                )}
+              </div>
+            </motion.div>
+          )}
+
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.3 }}
             className="p-4 rounded-xl bg-white/5 border border-white/5"
           >
             <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Owner</p>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-semibold">
-                {asset.user_name?.[0]?.toUpperCase() || asset.user_email[0].toUpperCase()}
+                {ownerName?.[0]?.toUpperCase() || ownerEmail[0].toUpperCase()}
               </div>
               <div>
-                <p className="text-white font-medium">{asset.user_name || "Unnamed"}</p>
-                <p className="text-gray-500 text-xs">{asset.user_email}</p>
+                <p className="text-white font-medium">{ownerName}</p>
+                <p className="text-gray-500 text-xs">{ownerEmail}</p>
               </div>
             </div>
           </motion.div>
@@ -176,7 +186,7 @@ function AssetDetailModal({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
+            transition={{ delay: 0.35 }}
             className="p-4 rounded-xl bg-white/5 border border-white/5"
           >
             <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Asset ID</p>
@@ -219,8 +229,12 @@ function AssetCard({
           <h3 className="text-white font-medium truncate mb-1">{asset.name}</h3>
           <p className="text-gray-500 text-xs capitalize mb-3">{asset.type}</p>
 
-          {/* Status */}
-          <div className="mb-3">{getStatusBadge(asset.status)}</div>
+          {/* Type Badge */}
+          <div className="mb-3">
+            <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/30 capitalize text-xs">
+              {asset.type}
+            </Badge>
+          </div>
 
           {/* Owner */}
           <div className="flex items-center gap-2 text-xs text-gray-400">
@@ -321,7 +335,11 @@ function AssetTableRow({
           </DropdownMenuContent>
         </DropdownMenu>
       </TableCell>
-      <TableCell>{getStatusBadge(asset.status)}</TableCell>
+      <TableCell>
+        <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/30 capitalize text-xs">
+          {asset.type}
+        </Badge>
+      </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500/50 to-purple-500/50 flex items-center justify-center text-white text-xs font-medium">
