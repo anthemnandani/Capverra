@@ -391,16 +391,22 @@ export default function AdminAssetsPage() {
       if (selectedType && selectedType !== "all") params.append("type", selectedType)
 
       const response = await fetch(`/api/admin/assets-list?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setAssets(data.assets)
-        setTotal(data.total)
-        // Extract unique asset types from the fetched data
-        const types = Array.from(new Set(data.assets.map((a: any) => a.type)))
-        setAssetTypes(types as string[])
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`[v0] API error: ${response.status}`, errorText)
+        return
       }
+      
+      const data = await response.json()
+      console.log("[v0] Assets data loaded:", { total: data.total, count: data.assets?.length })
+      setAssets(data.assets || [])
+      setTotal(data.total || 0)
+      // Extract unique asset types from the fetched data
+      const types = Array.from(new Set((data.assets || []).map((a: any) => a.type)))
+      setAssetTypes(types as string[])
     } catch (error) {
-      console.error("Error loading assets:", error)
+      console.error("[v0] Error loading assets:", error)
     } finally {
       setLoading(false)
     }

@@ -319,13 +319,19 @@ export default function AdminReportsPage() {
       if (selectedType && selectedType !== "all") params.append("type", selectedType)
 
       const response = await fetch(`/api/admin/reports-list?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setReports(data.reports)
-        setTotal(data.total)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`[v0] API error: ${response.status}`, errorText)
+        return
       }
+      
+      const data = await response.json()
+      console.log("[v0] Reports data loaded:", { total: data.total, count: data.reports?.length })
+      setReports(data.reports || [])
+      setTotal(data.total || 0)
     } catch (error) {
-      console.error("Error loading reports:", error)
+      console.error("[v0] Error loading reports:", error)
     } finally {
       setLoading(false)
     }

@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         latest_valuation_date,
         created_at,
         updated_at,
-        users!assets_user_id_fkey(id, email, name)
+        user_id
       `,
         { count: "exact" }
       )
@@ -48,14 +48,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Calculate performance and prepare data
-    const assets = (data || []).map((asset: any) => {
+    // Get user information separately for each asset
+    const assets = []
+    for (const asset of data || []) {
+      // Get user email from auth
+      const { data: user } = await adminClient.auth.admin.getUserById(asset.user_id)
+
       let performance = null
       if (asset.latest_valuation && asset.purchase_value) {
         performance = ((asset.latest_valuation - asset.purchase_value) / asset.purchase_value) * 100
       }
 
-      return {
+      assets.push({
         id: asset.id,
         name: asset.name,
         type: asset.type,
@@ -68,15 +72,15 @@ export async function GET(request: Request) {
         performance: performance,
         created_at: asset.created_at,
         updated_at: asset.updated_at,
-        owner: asset.users
+        owner: user
           ? {
-              id: asset.users.id,
-              name: asset.users.name,
-              email: asset.users.email,
+              id: user.id,
+              name: user.user_metadata?.name || "—",
+              email: user.email,
             }
           : null,
-      }
-    })
+      })
+    }
 
     return NextResponse.json({
       assets,
