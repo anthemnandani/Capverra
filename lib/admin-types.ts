@@ -72,9 +72,21 @@ export interface AssetWithOwner {
   id: string
   name: string
   type: string
-  status: string
+  location_country: string | null
+  location_state: string | null
+  purchase_value: number | null
+  purchase_date: string | null
+  latest_valuation: number | null
+  latest_valuation_date: string | null
+  performance: number | null
   created_at: string
+  updated_at: string
   user_id: string
-  user_email: string
-  user_name: string | null
+  owner?: {
+    id: string
+    name: string | null
+    email: string
+  }
+  user_email?: string
+  user_name?: string | null
 }
