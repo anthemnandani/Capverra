@@ -295,14 +295,12 @@ export function OptimizationResultsModal({
         }),
       })
 
-      // ── HTTP-level errors (503, 429, 401, 400, 500) ───────────────────────
       if (!res.ok) {
         let msg = `Server error ${res.status}`
         try { msg = (await res.json()).error ?? msg } catch { /* noop */ }
         throw new Error(msg)
       }
 
-      // ── Parse JSON response (route now returns plain JSON, not a stream) ──
       let parsed: any
       try {
         parsed = await res.json()
@@ -353,11 +351,11 @@ export function OptimizationResultsModal({
   // ── Savings badge ─────────────────────────────────────────────────────────
   const SavingsBadge = ({ savings, pct }: { savings: number; pct: string }) =>
     savings > 0 ? (
-      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700">
         <TrendingDown className="size-3 mr-1" /> Save {pct}
       </Badge>
     ) : (
-      <Badge className="bg-red-100 text-red-700 border-red-200">
+      <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
         <TrendingUp className="size-3 mr-1" /> Higher cost
       </Badge>
     )
@@ -366,7 +364,7 @@ export function OptimizationResultsModal({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="p-0 gap-0 overflow-hidden flex flex-col bg-slate-50 dark:bg-slate-900 max-w-none print:shadow-none"
+        className="p-0 gap-0 overflow-hidden flex flex-col bg-slate-50 dark:bg-slate-950 max-w-none print:shadow-none"
         style={{ width: "210mm", maxWidth: "95vw", height: "90vh", maxHeight: "90vh" }}
       >
         {/* ── Header ── */}
@@ -460,16 +458,16 @@ export function OptimizationResultsModal({
           {isLoading && (
             <div className="flex flex-col items-center justify-center h-full gap-6">
               <div className="relative">
-                <div className="size-20 rounded-full border-4 border-emerald-100 border-t-emerald-500 animate-spin" />
+                <div className="size-20 rounded-full border-4 border-emerald-100 border-t-emerald-500 animate-spin dark:border-emerald-900 dark:border-t-emerald-400" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Sparkles className="size-8 text-emerald-500" />
+                  <Sparkles className="size-8 text-emerald-500 dark:text-emerald-400" />
                 </div>
               </div>
               <div className="text-center space-y-2">
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
                   Analyzing Tax Structures
                 </h3>
-                <p className="text-sm text-slate-500 min-h-[1.5rem] transition-all duration-500">
+                <p className="text-sm text-slate-500 dark:text-slate-400 min-h-[1.5rem] transition-all duration-500">
                   {LOADING_STEPS[loadingStep]}
                 </p>
               </div>
@@ -479,12 +477,12 @@ export function OptimizationResultsModal({
                     key={i}
                     className={cn(
                       "h-1 rounded-full transition-all duration-500",
-                      i === loadingStep ? "w-6 bg-emerald-500" : "w-2 bg-slate-300",
+                      i === loadingStep ? "w-6 bg-emerald-500" : "w-2 bg-slate-300 dark:bg-slate-600",
                     )}
                   />
                 ))}
               </div>
-              <p className="text-xs text-slate-400">Please wait — this may take up to 30 seconds</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">Please wait — this may take up to 30 seconds</p>
             </div>
           )}
 
@@ -492,7 +490,7 @@ export function OptimizationResultsModal({
           {error && !isLoading && (
             <div className="flex flex-col items-center justify-center h-full">
               <AlertCircle className="size-12 text-red-500 mb-4" />
-              <h3 className="text-lg font-semibold">Analysis Failed</h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Analysis Failed</h3>
               <p className="text-muted-foreground mt-2 text-center max-w-sm text-sm">{error}</p>
               {(error.includes("overloaded") || error.includes("Rate limit") || error.includes("wait")) && (
                 <p className="text-xs text-slate-400 mt-1 text-center max-w-xs">
@@ -507,12 +505,12 @@ export function OptimizationResultsModal({
           {data && !isLoading && (
             <div className="space-y-6 print:space-y-4">
 
-              {/* Asset Summary */}
-              <Card className="border-slate-200 bg-white dark:bg-slate-800">
+              {/* ── Asset Summary ── */}
+              <Card className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-slate-100">
-                      <Landmark className="size-4" />
+                  <CardTitle className="text-base flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                    <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700">
+                      <Landmark className="size-4 text-slate-600 dark:text-slate-300" />
                     </div>
                     Asset Summary
                   </CardTitle>
@@ -538,31 +536,33 @@ export function OptimizationResultsModal({
                         label: "Performance",
                         value: data.assetSummary.performance,
                         className: data.assetSummary.performance.startsWith("+")
-                          ? "text-emerald-600"
+                          ? "text-emerald-600 dark:text-emerald-400"
                           : data.assetSummary.performance.startsWith("-")
-                            ? "text-red-600" : "",
+                            ? "text-red-600 dark:text-red-400" : "",
                       },
                     ].map(({ label, value, className }: { label: string; value: string; className?: string }) => (
                       <div key={label}>
                         <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
-                        <p className={cn("font-semibold", className)}>{value}</p>
+                        <p className={cn("font-semibold text-slate-900 dark:text-slate-100", className)}>{value}</p>
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Current Identity Summary */}
-              <Card className="border-amber-100 bg-gradient-to-br from-white to-amber-50/30 dark:bg-slate-800">
+              {/* ── Current Identity Summary ── */}
+              <Card className="border-amber-100 dark:border-amber-900/50 bg-white dark:bg-slate-800">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base flex items-center gap-2">
-                              <div className="p-1.5 rounded-lg bg-amber-100 text-amber-600">
+                    <CardTitle className="text-base flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                      <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400">
                         {identityIcon(data.currentIdentitySummary.identityType)}
                       </div>
                       Current Identity: {data.currentIdentitySummary.identityName}
                     </CardTitle>
-                    <Badge variant="outline" className="text-xs">Associated Identity</Badge>
+                    <Badge variant="outline" className="text-xs text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600">
+                      Associated Identity
+                    </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -576,7 +576,7 @@ export function OptimizationResultsModal({
                     ].map(({ label, value }) => (
                       <div key={label}>
                         <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
-                        <p className="font-medium capitalize">{value}</p>
+                        <p className="font-medium capitalize text-slate-900 dark:text-slate-100">{value}</p>
                       </div>
                     ))}
                   </div>
@@ -585,28 +585,32 @@ export function OptimizationResultsModal({
                       <p className="text-xs text-muted-foreground mb-1">Goals</p>
                       <div className="flex flex-wrap gap-1">
                         {data.currentIdentitySummary.goals.map((g, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs">{g}</Badge>
+                          <Badge key={i} variant="secondary" className="text-xs">
+                            {g}
+                          </Badge>
                         ))}
                       </div>
                     </div>
                   )}
-                  <p className="text-sm text-slate-600 dark:text-slate-300 pt-1 border-t border-amber-100">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 pt-1 border-t border-amber-100 dark:border-amber-900/40">
                     {data.currentIdentitySummary.summary}
                   </p>
                 </CardContent>
               </Card>
 
-              {/* Baseline */}
-              <Card className="border-slate-300 bg-white dark:bg-slate-800">
+              {/* ── Baseline ── */}
+              <Card className="border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <div className="p-2 rounded-lg bg-slate-100">
+                    <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                      <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700">
                         {identityIcon(data.baseline.identityType)}
                       </div>
                       Baseline: {data.baseline.identityName}
                     </CardTitle>
-                    <Badge variant="outline">Current Structure</Badge>
+                    <Badge variant="outline" className="text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600">
+                      Current Structure
+                    </Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -615,21 +619,21 @@ export function OptimizationResultsModal({
                   </p>
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-slate-50">
-                        <TableHead className="text-xs">Effective Tax Rate</TableHead>
-                        <TableHead className="text-xs">Annual Tax</TableHead>
-                        <TableHead className="text-xs">Capital Gains Tax</TableHead>
-                        <TableHead className="text-xs">Estate Tax</TableHead>
-                        <TableHead className="text-xs">10-Year Burden</TableHead>
+                      <TableRow className="bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-700">
+                        <TableHead className="text-xs text-slate-500 dark:text-slate-400">Effective Tax Rate</TableHead>
+                        <TableHead className="text-xs text-slate-500 dark:text-slate-400">Annual Tax</TableHead>
+                        <TableHead className="text-xs text-slate-500 dark:text-slate-400">Capital Gains Tax</TableHead>
+                        <TableHead className="text-xs text-slate-500 dark:text-slate-400">Estate Tax</TableHead>
+                        <TableHead className="text-xs text-slate-500 dark:text-slate-400">10-Year Burden</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      <TableRow>
-                        <TableCell className="font-semibold">{data.baseline.effectiveTaxRate}</TableCell>
-                        <TableCell>{fmt(data.baseline.annualTaxLiability)}</TableCell>
-                        <TableCell>{fmt(data.baseline.capitalGainsTax)}</TableCell>
-                        <TableCell>{fmt(data.baseline.estateTaxExposure)}</TableCell>
-                        <TableCell className="font-semibold text-red-600">
+                      <TableRow className="border-slate-200 dark:border-slate-700">
+                        <TableCell className="font-semibold text-slate-900 dark:text-slate-100">{data.baseline.effectiveTaxRate}</TableCell>
+                        <TableCell className="text-slate-700 dark:text-slate-300">{fmt(data.baseline.annualTaxLiability)}</TableCell>
+                        <TableCell className="text-slate-700 dark:text-slate-300">{fmt(data.baseline.capitalGainsTax)}</TableCell>
+                        <TableCell className="text-slate-700 dark:text-slate-300">{fmt(data.baseline.estateTaxExposure)}</TableCell>
+                        <TableCell className="font-semibold text-red-600 dark:text-red-400">
                           {fmt(data.baseline.totalTenYearBurden)}
                         </TableCell>
                       </TableRow>
@@ -638,19 +642,19 @@ export function OptimizationResultsModal({
                 </CardContent>
               </Card>
 
-              {/* Identity Comparisons */}
+              {/* ── Identity Comparisons ── */}
               {(data.identityComparisons ?? []).length > 0 && (
                 <div>
-                  <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Users className="size-5 text-amber-500" /> Identity Comparisons
+                  <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                    <Users className="size-5 text-amber-500 dark:text-amber-400" /> Identity Comparisons
                   </h2>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {data.identityComparisons.map((identity, i) => (
-                      <Card key={i} className="border-amber-200 bg-gradient-to-br from-white to-amber-50/30">
+                      <Card key={i} className="border-amber-200 dark:border-amber-900/50 bg-white dark:bg-slate-800">
                         <CardHeader className="pb-3">
                           <div className="flex items-center justify-between">
-                            <CardTitle className="text-base flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-amber-100 text-amber-600">
+                            <CardTitle className="text-base flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                              <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400">
                                 {identityIcon(identity.identityType)}
                               </div>
                               {identity.identityName}
@@ -662,41 +666,41 @@ export function OptimizationResultsModal({
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                          <p className="text-sm text-slate-600">{identity.summary}</p>
+                          <p className="text-sm text-slate-600 dark:text-slate-300">{identity.summary}</p>
                           <Table>
                             <TableHeader>
-                              <TableRow className="bg-amber-50/50">
-                                <TableHead className="text-xs">Metric</TableHead>
-                                <TableHead className="text-xs text-right">Value</TableHead>
-                                <TableHead className="text-xs text-right">vs Baseline</TableHead>
+                              <TableRow className="bg-amber-50/50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900/40">
+                                <TableHead className="text-xs text-slate-500 dark:text-slate-400">Metric</TableHead>
+                                <TableHead className="text-xs text-right text-slate-500 dark:text-slate-400">Value</TableHead>
+                                <TableHead className="text-xs text-right text-slate-500 dark:text-slate-400">vs Baseline</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              <TableRow>
-                                <TableCell className="text-sm">Effective Tax Rate</TableCell>
-                                <TableCell className="text-sm text-right">
+                              <TableRow className="border-amber-100 dark:border-amber-900/30">
+                                <TableCell className="text-sm text-slate-700 dark:text-slate-300">Effective Tax Rate</TableCell>
+                                <TableCell className="text-sm text-right text-slate-700 dark:text-slate-300">
                                   {identity.effectiveTaxRate}
                                 </TableCell>
                                 <TableCell className="text-sm text-right">
                                   {identity.savingsVsBaseline > 0 ? (
-                                    <span className="flex items-center justify-end gap-1 text-emerald-600">
+                                    <span className="flex items-center justify-end gap-1 text-emerald-600 dark:text-emerald-400">
                                       <TrendingDown className="size-3" /> Lower
                                     </span>
                                   ) : (
-                                    <span className="flex items-center justify-end gap-1 text-red-500">
+                                    <span className="flex items-center justify-end gap-1 text-red-500 dark:text-red-400">
                                       <TrendingUp className="size-3" /> Higher
                                     </span>
                                   )}
                                 </TableCell>
                               </TableRow>
-                              <TableRow>
-                                <TableCell className="text-sm">10-Year Burden</TableCell>
-                                <TableCell className="text-sm text-right">
+                              <TableRow className="border-amber-100 dark:border-amber-900/30">
+                                <TableCell className="text-sm text-slate-700 dark:text-slate-300">10-Year Burden</TableCell>
+                                <TableCell className="text-sm text-right text-slate-700 dark:text-slate-300">
                                   {fmt(identity.totalTenYearBurden)}
                                 </TableCell>
                                 <TableCell className={cn(
                                   "text-sm text-right font-semibold",
-                                  identity.savingsVsBaseline > 0 ? "text-emerald-600" : "text-red-500",
+                                  identity.savingsVsBaseline > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400",
                                 )}>
                                   {identity.savingsVsBaseline > 0
                                     ? `-${fmt(identity.savingsVsBaseline)}`
@@ -707,26 +711,26 @@ export function OptimizationResultsModal({
                           </Table>
                           <div className="grid grid-cols-2 gap-3 pt-2">
                             <div>
-                              <p className="text-xs font-semibold text-slate-500 uppercase mb-1.5">
+                              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1.5">
                                 Advantages
                               </p>
                               <ul className="space-y-1">
                                 {identity.advantages.map((adv, j) => (
-                                  <li key={j} className="text-xs text-slate-600 flex items-start gap-1.5">
-                                    <CheckCircle2 className="size-3 text-emerald-500 mt-0.5 shrink-0" />
+                                  <li key={j} className="text-xs text-slate-600 dark:text-slate-300 flex items-start gap-1.5">
+                                    <CheckCircle2 className="size-3 text-emerald-500 dark:text-emerald-400 mt-0.5 shrink-0" />
                                     {adv}
                                   </li>
                                 ))}
                               </ul>
                             </div>
                             <div>
-                              <p className="text-xs font-semibold text-slate-500 uppercase mb-1.5">
+                              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1.5">
                                 Considerations
                               </p>
                               <ul className="space-y-1">
                                 {identity.disadvantages.map((dis, j) => (
-                                  <li key={j} className="text-xs text-slate-600 flex items-start gap-1.5">
-                                    <AlertCircle className="size-3 text-amber-500 mt-0.5 shrink-0" />
+                                  <li key={j} className="text-xs text-slate-600 dark:text-slate-300 flex items-start gap-1.5">
+                                    <AlertCircle className="size-3 text-amber-500 dark:text-amber-400 mt-0.5 shrink-0" />
                                     {dis}
                                   </li>
                                 ))}
@@ -734,8 +738,8 @@ export function OptimizationResultsModal({
                             </div>
                           </div>
                           {identity.recommendedStructure && (
-                            <p className="text-xs text-slate-500 pt-1">
-                              <span className="font-medium">Recommended structure: </span>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 pt-1">
+                              <span className="font-medium text-slate-700 dark:text-slate-200">Recommended structure: </span>
                               {identity.recommendedStructure}
                             </p>
                           )}
@@ -746,86 +750,86 @@ export function OptimizationResultsModal({
                 </div>
               )}
 
-              {/* Jurisdiction Analysis */}
+              {/* ── Jurisdiction Analysis ── */}
               {(data.jurisdictionAnalysis ?? []).length > 0 && (
                 <div>
-                  <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Globe className="size-5 text-emerald-500" /> Jurisdiction Analysis
+                  <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                    <Globe className="size-5 text-emerald-500 dark:text-emerald-400" /> Jurisdiction Analysis
                   </h2>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {data.jurisdictionAnalysis.map((jur, i) => (
                       <Card
                         key={i}
-                        className="border-emerald-200 bg-gradient-to-br from-white to-emerald-50/30"
+                        className="border-emerald-200 dark:border-emerald-900/50 bg-white dark:bg-slate-800"
                       >
                         <CardHeader className="pb-3">
                           <div className="flex items-center justify-between">
-                            <CardTitle className="text-base flex items-center gap-2">
-                              <div className="p-1.5 rounded-lg bg-emerald-100 text-emerald-600">
+                            <CardTitle className="text-base flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                              <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400">
                                 <Globe className="size-4" />
                               </div>
                               {jur.jurisdiction}
                             </CardTitle>
-                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700">
                               <TrendingDown className="size-3 mr-1" />
                               Save {jur.savingsPercentage}
                             </Badge>
                           </div>
-                          <p className="text-xs text-slate-500 mt-1">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                             Recommended:{" "}
-                            <span className="font-medium text-slate-700">{jur.recommendedVehicle}</span>
+                            <span className="font-medium text-slate-700 dark:text-slate-200">{jur.recommendedVehicle}</span>
                           </p>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                          <p className="text-sm text-slate-600">{jur.summary}</p>
+                          <p className="text-sm text-slate-600 dark:text-slate-300">{jur.summary}</p>
                           <Table>
                             <TableHeader>
-                              <TableRow className="bg-emerald-50/50">
-                                <TableHead className="text-xs">Metric</TableHead>
-                                <TableHead className="text-xs text-right">Value</TableHead>
-                                <TableHead className="text-xs text-right">vs Baseline</TableHead>
+                              <TableRow className="bg-emerald-50/50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/40">
+                                <TableHead className="text-xs text-slate-500 dark:text-slate-400">Metric</TableHead>
+                                <TableHead className="text-xs text-right text-slate-500 dark:text-slate-400">Value</TableHead>
+                                <TableHead className="text-xs text-right text-slate-500 dark:text-slate-400">vs Baseline</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              <TableRow>
-                                <TableCell className="text-sm">Effective Tax Rate</TableCell>
-                                <TableCell className="text-sm text-right">
+                              <TableRow className="border-emerald-100 dark:border-emerald-900/30">
+                                <TableCell className="text-sm text-slate-700 dark:text-slate-300">Effective Tax Rate</TableCell>
+                                <TableCell className="text-sm text-right text-slate-700 dark:text-slate-300">
                                   {jur.effectiveTaxRate}
                                 </TableCell>
-                                <TableCell className="text-sm text-right text-emerald-600">
+                                <TableCell className="text-sm text-right text-emerald-600 dark:text-emerald-400">
                                   <span className="flex items-center justify-end gap-1">
                                     <TrendingDown className="size-3" /> Lower
                                   </span>
                                 </TableCell>
                               </TableRow>
-                              <TableRow>
-                                <TableCell className="text-sm">10-Year Burden</TableCell>
-                                <TableCell className="text-sm text-right">
+                              <TableRow className="border-emerald-100 dark:border-emerald-900/30">
+                                <TableCell className="text-sm text-slate-700 dark:text-slate-300">10-Year Burden</TableCell>
+                                <TableCell className="text-sm text-right text-slate-700 dark:text-slate-300">
                                   {fmt(jur.totalTenYearBurden)}
                                 </TableCell>
-                                <TableCell className="text-sm text-right font-semibold text-emerald-600">
+                                <TableCell className="text-sm text-right font-semibold text-emerald-600 dark:text-emerald-400">
                                   -{fmt(jur.savingsVsBaseline)}
                                 </TableCell>
                               </TableRow>
                             </TableBody>
                           </Table>
                           <div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase mb-1.5">
+                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1.5">
                               Key Benefits
                             </p>
                             <ul className="space-y-1">
                               {jur.keyBenefits.map((b, j) => (
-                                <li key={j} className="text-xs text-slate-600 flex items-start gap-1.5">
-                                  <CheckCircle2 className="size-3 text-emerald-500 mt-0.5 shrink-0" />
+                                <li key={j} className="text-xs text-slate-600 dark:text-slate-300 flex items-start gap-1.5">
+                                  <CheckCircle2 className="size-3 text-emerald-500 dark:text-emerald-400 mt-0.5 shrink-0" />
                                   {b}
                                 </li>
                               ))}
                             </ul>
                           </div>
                           {jur.treatyAdvantages && (
-                            <div className="text-xs bg-slate-50 rounded-lg p-2">
-                              <span className="font-semibold text-slate-500">Treaty Advantages: </span>
-                              <span className="text-slate-600">{jur.treatyAdvantages}</span>
+                            <div className="text-xs bg-slate-50 dark:bg-slate-700/50 rounded-lg p-2">
+                              <span className="font-semibold text-slate-500 dark:text-slate-400">Treaty Advantages: </span>
+                              <span className="text-slate-600 dark:text-slate-300">{jur.treatyAdvantages}</span>
                             </div>
                           )}
                         </CardContent>
@@ -835,22 +839,22 @@ export function OptimizationResultsModal({
                 </div>
               )}
 
-              {/* Time Horizon */}
-              <Card className="border-slate-300">
+              {/* ── Time Horizon ── */}
+              <Card className="border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <TrendingUp className="size-5 text-purple-500" />
+                  <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                    <TrendingUp className="size-5 text-purple-500 dark:text-purple-400" />
                     Tax Savings by Time Horizon
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-slate-50">
-                        <TableHead className="text-xs">Time Horizon</TableHead>
-                        <TableHead className="text-xs text-right">Baseline Tax</TableHead>
-                        <TableHead className="text-xs text-right">Optimized Tax</TableHead>
-                        <TableHead className="text-xs text-right">Estimated Savings</TableHead>
+                      <TableRow className="bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-700">
+                        <TableHead className="text-xs text-slate-500 dark:text-slate-400">Time Horizon</TableHead>
+                        <TableHead className="text-xs text-right text-slate-500 dark:text-slate-400">Baseline Tax</TableHead>
+                        <TableHead className="text-xs text-right text-slate-500 dark:text-slate-400">Optimized Tax</TableHead>
+                        <TableHead className="text-xs text-right text-slate-500 dark:text-slate-400">Estimated Savings</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -862,13 +866,19 @@ export function OptimizationResultsModal({
                           ["Hold Until Death", data.timeHorizonAnalysis.holdUntilDeath],
                         ] as const
                       ).map(([label, row], i) => (
-                        <TableRow key={i} className={i === 3 ? "bg-slate-50 font-semibold" : ""}>
-                          <TableCell className="font-medium">{label}</TableCell>
-                          <TableCell className="text-right text-red-600">
+                        <TableRow
+                          key={i}
+                          className={cn(
+                            "border-slate-200 dark:border-slate-700",
+                            i === 3 ? "bg-slate-50 dark:bg-slate-700/30 font-semibold" : "",
+                          )}
+                        >
+                          <TableCell className="font-medium text-slate-900 dark:text-slate-100">{label}</TableCell>
+                          <TableCell className="text-right text-red-600 dark:text-red-400">
                             {fmt(row.baselineTax)}
                           </TableCell>
-                          <TableCell className="text-right">{fmt(row.optimizedTax)}</TableCell>
-                          <TableCell className="text-right font-semibold text-emerald-600">
+                          <TableCell className="text-right text-slate-700 dark:text-slate-300">{fmt(row.optimizedTax)}</TableCell>
+                          <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-400">
                             {fmt(row.savings)}
                           </TableCell>
                         </TableRow>
@@ -878,44 +888,45 @@ export function OptimizationResultsModal({
                 </CardContent>
               </Card>
 
-              {/* Recommendation */}
-              <Card className="border-emerald-300 bg-gradient-to-br from-emerald-50 to-white">
+              {/* ── Recommendation ── */}
+              <Card className="border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-800">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <CheckCircle2 className="size-5 text-emerald-500" /> Recommendation
+                  <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                    <CheckCircle2 className="size-5 text-emerald-500 dark:text-emerald-400" /> Recommendation
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-emerald-200">
+                  <div className="flex items-center justify-between p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
                     <div>
-                      <p className="text-sm text-slate-500">Best Structure</p>
-                      <p className="text-xl font-bold text-slate-900">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Best Structure</p>
+                      <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
                         {data.recommendation.bestStructure}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-slate-500">Estimated Lifetime Savings</p>
-                      <p className="text-2xl font-bold text-emerald-600">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Estimated Lifetime Savings</p>
+                      <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                         {fmt(data.recommendation.estimatedLifetimeSavings)}
                       </p>
                     </div>
                   </div>
-                  <p className="text-slate-600">{data.recommendation.reasoning}</p>
+                  <p className="text-slate-600 dark:text-slate-300">{data.recommendation.reasoning}</p>
                   <div>
-                    <p className="text-sm font-semibold text-slate-700 mb-2">Next Steps</p>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Next Steps</p>
                     <ul className="space-y-2">
                       {data.recommendation.nextSteps.map((step, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
-                          <ChevronRight className="size-4 text-emerald-500 mt-0.5 shrink-0" />
+                        <li key={i} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+                          <ChevronRight className="size-4 text-emerald-500 dark:text-emerald-400 mt-0.5 shrink-0" />
                           {step}
                         </li>
                       ))}
                     </ul>
                   </div>
-                  <div className="text-xs text-slate-500 pt-4 border-t border-slate-200">
-                    <strong>Disclaimer:</strong> This analysis is for informational purposes only and does
-                    not constitute legal, tax, or financial advice. Please consult with qualified legal,
-                    tax, and compliance advisors in the relevant jurisdictions before taking any action.
+                  <div className="text-xs text-slate-500 dark:text-slate-400 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <strong className="text-slate-600 dark:text-slate-300">Disclaimer:</strong> This analysis is for
+                    informational purposes only and does not constitute legal, tax, or financial advice. Please consult
+                    with qualified legal, tax, and compliance advisors in the relevant jurisdictions before taking any
+                    action.
                   </div>
                 </CardContent>
               </Card>
