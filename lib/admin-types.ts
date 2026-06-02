@@ -73,6 +73,7 @@ export interface AssetWithOwner {
   id: string
   name: string
   type: string
+  currency: string
   location_country: string | null
   location_state: string | null
   purchase_value: number | null

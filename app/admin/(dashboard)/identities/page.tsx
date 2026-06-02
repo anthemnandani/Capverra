@@ -45,12 +45,15 @@ interface Identity {
   type: string
   citizenship: string[]
   residency: string
-  risk_profile: string
   goals: string[]
   created_at: string
   updated_at: string
   user_email?: string
   user_name?: string
+  state_province: string | null
+  tax_rate: number | null
+  annual_income: number | null
+  risk_profile: "low" | "medium" | "high" | "aggressive"
 }
 
 export default function IdentitiesPage() {
@@ -73,15 +76,15 @@ export default function IdentitiesPage() {
       if (searchTerm) params.append("search", searchTerm)
 
       const response = await fetch(`/api/admin/identities-list?${params}`)
-      
+
       if (!response.ok) {
         const errorText = await response.text()
         console.error(`[v0] API error: ${response.status}`, errorText)
         return
       }
-      
+
       const data = await response.json()
-      console.log("[v0] Identities data loaded:", { total: data.total, count: data.identities?.length })
+      console.log("[v0] Identities data loaded:", {DATA:data, total: data.total, count: data.identities?.length })
       setIdentities(data.identities || [])
       setTotal(data.total || 0)
       setTotalPages(data.totalPages || 1)
@@ -161,6 +164,11 @@ export default function IdentitiesPage() {
                 <TableHead className="text-gray-400">Type</TableHead>
                 <TableHead className="text-gray-400">Risk Profile</TableHead>
                 <TableHead className="text-gray-400">Residency</TableHead>
+                <TableHead className="text-gray-400">State/Province</TableHead>
+                <TableHead className="text-gray-400">Citizenship</TableHead>
+                <TableHead className="text-gray-400">Tax Rate</TableHead>
+                <TableHead className="text-gray-400">Annual Income</TableHead>
+                <TableHead className="text-gray-400">Goals</TableHead>
                 <TableHead className="text-gray-400">Created</TableHead>
                 <TableHead className="text-right text-gray-400">Actions</TableHead>
               </TableRow>
@@ -211,18 +219,22 @@ export default function IdentitiesPage() {
                       <TableCell>
                         <Badge
                           variant="outline"
-                          className={`capitalize ${
-                            identity.risk_profile === "low"
+                          className={`capitalize ${identity.risk_profile === "low"
                               ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/50"
                               : identity.risk_profile === "medium"
-                              ? "bg-amber-500/10 text-amber-400 border-amber-500/50"
-                              : "bg-rose-500/10 text-rose-400 border-rose-500/50"
-                          }`}
+                                ? "bg-amber-500/10 text-amber-400 border-amber-500/50"
+                                : "bg-rose-500/10 text-rose-400 border-rose-500/50"
+                            }`}
                         >
                           {identity.risk_profile}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-gray-400">{identity.residency}</TableCell>
+                       <TableCell className="text-gray-400">{identity.state_province}</TableCell>
+                        <TableCell className="text-gray-400">{identity.citizenship}</TableCell>
+                         <TableCell className="text-gray-400">{identity.tax_rate}</TableCell>
+                          <TableCell className="text-gray-400">{identity.annual_income}</TableCell>
+                           <TableCell className="text-gray-400">{identity.goals}</TableCell>
                       <TableCell className="text-gray-400">
                         {new Date(identity.created_at).toLocaleDateString()}
                       </TableCell>
@@ -321,8 +333,28 @@ export default function IdentitiesPage() {
                   <p className="text-white font-medium capitalize">{selectedIdentity.risk_profile}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-gray-400 uppercase">Citizenship</p>
+                  <p className="text-white font-medium">{selectedIdentity.citizenship}</p>
+                </div>
+                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-gray-400 uppercase">State/Province</p>
+                  <p className="text-white font-medium">{selectedIdentity.state_province}</p>
+                </div>
+                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
                   <p className="text-xs text-gray-400 uppercase">Residency</p>
                   <p className="text-white font-medium">{selectedIdentity.residency}</p>
+                </div>
+                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-gray-400 uppercase">Tax Rate</p>
+                  <p className="text-white font-medium">{selectedIdentity.tax_rate}</p>
+                </div>
+                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-gray-400 uppercase">Annual Income</p>
+                  <p className="text-white font-medium">{selectedIdentity.annual_income}</p>
+                </div>
+                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-gray-400 uppercase">Goals</p>
+                  <p className="text-white font-medium">{selectedIdentity.goals}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
                   <p className="text-xs text-gray-400 uppercase">Created</p>
