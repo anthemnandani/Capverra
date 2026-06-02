@@ -21,9 +21,9 @@ export function AnalyticsSummary({ metrics, delay = 0 }: SummaryMetricsProps) {
       title: 'Total Page Views',
       value: metrics.totalPageViews.toLocaleString(),
       icon: TrendingUp,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-500/10',
-      textColor: 'text-blue-600',
+      color: 'from-amber-500 to-amber-600',
+      bgColor: 'bg-amber-500/10',
+      textColor: 'text-amber-600',
     },
     {
       title: 'Total Sessions',

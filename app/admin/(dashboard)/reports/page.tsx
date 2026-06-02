@@ -121,7 +121,7 @@ body {
 }
 
 .cover {
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f172a 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #3d2f0f 60%, #0f172a 100%);
   color: #fff;
   padding: 28px 26px 22px;
   border-radius: 6px;
@@ -212,7 +212,7 @@ h2::before { content: attr(data-icon); font-size: 14pt; }
 .rec-struct { font-size: 9pt; color: #64748b; margin-top: 8px; }
 .treaty { font-size: 9pt; background: #f8fafc; border-radius: 4px; padding: 5px 8px; margin-top: 8px; }
 
-.identity-card { border-left: 3px solid #3b82f6; }
+.identity-card { border-left: 3px solid #d4af37; }
 .jur-card { border-left: 3px solid #10b981; }
 .baseline-card { border: 2px solid #cbd5e1; }
 .baseline-card .chip-outline {
@@ -1070,7 +1070,7 @@ export default function AdminReportsPage() {
           value={uniqueUsers}
           subValue={`${filters.users.length} total users`}
           icon={Users}
-          color="bg-indigo-500"
+            color="bg-amber-500"
         />
         <StatsCard
           title="Assets Analyzed"

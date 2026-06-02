@@ -45,9 +45,9 @@ interface AnalyticsChartsProps {
   delay?: number
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+const COLORS = ['#d4af37', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 const CHART_COLORS = {
-  views: '#3b82f6',
+  views: '#d4af37',
   sessions: '#10b981',
 }
 
@@ -69,7 +69,7 @@ export function AnalyticsCharts({
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-foreground flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-500" />
+              <TrendingUp className="w-5 h-5 text-amber-500" />
               Page Views & Sessions Trend
             </CardTitle>
           </CardHeader>
