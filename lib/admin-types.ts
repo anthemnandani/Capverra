@@ -27,13 +27,14 @@ export interface AdminActivityLog {
 
 export interface AdminReport {
   id: string
-  admin_id: string
-  report_type: 'users' | 'assets' | 'identities' | 'optimization' | 'analytics'
   title: string
   description: string | null
-  filters: Record<string, unknown>
-  report_data: Record<string, unknown>
+  report_type: 'users' | 'assets' | 'identities' | 'optimization' | 'analytics'
   status: 'pending' | 'processing' | 'completed' | 'failed'
+  estimated_savings: number | null
+  asset_name: string | null
+  asset_count: number
+  identity_count: number
   created_at: string
   updated_at: string
 }

@@ -82,31 +82,8 @@ function AdminSidebar({
           x: isOpen ? 0 : "-100%",
         }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className={`fixed left-0 top-0 h-full w-72 bg-card border-r border-border z-50 lg:translate-x-0 lg:static`}
+        className={`fixed left-0 top-16 h-[calc(100vh-64px)] w-72 bg-card border-r border-border z-50 lg:sticky lg:top-16 lg:translate-x-0 lg:static overflow-y-auto`}
       >
-        {/* Logo Section */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-border">
-          <Link href="/admin/dashboard" className="flex items-center gap-3">
-            <motion.div
-              className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Shield className="w-5 h-5 text-primary" />
-            </motion.div>
-            <div>
-              <h1 className="text-foreground font-bold text-lg tracking-tight">Capverra</h1>
-              <p className="text-xs text-primary -mt-0.5">Admin Portal</p>
-            </div>
-          </Link>
-          <button
-            onClick={onClose}
-            className="lg:hidden text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
         {/* Navigation */}
         <nav className="p-4 space-y-1">
           {navItems.map((item, index) => {
@@ -162,7 +139,7 @@ function AdminSidebar({
 
         {/* Admin Info Card */}
         {adminUser && (
-          <div className="absolute bottom-4 left-4 right-4">
+          <div className="p-4 space-y-4 border-t border-border mt-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -208,55 +185,19 @@ function AdminHeader({
   adminUser: AdminUser | null
   onLogout: () => void
 }) {
-  const pathname = usePathname()
-
-  const getPageTitle = () => {
-    const current = navItems.find(
-      (item) => pathname === item.href || pathname.startsWith(item.href + "/")
-    )
-    return current?.label || "Dashboard"
-  }
-
   return (
-    <header className="border-b border-border bg-card/50 backdrop-blur-xl sticky top-0 z-30">
-      <div className="px-4 lg:px-8 flex items-center justify-between h-16">
-        {/* Left Section - Logo & Nav */}
-        <div className="flex items-center gap-8">
-          <Link href="/admin/dashboard" className="flex items-center gap-3 flex-shrink-0">
-            <motion.div
-              className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Shield className="w-5 h-5 text-primary" />
-            </motion.div>
-            <div>
-              <h1 className="text-foreground font-bold text-lg tracking-tight">Capverra</h1>
-              <p className="text-xs text-primary -mt-0.5">Admin</p>
-            </div>
-          </Link>
+    <header className="border-b border-border bg-card/50 backdrop-blur-xl sticky top-0 z-30 h-16 lg:h-16">
+      <div className="px-4 flex items-center justify-between h-full">
+        {/* Left Section - Menu Button (Mobile) */}
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
 
-          {/* Navigation Menu */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 text-sm font-medium ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                  }`}
-                >
-                  {item.icon}
-                  {item.label}
-                </Link>
-              )
-            })}
-          </nav>
-        </div>
+        {/* Spacer for centering */}
+        <div className="flex-1 lg:hidden" />
 
         {/* Right Section */}
         <div className="flex items-center gap-3">
@@ -272,14 +213,6 @@ function AdminHeader({
             <Bell className="w-5 h-5" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
           </motion.button>
-
-          {/* Mobile Menu */}
-          <button
-            onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
 
           {/* User Menu */}
           <DropdownMenu>
@@ -414,24 +347,35 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Top Header */}
       <AdminHeader
         onMenuClick={() => setSidebarOpen(true)}
         adminUser={adminUser}
         onLogout={handleLogout}
       />
 
-      {/* Main Content - Full Width */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <main className="flex-1 overflow-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="p-4 lg:p-8"
-          >
-            {children}
-          </motion.div>
-        </main>
+      {/* Main Container with Sidebar */}
+      <div className="flex-1 flex min-w-0 overflow-hidden">
+        {/* Sidebar */}
+        <AdminSidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          adminUser={adminUser}
+        />
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden lg:ml-0">
+          <main className="flex-1 overflow-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="p-4 lg:p-8"
+            >
+              {children}
+            </motion.div>
+          </main>
+        </div>
       </div>
     </div>
   )
