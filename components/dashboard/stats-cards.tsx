@@ -70,7 +70,7 @@ export function StatsCards() {
       value: stats.totalIdentities,
       description: "Active client profiles",
       icon: Users,
-      color: "text-blue-600",
+      color: "text-amber-600",
     },
     {
       title: "Total Assets",

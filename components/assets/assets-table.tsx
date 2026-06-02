@@ -25,7 +25,7 @@ const currencySymbols: Record<Currency, string> = {
 
 const ASSET_TYPE_COLORS: Record<string, string> = {
   "Real Estate": "bg-emerald-600 text-white hover:bg-emerald-600",
-  Stocks: "bg-blue-600 text-white hover:bg-blue-600",
+  Stocks: "bg-amber-600 text-white hover:bg-amber-600",
   Bonds: "bg-purple-600 text-white hover:bg-purple-600",
   Cryptocurrency: "bg-orange-600 text-white hover:bg-orange-600",
   "Mutual Funds": "bg-cyan-600 text-white hover:bg-cyan-600",

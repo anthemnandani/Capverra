@@ -66,8 +66,8 @@ const ownerTypeIcons: Record<string, React.ReactNode> = {
 const identityTypeBadgeStyles: Record<string, string> = {
   Individual:  "bg-green-100  text-green-700",
   individual:  "bg-green-100  text-green-700",
-  trust:       "bg-blue-100   text-blue-700",
-  Trust:       "bg-blue-100   text-blue-700",
+  trust:       "bg-amber-100  text-amber-700",
+  Trust:       "bg-amber-100  text-amber-700",
   LLC:         "bg-purple-100 text-purple-700",
   llc:         "bg-purple-100 text-purple-700",
   corporation: "bg-purple-100 text-purple-700",

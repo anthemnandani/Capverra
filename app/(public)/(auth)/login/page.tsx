@@ -8,7 +8,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Shield } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { useAuth } from "@/context"
@@ -174,6 +174,17 @@ export default function LoginPage() {
                 >
                   {isRegister ? "Sign in instead" : "Create an account"}
                 </button>
+              </div>
+
+              {/* Admin Login Link */}
+              <div className="mt-6 pt-4 border-t border-border">
+                <Link
+                  href="/admin/login"
+                  className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
+                >
+                  <Shield className="w-4 h-4 group-hover:text-primary transition-colors" />
+                  <span>Admin Portal</span>
+                </Link>
               </div>
             </div>
           </div>

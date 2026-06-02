@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#0a0a0a",
   width: "device-width",
   initialScale: 1,
 };
@@ -54,21 +54,20 @@ export default function RootLayout({
             <Script id="google-analytics" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
-                
+
                 function gtag() {
                   dataLayer.push(arguments);
                 }
 
                 gtag('js', new Date());
                 gtag('config', '${GA_ID}');
-                 console.log('Google Analytics ID:', '${GA_ID}');
               `}
             </Script>
           </>
         )}
       </head>
 
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} font-sans antialiased bg-background`}>
         <Providers>{children}</Providers>
       </body>
     </html>
