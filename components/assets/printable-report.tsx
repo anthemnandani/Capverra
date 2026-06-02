@@ -340,7 +340,7 @@ h2::before { content: attr(data-icon); font-size: 14pt; }
 .treaty      { font-size: 9pt; background: #f8fafc; border-radius: 4px; padding: 5px 8px; margin-top: 8px; }
 
 /* ── Card accents ── */
-  .identity-card { border-left: 3px solid #d4af37; }
+  .identity-card { border-left: 3px solid #C9A96A; }
 .jur-card      { border-left: 3px solid #10b981; }
 .baseline-card { border: 2px solid #cbd5e1; }
 .baseline-card .chip-outline {
@@ -419,7 +419,7 @@ h2::before { content: attr(data-icon); font-size: 14pt; }
 
 <!-- CURRENT IDENTITY -->
 <h2 data-icon="👤">Current Identity</h2>
-    <div class="card" style="border-left:3px solid #d4af37;background:linear-gradient(135deg,#fff,#fef3c722)">
+    <div class="card" style="border-left:3px solid #C9A96A;background:linear-gradient(135deg,#fff,#fef8e822)">
   <div class="card-head">
     <span class="card-title">${data.currentIdentitySummary.identityName}</span>
     ${chip("Associated Identity", "#f1f5f9", "#475569")}

@@ -45,9 +45,9 @@ interface AnalyticsChartsProps {
   delay?: number
 }
 
-const COLORS = ['#d4af37', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+const COLORS = ['#C9A96A', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 const CHART_COLORS = {
-  views: '#d4af37',
+  views: '#C9A96A',
   sessions: '#10b981',
 }
 

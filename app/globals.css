@@ -3,76 +3,93 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Light mode: White + Light Grey with Gold accents */
-  --background: oklch(0.985 0.002 85);
-  --foreground: oklch(0.2 0.02 85);
+  /* Light mode: White + Light Grey with Capverra Gold accents */
+  /* Gold color matched to Capverra button: #C9A96A */
+  --background: oklch(0.985 0.005 75);
+  --foreground: oklch(0.15 0.02 75);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.02 85);
+  --card-foreground: oklch(0.15 0.02 75);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.02 85);
-  --primary: oklch(0.75 0.15 85);
-  --primary-foreground: oklch(0.15 0.02 85);
-  --secondary: oklch(0.96 0.01 85);
-  --secondary-foreground: oklch(0.25 0.02 85);
-  --muted: oklch(0.96 0.01 85);
-  --muted-foreground: oklch(0.5 0.02 85);
-  --accent: oklch(0.94 0.02 85);
-  --accent-foreground: oklch(0.25 0.02 85);
+  --popover-foreground: oklch(0.15 0.02 75);
+  --primary: oklch(0.73 0.12 75);
+  --primary-foreground: oklch(0.12 0.02 75);
+  --secondary: oklch(0.96 0.01 75);
+  --secondary-foreground: oklch(0.2 0.02 75);
+  --muted: oklch(0.96 0.01 75);
+  --muted-foreground: oklch(0.45 0.02 75);
+  --accent: oklch(0.94 0.02 75);
+  --accent-foreground: oklch(0.2 0.02 75);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.91 0.01 85);
-  --input: oklch(0.91 0.01 85);
-  --ring: oklch(0.75 0.15 85);
-  --chart-1: oklch(0.75 0.15 85);
+  --border: oklch(0.90 0.01 75);
+  --input: oklch(0.90 0.01 75);
+  --ring: oklch(0.73 0.12 75);
+  --chart-1: oklch(0.73 0.12 75);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.5rem;
-  --sidebar: oklch(0.98 0.005 85);
-  --sidebar-foreground: oklch(0.2 0.02 85);
-  --sidebar-primary: oklch(0.75 0.15 85);
-  --sidebar-primary-foreground: oklch(0.15 0.02 85);
-  --sidebar-accent: oklch(0.94 0.02 85);
-  --sidebar-accent-foreground: oklch(0.25 0.02 85);
-  --sidebar-border: oklch(0.91 0.01 85);
-  --sidebar-ring: oklch(0.75 0.15 85);
+  --sidebar: oklch(0.98 0.005 75);
+  --sidebar-foreground: oklch(0.15 0.02 75);
+  --sidebar-primary: oklch(0.73 0.12 75);
+  --sidebar-primary-foreground: oklch(0.12 0.02 75);
+  --sidebar-accent: oklch(0.94 0.02 75);
+  --sidebar-accent-foreground: oklch(0.2 0.02 75);
+  --sidebar-border: oklch(0.90 0.01 75);
+  --sidebar-ring: oklch(0.73 0.12 75);
+  
+  /* Capverra Gold Gradient Variables */
+  --gold-light: #D4B87A;
+  --gold-base: #C9A96A;
+  --gold-dark: #B8945A;
+  --gold-gradient: linear-gradient(135deg, #D4B87A 0%, #C9A96A 50%, #B8945A 100%);
+  --gold-gradient-hover: linear-gradient(135deg, #DFC48A 0%, #D4B87A 50%, #C9A96A 100%);
+  --gold-text-gradient: linear-gradient(135deg, #D4B87A 0%, #C9A96A 50%, #A8844A 100%);
 }
 
 .dark {
-  /* Dark mode: Black + Dark Grey with Gold accents */
-  --background: oklch(0.13 0.01 85);
-  --foreground: oklch(0.95 0.01 85);
-  --card: oklch(0.17 0.01 85);
-  --card-foreground: oklch(0.95 0.01 85);
-  --popover: oklch(0.17 0.01 85);
-  --popover-foreground: oklch(0.95 0.01 85);
-  --primary: oklch(0.78 0.16 85);
-  --primary-foreground: oklch(0.13 0.01 85);
-  --secondary: oklch(0.22 0.01 85);
-  --secondary-foreground: oklch(0.95 0.01 85);
-  --muted: oklch(0.22 0.01 85);
-  --muted-foreground: oklch(0.65 0.01 85);
-  --accent: oklch(0.25 0.02 85);
-  --accent-foreground: oklch(0.95 0.01 85);
+  /* Dark mode: Black + Dark Grey with Capverra Gold accents */
+  --background: oklch(0.12 0.01 75);
+  --foreground: oklch(0.95 0.01 75);
+  --card: oklch(0.16 0.01 75);
+  --card-foreground: oklch(0.95 0.01 75);
+  --popover: oklch(0.16 0.01 75);
+  --popover-foreground: oklch(0.95 0.01 75);
+  --primary: oklch(0.76 0.13 75);
+  --primary-foreground: oklch(0.12 0.01 75);
+  --secondary: oklch(0.22 0.01 75);
+  --secondary-foreground: oklch(0.95 0.01 75);
+  --muted: oklch(0.22 0.01 75);
+  --muted-foreground: oklch(0.65 0.01 75);
+  --accent: oklch(0.25 0.02 75);
+  --accent-foreground: oklch(0.95 0.01 75);
   --destructive: oklch(0.5 0.2 25);
-  --destructive-foreground: oklch(0.95 0.01 85);
-  --border: oklch(0.28 0.01 85);
-  --input: oklch(0.22 0.01 85);
-  --ring: oklch(0.78 0.16 85);
-  --chart-1: oklch(0.78 0.16 85);
+  --destructive-foreground: oklch(0.95 0.01 75);
+  --border: oklch(0.28 0.01 75);
+  --input: oklch(0.22 0.01 75);
+  --ring: oklch(0.76 0.13 75);
+  --chart-1: oklch(0.76 0.13 75);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.15 0.01 85);
-  --sidebar-foreground: oklch(0.95 0.01 85);
-  --sidebar-primary: oklch(0.78 0.16 85);
-  --sidebar-primary-foreground: oklch(0.13 0.01 85);
-  --sidebar-accent: oklch(0.22 0.01 85);
-  --sidebar-accent-foreground: oklch(0.95 0.01 85);
-  --sidebar-border: oklch(0.28 0.01 85);
-  --sidebar-ring: oklch(0.78 0.16 85);
+  --sidebar: oklch(0.14 0.01 75);
+  --sidebar-foreground: oklch(0.95 0.01 75);
+  --sidebar-primary: oklch(0.76 0.13 75);
+  --sidebar-primary-foreground: oklch(0.12 0.01 75);
+  --sidebar-accent: oklch(0.22 0.01 75);
+  --sidebar-accent-foreground: oklch(0.95 0.01 75);
+  --sidebar-border: oklch(0.28 0.01 75);
+  --sidebar-ring: oklch(0.76 0.13 75);
+  
+  /* Capverra Gold Gradient Variables - Brighter for dark mode */
+  --gold-light: #DFC48A;
+  --gold-base: #D4B87A;
+  --gold-dark: #C9A96A;
+  --gold-gradient: linear-gradient(135deg, #DFC48A 0%, #D4B87A 50%, #C9A96A 100%);
+  --gold-gradient-hover: linear-gradient(135deg, #EAD09A 0%, #DFC48A 50%, #D4B87A 100%);
+  --gold-text-gradient: linear-gradient(135deg, #DFC48A 0%, #D4B87A 50%, #C9A96A 100%);
 }
 
 @theme inline {
@@ -123,5 +140,47 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-playfair), 'Playfair Display', Georgia, serif;
+  }
+}
+
+/* Capverra Gold Gradient Utilities */
+@layer utilities {
+  /* Gold gradient background for buttons */
+  .bg-gold-gradient {
+    background: var(--gold-gradient);
+  }
+  
+  .bg-gold-gradient:hover {
+    background: var(--gold-gradient-hover);
+  }
+  
+  /* Gold gradient text */
+  .text-gold-gradient {
+    background: var(--gold-text-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Gold solid colors */
+  .bg-gold {
+    background-color: var(--gold-base);
+  }
+  
+  .text-gold {
+    color: var(--gold-base);
+  }
+  
+  .border-gold {
+    border-color: var(--gold-base);
+  }
+  
+  /* Gold hover states */
+  .hover\:bg-gold-gradient:hover {
+    background: var(--gold-gradient);
+  }
+  
+  .hover\:text-gold:hover {
+    color: var(--gold-base);
   }
 }

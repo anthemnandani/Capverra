@@ -212,7 +212,7 @@ h2::before { content: attr(data-icon); font-size: 14pt; }
 .rec-struct { font-size: 9pt; color: #64748b; margin-top: 8px; }
 .treaty { font-size: 9pt; background: #f8fafc; border-radius: 4px; padding: 5px 8px; margin-top: 8px; }
 
-.identity-card { border-left: 3px solid #d4af37; }
+.identity-card { border-left: 3px solid #C9A96A; }
 .jur-card { border-left: 3px solid #10b981; }
 .baseline-card { border: 2px solid #cbd5e1; }
 .baseline-card .chip-outline {
