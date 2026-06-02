@@ -59,12 +59,22 @@ function AdminSidebar({
   adminUser: AdminUser | null
 }) {
   const pathname = usePathname()
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024)
+    }
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   return (
     <>
       {/* Mobile Overlay */}
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && isMobile && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -75,25 +85,14 @@ function AdminSidebar({
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
-      <motion.aside
-        initial={false}
-        animate={{
-          x: isOpen ? 0 : "-100%",
-        }}
-        transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className={`fixed left-0 top-16 h-[calc(100vh-64px)] w-72 bg-card border-r border-border z-50 lg:sticky lg:top-16 lg:translate-x-0 lg:static overflow-y-auto flex flex-col`}
-      >
+      {/* Desktop Sidebar - Always visible */}
+      <aside className="hidden lg:flex lg:flex-col w-72 bg-card border-r border-border h-[calc(100vh-64px)] sticky top-16 overflow-y-auto">
         {/* Logo Section */}
         <div className="p-4 border-b border-border">
           <Link href="/admin/dashboard" className="flex items-center gap-3">
-            <motion.div
-              className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
               <Shield className="w-5 h-5 text-primary" />
-            </motion.div>
+            </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-foreground font-bold text-lg tracking-tight leading-tight">
                 Capverra
@@ -105,53 +104,34 @@ function AdminSidebar({
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {navItems.map((item, index) => {
+          {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
             return (
-              <motion.div
+              <Link
                 key={item.href}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
+                href={item.href}
+                className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden ${
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
               >
-                <Link
-                  href={item.href}
-                  onClick={onClose}
-                  className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                  }`}
-                >
-                  {/* Active Indicator */}
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeNav"
-                      className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-full"
-                    />
-                  )}
-
-                  <span className={isActive ? "text-primary" : ""}>
-                    {item.icon}
+                {isActive && (
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-full" />
+                )}
+                <span className={isActive ? "text-primary" : ""}>{item.icon}</span>
+                <span className="font-medium">{item.label}</span>
+                {item.badge && (
+                  <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
+                    {item.badge}
                   </span>
-
-                  <span className="font-medium">{item.label}</span>
-
-                  {/* Badge */}
-                  {item.badge && (
-                    <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
-                      {item.badge}
-                    </span>
-                  )}
-
-                  {/* Hover Arrow */}
-                  <ChevronRight
-                    className={`w-4 h-4 ml-auto transition-all duration-300 ${
-                      isActive ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 group-hover:opacity-50 group-hover:translate-x-0"
-                    }`}
-                  />
-                </Link>
-              </motion.div>
+                )}
+                <ChevronRight
+                  className={`w-4 h-4 ml-auto transition-all duration-300 ${
+                    isActive ? "opacity-100" : "opacity-0 group-hover:opacity-50"
+                  }`}
+                />
+              </Link>
             )
           })}
         </nav>
@@ -159,12 +139,7 @@ function AdminSidebar({
         {/* Admin Info Card */}
         {adminUser && (
           <div className="p-4 border-t border-border mt-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="p-4 rounded-xl bg-accent/50 border border-border"
-            >
+            <div className="p-4 rounded-xl bg-accent/50 border border-border">
               <div className="flex items-center gap-3">
                 <Avatar className="w-10 h-10 border-2 border-primary/30">
                   <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
@@ -187,10 +162,103 @@ function AdminSidebar({
                   Active
                 </span>
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
-      </motion.aside>
+      </aside>
+
+      {/* Mobile Sidebar - Animated */}
+      <AnimatePresence>
+        {isOpen && isMobile && (
+          <motion.aside
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed left-0 top-16 h-[calc(100vh-64px)] w-72 bg-card border-r border-border z-50 overflow-y-auto flex flex-col lg:hidden"
+          >
+            {/* Logo Section */}
+            <div className="p-4 border-b border-border">
+              <Link href="/admin/dashboard" className="flex items-center gap-3" onClick={onClose}>
+                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-foreground font-bold text-lg tracking-tight leading-tight">
+                    Capverra
+                  </h1>
+                  <p className="text-xs text-primary -mt-1">Admin Panel</p>
+                </div>
+              </Link>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onClose}
+                    className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden ${
+                      isActive
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    }`}
+                  >
+                    {isActive && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-full" />
+                    )}
+                    <span className={isActive ? "text-primary" : ""}>{item.icon}</span>
+                    <span className="font-medium">{item.label}</span>
+                    {item.badge && (
+                      <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
+                        {item.badge}
+                      </span>
+                    )}
+                    <ChevronRight
+                      className={`w-4 h-4 ml-auto transition-all duration-300 ${
+                        isActive ? "opacity-100" : "opacity-0 group-hover:opacity-50"
+                      }`}
+                    />
+                  </Link>
+                )
+              })}
+            </nav>
+
+            {/* Admin Info Card */}
+            {adminUser && (
+              <div className="p-4 border-t border-border mt-auto">
+                <div className="p-4 rounded-xl bg-accent/50 border border-border">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10 border-2 border-primary/30">
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                        {adminUser.name?.[0]?.toUpperCase() || adminUser.email[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-foreground font-medium truncate text-sm">
+                        {adminUser.name || "Admin"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{adminUser.email}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium capitalize">
+                      {adminUser.role.replace("_", " ")}
+                    </span>
+                    <span className="flex items-center gap-1 text-emerald-500 text-xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Active
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.aside>
+        )}
+      </AnimatePresence>
     </>
   )
 }
@@ -205,18 +273,25 @@ function AdminHeader({
   onLogout: () => void
 }) {
   return (
-    <header className="border-b border-border bg-card/50 backdrop-blur-xl sticky top-0 z-30 h-16 lg:h-16">
+    <header className="border-b border-border bg-card/50 backdrop-blur-xl sticky top-0 z-30 h-16">
       <div className="px-4 flex items-center justify-between h-full">
-        {/* Left Section - Menu Button (Mobile) */}
-        <button
-          onClick={onMenuClick}
-          className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-
-        {/* Spacer for centering */}
-        <div className="flex-1 lg:hidden" />
+        {/* Left Section - Logo (Mobile) + Menu Button */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onMenuClick}
+            className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          
+          {/* Mobile Logo */}
+          <Link href="/admin/dashboard" className="flex items-center gap-2 lg:hidden">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-foreground font-bold">Capverra</span>
+          </Link>
+        </div>
 
         {/* Right Section */}
         <div className="flex items-center gap-3">
