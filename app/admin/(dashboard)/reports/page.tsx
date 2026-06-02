@@ -2,6 +2,8 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useCallback } from "react"
+import { jsPDF } from "jspdf"
+import autoTable from "jspdf-autotable"
 import {
   FileText,
   Search,
@@ -93,6 +95,230 @@ const formatCurrency = (value: number, currency: string = "USD") => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value)
+}
+
+// Export single report to PDF
+const exportReportToPDF = (report: ReportData) => {
+  const doc = new jsPDF()
+  const data = report.report_data
+  
+  // Header
+  doc.setFontSize(20)
+  doc.setTextColor(79, 70, 229) // Primary color
+  doc.text("Capverra", 20, 20)
+  doc.setFontSize(10)
+  doc.setTextColor(107, 114, 128)
+  doc.text("Optimization Report", 20, 28)
+  
+  // Report Title
+  doc.setFontSize(16)
+  doc.setTextColor(17, 24, 39)
+  doc.text(`Asset: ${report.asset_name}`, 20, 45)
+  
+  // Meta info
+  doc.setFontSize(10)
+  doc.setTextColor(107, 114, 128)
+  doc.text(`User: ${report.user_name} (${report.user_email})`, 20, 55)
+  doc.text(`Generated: ${new Date(report.generated_at).toLocaleDateString()}`, 20, 62)
+  doc.text(`Estimated Savings: ${formatCurrency(report.estimated_savings, report.currency)}`, 20, 69)
+  
+  // Summary Section
+  doc.setFontSize(12)
+  doc.setTextColor(17, 24, 39)
+  doc.text("Summary", 20, 85)
+  doc.setFontSize(10)
+  doc.setTextColor(55, 65, 81)
+  const summaryLines = doc.splitTextToSize(report.summary || "No summary available", 170)
+  doc.text(summaryLines, 20, 93)
+  
+  let yPos = 93 + (summaryLines.length * 5) + 10
+  
+  // Asset Details Table
+  doc.setFontSize(12)
+  doc.setTextColor(17, 24, 39)
+  doc.text("Asset Details", 20, yPos)
+  yPos += 5
+  
+  autoTable(doc, {
+    startY: yPos,
+    head: [["Property", "Value"]],
+    body: [
+      ["Asset Name", report.asset_name],
+      ["Asset Type", report.asset_type],
+      ["Location", report.asset_location],
+      ["Current Value", formatCurrency(report.asset_value)],
+    ],
+    theme: "striped",
+    headStyles: { fillColor: [79, 70, 229] },
+    margin: { left: 20, right: 20 },
+  })
+  
+  yPos = (doc as any).lastAutoTable.finalY + 15
+  
+  // Identities
+  if (report.identities && report.identities.length > 0) {
+    doc.setFontSize(12)
+    doc.setTextColor(17, 24, 39)
+    doc.text(`Identities Analyzed (${report.identity_count})`, 20, yPos)
+    yPos += 5
+    
+    autoTable(doc, {
+      startY: yPos,
+      head: [["Name", "Type"]],
+      body: report.identities.map((i) => [i.name, i.type]),
+      theme: "striped",
+      headStyles: { fillColor: [6, 182, 212] },
+      margin: { left: 20, right: 20 },
+    })
+    
+    yPos = (doc as any).lastAutoTable.finalY + 15
+  }
+  
+  // Jurisdictions
+  if (report.jurisdictions && report.jurisdictions.length > 0) {
+    if (yPos > 250) {
+      doc.addPage()
+      yPos = 20
+    }
+    
+    doc.setFontSize(12)
+    doc.setTextColor(17, 24, 39)
+    doc.text(`Jurisdictions Analyzed (${report.jurisdiction_count})`, 20, yPos)
+    yPos += 5
+    
+    autoTable(doc, {
+      startY: yPos,
+      head: [["Name", "Code"]],
+      body: report.jurisdictions.map((j) => [j.name, j.code]),
+      theme: "striped",
+      headStyles: { fillColor: [139, 92, 246] },
+      margin: { left: 20, right: 20 },
+    })
+    
+    yPos = (doc as any).lastAutoTable.finalY + 15
+  }
+  
+  // AI Recommendation
+  if (data?.recommendation) {
+    if (yPos > 200) {
+      doc.addPage()
+      yPos = 20
+    }
+    
+    doc.setFontSize(12)
+    doc.setTextColor(17, 24, 39)
+    doc.text("AI Recommendation", 20, yPos)
+    yPos += 8
+    
+    doc.setFontSize(11)
+    doc.setTextColor(16, 185, 129)
+    doc.text(`Best Structure: ${data.recommendation.bestStructure || "N/A"}`, 20, yPos)
+    yPos += 8
+    
+    doc.setFontSize(10)
+    doc.setTextColor(55, 65, 81)
+    const reasoningLines = doc.splitTextToSize(data.recommendation.reasoning || "", 170)
+    doc.text(reasoningLines, 20, yPos)
+    yPos += (reasoningLines.length * 5) + 5
+    
+    doc.setTextColor(16, 185, 129)
+    doc.text(`Estimated Lifetime Savings: ${formatCurrency(data.recommendation.estimatedLifetimeSavings || 0)}`, 20, yPos)
+    yPos += 10
+    
+    if (data.recommendation.nextSteps && data.recommendation.nextSteps.length > 0) {
+      doc.setFontSize(10)
+      doc.setTextColor(17, 24, 39)
+      doc.text("Next Steps:", 20, yPos)
+      yPos += 5
+      
+      data.recommendation.nextSteps.forEach((step: string, idx: number) => {
+        if (yPos > 280) {
+          doc.addPage()
+          yPos = 20
+        }
+        doc.setTextColor(55, 65, 81)
+        const stepLines = doc.splitTextToSize(`${idx + 1}. ${step}`, 165)
+        doc.text(stepLines, 25, yPos)
+        yPos += (stepLines.length * 5) + 2
+      })
+    }
+  }
+  
+  // Footer
+  const pageCount = doc.getNumberOfPages()
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i)
+    doc.setFontSize(8)
+    doc.setTextColor(156, 163, 175)
+    doc.text(`Generated by Capverra Admin Panel | Page ${i} of ${pageCount}`, 20, 290)
+    doc.text(new Date().toLocaleString(), 170, 290)
+  }
+  
+  // Save
+  doc.save(`optimization-report-${report.asset_name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.pdf`)
+}
+
+// Export all reports to PDF
+const exportAllReportsToPDF = (reports: ReportData[]) => {
+  const doc = new jsPDF("landscape")
+  
+  // Header
+  doc.setFontSize(20)
+  doc.setTextColor(79, 70, 229)
+  doc.text("Capverra", 20, 20)
+  doc.setFontSize(10)
+  doc.setTextColor(107, 114, 128)
+  doc.text("All Optimization Reports", 20, 28)
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 35)
+  doc.text(`Total Reports: ${reports.length}`, 20, 42)
+  
+  // Calculate totals
+  const totalSavings = reports.reduce((sum, r) => sum + (r.estimated_savings || 0), 0)
+  const uniqueUsers = new Set(reports.map((r) => r.user_id)).size
+  const uniqueAssets = new Set(reports.map((r) => r.asset_id)).size
+  
+  doc.text(`Total Estimated Savings: ${formatCurrency(totalSavings)}`, 140, 35)
+  doc.text(`Unique Users: ${uniqueUsers} | Assets Analyzed: ${uniqueAssets}`, 140, 42)
+  
+  // Reports Table
+  autoTable(doc, {
+    startY: 55,
+    head: [["User", "Email", "Asset", "Type", "Identities", "Est. Savings", "Generated"]],
+    body: reports.map((r) => [
+      r.user_name,
+      r.user_email,
+      r.asset_name,
+      r.asset_type,
+      r.identity_count.toString(),
+      formatCurrency(r.estimated_savings, r.currency),
+      new Date(r.generated_at).toLocaleDateString(),
+    ]),
+    theme: "striped",
+    headStyles: { fillColor: [79, 70, 229], fontSize: 9 },
+    bodyStyles: { fontSize: 8 },
+    columnStyles: {
+      0: { cellWidth: 35 },
+      1: { cellWidth: 50 },
+      2: { cellWidth: 40 },
+      3: { cellWidth: 25 },
+      4: { cellWidth: 20, halign: "center" },
+      5: { cellWidth: 30, halign: "right" },
+      6: { cellWidth: 25 },
+    },
+    margin: { left: 15, right: 15 },
+  })
+  
+  // Footer on all pages
+  const pageCount = doc.getNumberOfPages()
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i)
+    doc.setFontSize(8)
+    doc.setTextColor(156, 163, 175)
+    doc.text(`Generated by Capverra Admin Panel | Page ${i} of ${pageCount}`, 15, 200)
+  }
+  
+  // Save
+  doc.save(`all-optimization-reports-${new Date().toISOString().split("T")[0]}.pdf`)
 }
 
 // Stats Card Component
@@ -293,7 +519,10 @@ function ReportDetailModal({
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button className="bg-primary hover:bg-primary/90">
+          <Button 
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => exportReportToPDF(report)}
+          >
             <Download className="w-4 h-4 mr-2" />
             Export PDF
           </Button>
@@ -478,9 +707,14 @@ export default function AdminReportsPage() {
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
-          <Button size="sm" className="bg-primary hover:bg-primary/90">
+          <Button
+            size="sm"
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => exportAllReportsToPDF(filteredReports)}
+            disabled={filteredReports.length === 0}
+          >
             <Download className="w-4 h-4 mr-2" />
-            Export All
+            Export All ({filteredReports.length})
           </Button>
         </div>
       </motion.div>
