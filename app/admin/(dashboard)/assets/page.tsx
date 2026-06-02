@@ -133,7 +133,21 @@ function AssetDetailModal({
               </div>
             </motion.div>
           </div>
-
+{asset.currency && (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.2 }}
+    className="p-4 rounded-xl bg-white/5 border border-white/5"
+  >
+    <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">
+      Currency
+    </p>
+    <p className="text-white font-medium">
+      {asset.currency}
+    </p>
+  </motion.div>
+)}
           {asset.purchase_value && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -145,7 +159,21 @@ function AssetDetailModal({
               <p className="text-white font-medium">${asset.purchase_value.toLocaleString()}</p>
             </motion.div>
           )}
-
+{asset.latest_valuation_date && (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.2 }}
+    className="p-4 rounded-xl bg-white/5 border border-white/5"
+  >
+    <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">
+      Latest Valuation Date
+    </p>
+    <p className="text-white font-medium">
+      {new Date(asset.latest_valuation_date).toLocaleDateString()}
+    </p>
+  </motion.div>
+)}
           {asset.latest_valuation && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -281,9 +309,22 @@ function AssetTableRow({
       </TableCell>
       <TableCell className="text-gray-400 capitalize">{asset.type}</TableCell>
       <TableCell className="text-gray-400">{asset.location_country}{asset.location_state ? `, ${asset.location_state}` : ""}</TableCell>
+       <TableCell className="text-gray-400">
+        {asset.currency ? `$${(asset.currency).toLocaleString()}` : "—"}
+      </TableCell>
       <TableCell className="text-gray-400">
         {asset.purchase_value ? `$${(asset.purchase_value).toLocaleString()}` : "—"}
       </TableCell>
+      <TableCell className="text-gray-400">
+  {asset.purchase_date
+    ? new Date(asset.purchase_date).toLocaleDateString()
+    : "—"}
+</TableCell>
+<TableCell className="text-gray-400">
+  {asset.latest_valuation_date
+    ? new Date(asset.latest_valuation_date).toLocaleDateString()
+    : "—"}
+</TableCell>
       <TableCell className="text-gray-400">
         {asset.latest_valuation ? `$${(asset.latest_valuation).toLocaleString()}` : "—"}
       </TableCell>
@@ -335,53 +376,7 @@ function AssetTableRow({
           </DropdownMenuContent>
         </DropdownMenu>
       </TableCell>
-      <TableCell>
-        <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/30 capitalize text-xs">
-          {asset.type}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500/50 to-purple-500/50 flex items-center justify-center text-white text-xs font-medium">
-            {asset.user_name?.[0]?.toUpperCase() || asset.user_email[0].toUpperCase()}
-          </div>
-          <span className="text-gray-400 text-sm truncate max-w-[150px]">
-            {asset.user_email}
-          </span>
-        </div>
-      </TableCell>
-      <TableCell className="text-gray-400">
-        {new Date(asset.created_at).toLocaleDateString()}
-      </TableCell>
-      <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-gray-400 hover:text-white hover:bg-white/10"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="bg-slate-900 border-white/10 text-white"
-          >
-            <DropdownMenuItem
-              onClick={() => onView(asset)}
-              className="cursor-pointer hover:bg-white/5"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer hover:bg-white/5">
-              <Download className="w-4 h-4 mr-2" />
-              Download
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </TableCell>
+    
     </motion.tr>
   )
 }
@@ -590,11 +585,14 @@ export default function AdminAssetsPage() {
                       <TableHead className="text-gray-400">Asset Name</TableHead>
                       <TableHead className="text-gray-400">Type</TableHead>
                       <TableHead className="text-gray-400">Location</TableHead>
+                       <TableHead className="text-gray-400">Currency</TableHead>
                       <TableHead className="text-gray-400">Purchase Value</TableHead>
+                        <TableHead className="text-gray-400">Purchase Date</TableHead>
+                        <TableHead className="text-gray-400">Valuation Date</TableHead>
                       <TableHead className="text-gray-400">Current Value</TableHead>
                       <TableHead className="text-gray-400">Performance</TableHead>
                       <TableHead className="text-gray-400">Owner</TableHead>
-                      <TableHead className="text-gray-400 w-12"></TableHead>
+                      <TableHead className="text-gray-400 w-12">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

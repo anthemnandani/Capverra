@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/server"
+import { Currency } from "lucide-react"
 import { NextResponse } from "next/server"
 
 export async function GET(request: Request) {
@@ -25,6 +26,7 @@ export async function GET(request: Request) {
         purchase_date,
         latest_valuation,
         latest_valuation_date,
+        currency,
         created_at,
         updated_at,
         user_id
@@ -53,7 +55,7 @@ export async function GET(request: Request) {
     for (const asset of data || []) {
       // Get user email from auth
       const { data: user } = await adminClient.auth.admin.getUserById(asset.user_id)
-
+     console.log("USER DATA:", JSON.stringify(user, null, 2))
       let performance = null
       if (asset.latest_valuation && asset.purchase_value) {
         performance = ((asset.latest_valuation - asset.purchase_value) / asset.purchase_value) * 100
@@ -72,6 +74,7 @@ export async function GET(request: Request) {
         purchase_date: asset.purchase_date,
         latest_valuation: asset.latest_valuation,
         latest_valuation_date: asset.latest_valuation_date,
+        currency: asset.currency,
         performance: performance,
         created_at: asset.created_at,
         updated_at: asset.updated_at,
