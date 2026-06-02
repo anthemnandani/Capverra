@@ -305,8 +305,11 @@ export default function AdminReportsPage() {
   const [reports, setReports] = useState<AdminReport[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState("")
   const [selectedType, setSelectedType] = useState<string>("all")
   const [loading, setLoading] = useState(true)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [adminUser, setAdminUser] = useState<any>(null)
   const limit = 12
 
   const loadReports = useCallback(async () => {
@@ -316,6 +319,7 @@ export default function AdminReportsPage() {
         page: page.toString(),
         limit: limit.toString(),
       })
+      if (search) params.append("search", search)
       if (selectedType && selectedType !== "all") params.append("type", selectedType)
 
       const response = await fetch(`/api/admin/reports-list?${params}`)
@@ -335,7 +339,7 @@ export default function AdminReportsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, selectedType])
+  }, [page, search, selectedType])
 
   useEffect(() => {
     loadReports()
@@ -385,6 +389,8 @@ export default function AdminReportsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <Input
             placeholder="Search reports..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-indigo-500"
           />
         </div>
