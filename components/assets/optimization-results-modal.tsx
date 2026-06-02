@@ -553,11 +553,11 @@ export function OptimizationResultsModal({
               </Card>
 
               {/* Current Identity Summary */}
-              <Card className="border-blue-100 bg-gradient-to-br from-white to-blue-50/30 dark:bg-slate-800">
+              <Card className="border-amber-100 bg-gradient-to-br from-white to-amber-50/30 dark:bg-slate-800">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-blue-100 text-blue-600">
+                              <div className="p-1.5 rounded-lg bg-amber-100 text-amber-600">
                         {identityIcon(data.currentIdentitySummary.identityType)}
                       </div>
                       Current Identity: {data.currentIdentitySummary.identityName}
@@ -590,7 +590,7 @@ export function OptimizationResultsModal({
                       </div>
                     </div>
                   )}
-                  <p className="text-sm text-slate-600 dark:text-slate-300 pt-1 border-t border-blue-100">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 pt-1 border-t border-amber-100">
                     {data.currentIdentitySummary.summary}
                   </p>
                 </CardContent>
@@ -642,15 +642,15 @@ export function OptimizationResultsModal({
               {(data.identityComparisons ?? []).length > 0 && (
                 <div>
                   <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Users className="size-5 text-blue-500" /> Identity Comparisons
+                    <Users className="size-5 text-amber-500" /> Identity Comparisons
                   </h2>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {data.identityComparisons.map((identity, i) => (
-                      <Card key={i} className="border-blue-200 bg-gradient-to-br from-white to-blue-50/30">
+                      <Card key={i} className="border-amber-200 bg-gradient-to-br from-white to-amber-50/30">
                         <CardHeader className="pb-3">
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-base flex items-center gap-2">
-                              <div className="p-1.5 rounded-lg bg-blue-100 text-blue-600">
+                      <div className="p-1.5 rounded-lg bg-amber-100 text-amber-600">
                                 {identityIcon(identity.identityType)}
                               </div>
                               {identity.identityName}
@@ -665,7 +665,7 @@ export function OptimizationResultsModal({
                           <p className="text-sm text-slate-600">{identity.summary}</p>
                           <Table>
                             <TableHeader>
-                              <TableRow className="bg-blue-50/50">
+                              <TableRow className="bg-amber-50/50">
                                 <TableHead className="text-xs">Metric</TableHead>
                                 <TableHead className="text-xs text-right">Value</TableHead>
                                 <TableHead className="text-xs text-right">vs Baseline</TableHead>

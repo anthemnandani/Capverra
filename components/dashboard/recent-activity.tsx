@@ -38,7 +38,7 @@ export function RecentActivity() {
       case "asset_added":
         return <Plus className="h-4 w-4 text-green-600" />
       case "identity_added":
-        return <Plus className="h-4 w-4 text-blue-600" />
+        return <Plus className="h-4 w-4 text-amber-600" />
       case "valuation_updated":
         return <TrendingUp className="h-4 w-4 text-purple-600" />
       case "optimization_generated":
@@ -53,7 +53,7 @@ export function RecentActivity() {
       case "asset_added":
         return <Badge className="bg-green-100 text-green-800">Asset</Badge>
       case "identity_added":
-        return <Badge className="bg-blue-100 text-blue-800">Identity</Badge>
+        return <Badge className="bg-amber-100 text-amber-800">Identity</Badge>
       case "valuation_updated":
         return <Badge className="bg-purple-100 text-purple-800">Valuation</Badge>
       case "optimization_generated":

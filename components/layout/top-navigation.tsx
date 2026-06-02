@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -92,6 +93,8 @@ export function TopNavigation() {
           <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
         ) : isAuthenticated && user ? (
           <div className="flex items-center gap-2">
+            {/* Theme Toggle */}
+            <ThemeToggle />
 
             {/* Mobile Hamburger Menu */}
             <DropdownMenu>
@@ -108,6 +111,12 @@ export function TopNavigation() {
                 align="end"
                 className="w-[80vw] max-w-sm rounded-xl px-2 py-4 md:hidden"
               >
+                {/* Theme Toggle for Mobile */}
+                <div className="flex items-center justify-between px-3 py-2 mb-2 border-b border-border">
+                  <span className="text-sm text-muted-foreground">Theme</span>
+                  <ThemeToggle />
+                </div>
+                
                 {navigation.map((item) => {
                   const Icon = item.icon
                   const isActive = pathname === item.href

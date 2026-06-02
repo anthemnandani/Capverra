@@ -272,7 +272,7 @@ export function ReportsHistoryModal({
                                     <Badge
                                       key={idx}
                                       variant="outline"
-                                      className="text-xs font-normal bg-blue-50 border-blue-200 text-blue-700"
+                                      className="text-xs font-normal bg-amber-50 border-amber-200 text-amber-700"
                                     >
                                       {jurisdiction.code}
                                     </Badge>

@@ -281,7 +281,7 @@ export interface Asset {
 export function getAssetTypeColor(type: AssetType): string {
   const colors: Record<AssetType, string> = {
     "Real Estate": "bg-emerald-500 text-white",
-    "Stocks": "bg-blue-500 text-white",
+    "Stocks": "bg-amber-500 text-white",
     "Bonds": "bg-purple-500 text-white",
     "Mutual Funds": "bg-indigo-500 text-white",
     "ETFs": "bg-cyan-500 text-white",
