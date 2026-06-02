@@ -4,59 +4,105 @@ import { NextResponse } from "next/server"
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
+
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "20")
-    const search = searchParams.get("search") || undefined
+    const search = searchParams.get("search") || ""
 
     const adminClient = createSupabaseAdminClient()
-    const offset = (page - 1) * limit
 
-    // Get users from auth.users table
-    const { data: users, count, error } = await adminClient.auth.admin.listUsers({
-      perPage: limit,
-      page: page,
-    })
+    // Get users from custom users table
+    const { data: customUsers, error: customUsersError } = await adminClient
+      .from("users")
+      .select("*")
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (customUsersError) {
+      return NextResponse.json(
+        { error: customUsersError.message },
+        { status: 500 }
+      )
     }
 
-    // Get asset and identity counts separately for each user
+    // Get auth users
+    const { data: authUsersResponse, error: authError } =
+      await adminClient.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      })
+
+    if (authError) {
+      return NextResponse.json(
+        { error: authError.message },
+        { status: 500 }
+      )
+    }
+
+    const authUsers = authUsersResponse.users || []
+
     const userData = []
-    for (const user of users.users || []) {
-      // Check if user matches search filter
-      if (search && !user.email?.toLowerCase().includes(search.toLowerCase())) {
+
+    for (const customUser of customUsers || []) {
+      const authUser = authUsers.find(
+        (user) => user.id === customUser.id
+      )
+
+      // Skip if auth user not found
+      if (!authUser) continue
+
+      // Search filter
+      if (
+        search &&
+        !(
+          customUser.name?.toLowerCase().includes(search.toLowerCase()) ||
+          authUser.email?.toLowerCase().includes(search.toLowerCase())
+        )
+      ) {
         continue
       }
 
-      const { count: assetCount } = await adminClient
-        .from("assets")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
+      const [{ count: assetCount }, { count: identityCount }] =
+        await Promise.all([
+          adminClient
+            .from("assets")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", customUser.id),
 
-      const { count: identityCount } = await adminClient
-        .from("identities")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
+          adminClient
+            .from("identities")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", customUser.id),
+        ])
 
       userData.push({
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.name || "—",
-        role: user.user_metadata?.role || "user",
-        created_at: user.created_at,
+        id: customUser.id,
+        email: authUser.email,
+        name: customUser.name || "—", // from custom users table
+        role: authUser.user_metadata?.role || "user", // same as before
+        created_at: authUser.created_at, // same as before
         asset_count: assetCount || 0,
         identity_count: identityCount || 0,
       })
     }
 
+    // Sort newest first
+    userData.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() -
+        new Date(a.created_at).getTime()
+    )
+
+    const total = userData.length
+    const start = (page - 1) * limit
+    const end = start + limit
+
     return NextResponse.json({
-      users: userData.slice(offset, offset + limit),
-      total: users.users?.length || 0,
-      totalPages: Math.ceil((users.users?.length || 0) / limit),
+      users: userData.slice(start, end),
+      total,
+      totalPages: Math.ceil(total / limit),
     })
   } catch (error) {
     console.error("Error fetching users:", error)
+
     return NextResponse.json(
       { error: "Failed to fetch users" },
       { status: 500 }
