@@ -99,6 +99,14 @@ interface OptimizationData {
     reasoning: string
     estimatedLifetimeSavings: number
     nextSteps: string[]
+    savingsExplanation?: {
+      /** NEW: 2–4 short mechanism bullet points (replaces old `mechanism` string) */
+      mechanismPoints?: string[]
+      /** Legacy fallback — single string from older API responses */
+      mechanism?: string
+      neutralImpacts: string[]
+      risksIfAny: string[]
+    }
   }
 }
 
@@ -136,6 +144,24 @@ const GOAL_LABELS: Record<string, string> = {
   "investment-efficiency": "Investment tax efficiency",
 }
 const humanizeGoal = (g: string) => GOAL_LABELS[g] ?? g.replace(/-/g, " ")
+
+// ── Helper: resolve mechanism bullets from either new or legacy field ─────────
+function resolveMechanismPoints(
+  se: OptimizationData["recommendation"]["savingsExplanation"],
+): string[] {
+  if (!se) return []
+  // New field (array of bullets)
+  if (se.mechanismPoints && se.mechanismPoints.length > 0) return se.mechanismPoints
+  // Legacy fallback (single string) — split on period or semicolon into pseudo-bullets
+  if (se.mechanism) {
+    return se.mechanism
+      .split(/[;.]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 4)
+  }
+  return []
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function OptimizationResultsModal({
@@ -910,7 +936,71 @@ export function OptimizationResultsModal({
                       </p>
                     </div>
                   </div>
+
                   <p className="text-slate-600 dark:text-slate-300">{data.recommendation.reasoning}</p>
+
+                  {/* ── How savings are generated ── */}
+                  {data.recommendation.savingsExplanation && (() => {
+                    const se = data.recommendation.savingsExplanation
+                    const mechanismPoints = resolveMechanismPoints(se)
+                    return (
+                      <div className="rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/40 divide-y divide-slate-200 dark:divide-slate-600">
+
+                        {/* Why savings occur — bullet list */}
+                        {mechanismPoints.length > 0 && (
+                          <div className="p-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
+                              Why savings occur
+                            </p>
+                            <ul className="space-y-2">
+                              {mechanismPoints.map((point, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+                                  <span className="mt-1.5 size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" />
+                                  {point}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* What stays unaffected */}
+                        {(se.neutralImpacts ?? []).length > 0 && (
+                          <div className="p-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
+                              What stays unaffected
+                            </p>
+                            <ul className="space-y-1.5">
+                              {se.neutralImpacts.map((item, i) => (
+                                <li key={i} className="text-xs text-slate-600 dark:text-slate-300 flex items-start gap-1.5">
+                                  <CheckCircle2 className="size-3 text-slate-400 dark:text-slate-500 mt-0.5 shrink-0" />
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Caveats */}
+                        {(se.risksIfAny ?? []).length > 0 && (
+                          <div className="p-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400 mb-1.5">
+                              Caveats to be aware of
+                            </p>
+                            <ul className="space-y-1.5">
+                              {se.risksIfAny.map((item, i) => (
+                                <li key={i} className="text-xs text-slate-600 dark:text-slate-300 flex items-start gap-1.5">
+                                  <AlertCircle className="size-3 text-amber-500 dark:text-amber-400 mt-0.5 shrink-0" />
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
+
+                  {/* Next Steps */}
                   <div>
                     <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Next Steps</p>
                     <ul className="space-y-2">
@@ -922,6 +1012,7 @@ export function OptimizationResultsModal({
                       ))}
                     </ul>
                   </div>
+
                   <div className="text-xs text-slate-500 dark:text-slate-400 pt-4 border-t border-slate-200 dark:border-slate-700">
                     <strong className="text-slate-600 dark:text-slate-300">Disclaimer:</strong> This analysis is for
                     informational purposes only and does not constitute legal, tax, or financial advice. Please consult

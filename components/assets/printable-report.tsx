@@ -40,6 +40,14 @@ interface OptimizationData {
   recommendation: {
     bestStructure: string; reasoning: string
     estimatedLifetimeSavings: number; nextSteps: string[]
+    savingsExplanation?: {
+      /** NEW: 2–4 short mechanism bullet points */
+      mechanismPoints?: string[]
+      /** Legacy: single string from older responses */
+      mechanism?: string
+      neutralImpacts: string[]
+      risksIfAny: string[]
+    }
   }
 }
 
@@ -55,6 +63,22 @@ const fmt = (v: number) =>
     style: "currency", currency: "USD",
     minimumFractionDigits: 0, maximumFractionDigits: 0,
   }).format(Math.round(v))
+
+// ── Resolve mechanism bullets (new field or legacy string) ────────────────────
+function resolveMechanismPoints(
+  se: OptimizationData["recommendation"]["savingsExplanation"],
+): string[] {
+  if (!se) return []
+  if (se.mechanismPoints && se.mechanismPoints.length > 0) return se.mechanismPoints
+  if (se.mechanism) {
+    return se.mechanism
+      .split(/[;.]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 4)
+  }
+  return []
+}
 
 // ── HTML builder ──────────────────────────────────────────────────────────────
 function buildPrintHTML(data: OptimizationData, assetName: string): string {
@@ -189,6 +213,32 @@ function buildPrintHTML(data: OptimizationData, assetName: string): string {
   const goalChips = (data.currentIdentitySummary.goals ?? [])
     .map(g => chip(g, "#fef3c7", "#92400e")).join(" ")
 
+  // ── Savings explanation block — mechanism as bullet list ──────────────────
+  const se = data.recommendation.savingsExplanation
+  const mechanismPoints = resolveMechanismPoints(se)
+
+  const savingsExplanationBlock = se ? `
+    <div class="savings-explain">
+
+      ${mechanismPoints.length > 0 ? `
+        <p class="mini-head">Why savings occur</p>
+        <ul class="mechanism-list">
+          ${mechanismPoints.map(p => `<li>${p}</li>`).join("")}
+        </ul>
+      ` : ""}
+
+      ${(se.neutralImpacts ?? []).length > 0 ? `
+        <p class="mini-head" style="margin-top:9px">What stays unaffected</p>
+        <ul class="pro-con">${se.neutralImpacts.map(i => `<li class="pro">✓ ${i}</li>`).join("")}</ul>
+      ` : ""}
+
+      ${(se.risksIfAny ?? []).length > 0 ? `
+        <p class="mini-head" style="margin-top:9px;color:#92400e">Caveats to be aware of</p>
+        <ul class="pro-con">${se.risksIfAny.map(i => `<li class="con">⚠ ${i}</li>`).join("")}</ul>
+      ` : ""}
+    </div>
+  ` : ""
+
   return /* html */`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -214,27 +264,16 @@ body {
 
 @media print {
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
-  /* Headings must never be orphaned at bottom of page */
   h2 { break-after: avoid; }
-
-  /* Small atoms that must stay together */
   .card-head       { break-inside: avoid; }
   .two-col         { break-inside: avoid; }
   tr               { break-inside: avoid; }
   .highlight-row   { break-inside: avoid; }
   .next-step       { break-inside: avoid; }
   .disclaimer      { break-inside: avoid; }
-
-  /* Cards: allow page breaks INSIDE tall cards — do NOT force avoid here.
-     If the card is short enough (< ~12 lines) the browser will naturally
-     keep it on one page; forcing avoid on tall cards is what caused gaps. */
+  .savings-explain { break-inside: avoid; }
   .card { break-inside: auto; }
-
-  /* The cover block should always start fresh if it's not the first thing */
   .cover { break-after: auto; }
-
-  /* Recommendation box is compact enough to stay together */
   .rec-box { break-inside: avoid; }
 }
 
@@ -326,6 +365,27 @@ h2::before { content: attr(data-icon); font-size: 14pt; }
 .pro-con li.pro { color: #065f46; }
 .pro-con li.con { color: #92400e; }
 
+/* ── Mechanism bullet list ── */
+.mechanism-list {
+  list-style: none;
+  margin: 4px 0 0;
+}
+.mechanism-list li {
+  font-size: 9.5pt;
+  color: #1e293b;
+  padding: 3px 0 3px 14px;
+  position: relative;
+  line-height: 1.45;
+}
+.mechanism-list li::before {
+  content: "●";
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-size: 7pt;
+  top: 5px;
+}
+
 /* ── Chips ── */
 .chip {
   display: inline-block;
@@ -340,7 +400,7 @@ h2::before { content: attr(data-icon); font-size: 14pt; }
 .treaty      { font-size: 9pt; background: #f8fafc; border-radius: 4px; padding: 5px 8px; margin-top: 8px; }
 
 /* ── Card accents ── */
-  .identity-card { border-left: 3px solid #C9A96A; }
+.identity-card { border-left: 3px solid #C9A96A; }
 .jur-card      { border-left: 3px solid #10b981; }
 .baseline-card { border: 2px solid #cbd5e1; }
 .baseline-card .chip-outline {
@@ -366,6 +426,15 @@ h2::before { content: attr(data-icon); font-size: 14pt; }
 .reasoning     { font-size: 10pt; color: #374151; margin-bottom: 11px; }
 .next-step { display: flex; gap: 6px; font-size: 9.5pt; color: #374151; margin: 4px 0; }
 .next-step::before { content: "›"; color: #10b981; font-weight: 700; font-size: 11pt; line-height: 1.3; }
+
+/* ── Savings explanation block ── */
+.savings-explain {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 11px 13px;
+  margin-bottom: 11px;
+}
 
 /* ── Disclaimer & footer ── */
 .disclaimer {
@@ -419,7 +488,7 @@ h2::before { content: attr(data-icon); font-size: 14pt; }
 
 <!-- CURRENT IDENTITY -->
 <h2 data-icon="👤">Current Identity</h2>
-    <div class="card" style="border-left:3px solid #C9A96A;background:linear-gradient(135deg,#fff,#fef8e822)">
+<div class="card" style="border-left:3px solid #C9A96A;background:linear-gradient(135deg,#fff,#fef8e822)">
   <div class="card-head">
     <span class="card-title">${data.currentIdentitySummary.identityName}</span>
     ${chip("Associated Identity", "#f1f5f9", "#475569")}
@@ -495,6 +564,9 @@ ${jurCards}
     </div>
   </div>
   <p class="reasoning">${data.recommendation.reasoning}</p>
+
+  ${savingsExplanationBlock}
+
   <p class="mini-head">Next Steps</p>
   ${data.recommendation.nextSteps.map(s => `<div class="next-step">${s}</div>`).join("")}
   <div class="disclaimer">
@@ -509,20 +581,6 @@ ${jurCards}
   Tax Optimization Report · ${assetName} · Generated ${today} · Confidential — For Authorized Use Only
 </div>
 
-<!--
-  FIX #2 — No popup flash
-  ─────────────────────────────────────────────────────────────────────────────
-  Previous approach opened window.open() which briefly showed a blank tab
-  before print dialog appeared — users saw an unwanted extra window flash.
-
-  New approach:
-  1. This HTML is loaded into a hidden <iframe> injected into the CURRENT page.
-  2. We call iframe.contentWindow.print() — the browser's print dialog opens
-     directly over the current page, zero extra windows visible to the user.
-  3. After printing, the iframe is removed from the DOM.
-  The iframe is sized 0×0 and positioned off-screen so it is completely
-  invisible. The browser still renders it for print purposes.
--->
 <script>
   window.addEventListener("load", function () {
     setTimeout(function () { window.print(); }, 300);
@@ -541,11 +599,8 @@ export function PrintReportButton({
   const handlePrint = () => {
     const html = buildPrintHTML(data, assetName)
 
-    // Explicit typing fixes TS "never" issues
-    const iframe: HTMLIFrameElement =
-      document.createElement("iframe")
+    const iframe: HTMLIFrameElement = document.createElement("iframe")
 
-    // Invisible iframe for printing
     iframe.style.position = "fixed"
     iframe.style.top = "-9999px"
     iframe.style.left = "-9999px"
@@ -581,10 +636,8 @@ export function PrintReportButton({
         win.focus()
         win.print()
 
-        // Cleanup after print
         win.onafterprint = cleanup
       } catch {
-        // Fallback
         const blob = new Blob([html], { type: "text/html" })
         const url = URL.createObjectURL(blob)
 
@@ -602,17 +655,13 @@ export function PrintReportButton({
       }
     }
 
-    // Modern browser support
     if (typeof iframe.srcdoc !== "undefined") {
       iframe.srcdoc = html
-
       iframe.onload = () => {
         printFrame()
       }
     } else {
-      const doc =
-        iframe.contentDocument ||
-        iframe.contentWindow?.document
+      const doc = iframe.contentDocument || iframe.contentWindow?.document
 
       if (!doc) {
         cleanup()

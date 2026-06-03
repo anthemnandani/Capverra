@@ -32,6 +32,11 @@
  *    401 → unauthenticated
  *    400 → bad request
  *    500 → unexpected server error
+ *
+ * CHANGELOG (savingsExplanation enhancement):
+ *    - Strengthened prompt rules for savingsExplanation so the model always
+ *      explains HOW savings are generated, WHAT remains unaffected, and any
+ *      caveats — without adding new fields or increasing token budget.
  */
 
 import { type NextRequest, NextResponse } from "next/server"
@@ -144,7 +149,7 @@ function buildPrompts(
   "identityComparisons":[{"identityName":"str","identityType":"str","location":"str","effectiveTaxRate":"str","annualTaxLiability":0,"capitalGainsTax":0,"estateTaxExposure":0,"totalTenYearBurden":0,"savingsVsBaseline":0,"savingsPercentage":"str","summary":"str","advantages":["str"],"disadvantages":["str"],"recommendedStructure":"str"}],
   "jurisdictionAnalysis":[{"jurisdiction":"str","code":"str","recommendedVehicle":"str","effectiveTaxRate":"str","annualTaxLiability":0,"capitalGainsTax":0,"estateTaxExposure":0,"totalTenYearBurden":0,"savingsVsBaseline":0,"savingsPercentage":"str","summary":"str","keyBenefits":["str"],"considerations":["str"],"treatyAdvantages":"str"}],
   "timeHorizonAnalysis":{"fiveYear":{"baselineTax":0,"optimizedTax":0,"savings":0},"tenYear":{"baselineTax":0,"optimizedTax":0,"savings":0},"twentyYear":{"baselineTax":0,"optimizedTax":0,"savings":0},"holdUntilDeath":{"baselineTax":0,"optimizedTax":0,"savings":0}},
-  "recommendation":{"bestStructure":"str","reasoning":"str","estimatedLifetimeSavings":0,"nextSteps":["str"]}
+  "recommendation":{"bestStructure":"str","reasoning":"str","estimatedLifetimeSavings":0,"nextSteps":["str"],"savingsExplanation":{"mechanismPoints":["str"],"neutralImpacts":["str"],"risksIfAny":["str"]}}
 }`
 
   const user = `ASSET: ${asset.name} | type:${asset.type} | loc:${assetLoc} | currency:${asset.currency ?? "USD"} | purchased:${assetPv} on ${asset.purchase_date ?? "?"} | current:${assetLv} on ${asset.latest_valuation_date ?? "?"} | owner:${owner}
@@ -160,8 +165,12 @@ Rules:
 - All advice must be legal. Add disclaimer in currentIdentitySummary.summary.
 - Populate ALL array fields; do not return empty arrays.
 - Keep every summary field under 30 words.
-- Maximum 3 items in any array (advantages, disadvantages, keyBenefits, considerations, nextSteps, goals).
-- Be concise — short values keep the JSON well within token limits.
+- Maximum 3 items in any array (advantages, disadvantages, keyBenefits, considerations, nextSteps, goals, neutralImpacts, risksIfAny).
+
+CRITICAL — savingsExplanation (always populate; no empty strings or arrays):
+- mechanismPoints: 2–4 short bullet strings. Each ≤15 words. Each must name ONE specific reason why the recommended structure saves tax. Cover different mechanisms — do NOT repeat the same point in different words. Good examples: "BVI LLC: 0% corporate tax on non-BVI sourced income", "Profit stays in entity until withdrawal — defers personal tax", "No capital gains tax on asset sale within Cayman structure", "US-UK treaty reduces withholding on dividends from 30% to 15%". Bad: vague phrases like "reduces tax burden" or "optimizes structure".
+- neutralImpacts: exactly 3 items, each ≤12 words. State what does NOT change (e.g. "Legal title and asset ownership stay with current owner", "Existing contracts and banking relationships unaffected", "Day-to-day operations require no changes").
+- risksIfAny: 1–2 items, each ≤12 words. Real caveats only (e.g. "Annual BVI filing fee ~$450 required", "Substance rules need local director appointment"). Use ["None identified"] only if genuinely none.
 
 Respond with ONLY the JSON object matching this exact schema (replace 0 and "str" with real values):
 ${schema}`
@@ -211,8 +220,8 @@ export async function POST(request: NextRequest) {
     message = await withRetry(() =>
       anthropic.messages.create({
         model:       "claude-haiku-4-5-20251001",
-        max_tokens:  5000,   // FIX: raised from 3000 — large schema needs headroom
-        temperature: 0.2,    // FIX: low temperature reduces stray formatting
+        max_tokens:  5000,   // raised from 3000 — large schema needs headroom
+        temperature: 0.2,    // low temperature reduces stray formatting
         system,
         messages: [{ role: "user", content: userPrompt }],
       }),
@@ -252,7 +261,7 @@ export async function POST(request: NextRequest) {
     .replace(/\s*```$/i, "")
     .trim()
 
-  // ── FIX: safe JSON extraction — slice from first { to last } ─────────────
+  // ── Safe JSON extraction — slice from first { to last } ───────────────────
   // Handles preamble text, trailing commentary, or minor truncation artifacts.
   const firstBrace = cleaned.indexOf("{")
   const lastBrace  = cleaned.lastIndexOf("}")
