@@ -13,8 +13,8 @@ export async function checkAdminStatus(): Promise<{ isAdmin: boolean; adminUser:
     return { isAdmin: false, adminUser: null }
   }
 
-  // Use admin client to bypass RLS for admin check
   const adminClient = createSupabaseAdminClient()
+
   const { data: adminUser } = await adminClient
     .from("admin_users")
     .select("*")
@@ -22,17 +22,43 @@ export async function checkAdminStatus(): Promise<{ isAdmin: boolean; adminUser:
     .eq("is_active", true)
     .single()
 
+  // ✅ ADDED: users table se preferences fetch karo
+  const { data: userPrefs } = await adminClient
+    .from("users")
+    .select("preferences")
+    .eq("id", user.id)
+    .single()
+
   return { 
     isAdmin: !!adminUser, 
-    adminUser: adminUser as AdminUser | null 
+    adminUser: adminUser ? {
+      ...adminUser,
+      // ✅ ADDED: preferences merge karo adminUser mein
+      preferences: userPrefs?.preferences || { theme: "dark" }
+    } as AdminUser : null
   }
+}
+
+// ✅ ADDED: Save theme preference to users table
+export async function updateAdminPreferences(
+  userId: string,
+  preferences: { theme: "dark" | "light" }
+): Promise<{ success: boolean; error?: string }> {
+  const adminClient = createSupabaseAdminClient()
+
+  const { error } = await adminClient
+    .from("users")
+    .update({ preferences })
+    .eq("id", userId)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true }
 }
 
 // Admin login - verifies admin credentials
 export async function adminLogin(email: string, password: string): Promise<{ success: boolean; error?: string; adminUser?: AdminUser }> {
   const supabase = await createSupabaseServerClient()
   
-  // First sign in with Supabase auth
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -46,7 +72,6 @@ export async function adminLogin(email: string, password: string): Promise<{ suc
     return { success: false, error: "Authentication failed" }
   }
 
-  // Use admin client to bypass RLS and check if user is an admin
   try {
     const adminClient = createSupabaseAdminClient()
     
@@ -58,12 +83,10 @@ export async function adminLogin(email: string, password: string): Promise<{ suc
       .single()
 
     if (adminError || !adminUser) {
-      // Sign out if not an admin
       await supabase.auth.signOut()
       return { success: false, error: "Access denied. You are not authorized as an admin." }
     }
 
-    // Update last login
     await adminClient
       .from("admin_users")
       .update({ last_login: new Date().toISOString() })
@@ -82,16 +105,14 @@ export async function adminLogout(): Promise<void> {
   await supabase.auth.signOut()
 }
 
-// Get dashboard statistics (uses admin client to bypass RLS for counts)
+// Get dashboard statistics
 export async function getDashboardStats(): Promise<DashboardStats> {
   const adminClient = createSupabaseAdminClient()
   
-  // Get total users count
   const { count: totalUsers } = await adminClient
     .from("users")
     .select("*", { count: "exact", head: true })
 
-  // Get active users (logged in within last 30 days)
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   
@@ -100,22 +121,18 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .select("*", { count: "exact", head: true })
     .gte("created_at", thirtyDaysAgo.toISOString())
 
-  // Get total assets
   const { count: totalAssets } = await adminClient
     .from("assets")
     .select("*", { count: "exact", head: true })
 
-  // Get total identities
   const { count: totalIdentities } = await adminClient
     .from("identities")
     .select("*", { count: "exact", head: true })
 
-  // Get reports generated
   const { count: reportsGenerated } = await adminClient
     .from("admin_reports")
     .select("*", { count: "exact", head: true })
 
-  // Calculate growth (compare last 7 days vs previous 7 days)
   const sevenDaysAgo = new Date()
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
   const fourteenDaysAgo = new Date()
@@ -147,7 +164,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   const assetGrowth = previousAssets ? ((recentAssets || 0) - previousAssets) / previousAssets * 100 : 0
 
-  // Get recent admin activity
   const { data: recentActivity } = await adminClient
     .from("admin_activity_logs")
     .select("*")
