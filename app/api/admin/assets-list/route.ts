@@ -1,5 +1,5 @@
+
 import { createSupabaseAdminClient } from "@/lib/supabase/server"
-import { Currency } from "lucide-react"
 import { NextResponse } from "next/server"
 
 export async function GET(request: Request) {
@@ -29,8 +29,10 @@ export async function GET(request: Request) {
         currency,
         created_at,
         updated_at,
-        user_id
+        user_id,
+        owner_id
       `,
+        //  ADDED: owner_id in select query
         { count: "exact" }
       )
 
@@ -50,18 +52,34 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    //  ADDED: Fetch all identities in ONE query (avoids N+1 problem)
+    const ownerIds = (data || []).map((a: any) => a.owner_id).filter(Boolean)
+
+    const { data: identities } = await adminClient
+      .from("identities")
+      .select("id, name, type")
+      .in("id", ownerIds)
+
+    //  ADDED: Map for quick lookup — { identity_id: identity }
+    const identityMap = Object.fromEntries(
+      identities?.map((i: any) => [i.id, i]) || []
+    )
+
     // Get user information separately for each asset
     const assets = []
     for (const asset of data || []) {
       // Get user email from auth
       const { data: user } = await adminClient.auth.admin.getUserById(asset.user_id)
-     console.log("USER DATA:", JSON.stringify(user, null, 2))
+
+      //  ADDED: Get identity (owner) from map
+      const identity = identityMap[asset.owner_id]
+
       let performance = null
       if (asset.latest_valuation && asset.purchase_value) {
         performance = ((asset.latest_valuation - asset.purchase_value) / asset.purchase_value) * 100
       }
 
-      const ownerName = user?.user_metadata?.name || "—"
+      //  REMOVED: ownerName from user_metadata (was wrong source)
       const ownerEmail = user?.email || "N/A"
 
       assets.push({
@@ -80,14 +98,13 @@ export async function GET(request: Request) {
         updated_at: asset.updated_at,
         user_id: asset.user_id,
         user_email: ownerEmail,
-        user_name: ownerName,
-        owner: user
-          ? {
-              id: user.id,
-              name: ownerName,
-              email: ownerEmail,
-            }
-          : null,
+        user_name: identity?.name || "—", //  CHANGED: now from identities table
+        owner: {
+          id: identity?.id || null,
+          name: identity?.name || "—",   //  CHANGED: identities.name (e.g. "Tom Jones")
+          type: identity?.type || "—",   //  ADDED: identity type (individual/trust/llc)
+          email: ownerEmail,             // user ka email
+        },
       })
     }
 
