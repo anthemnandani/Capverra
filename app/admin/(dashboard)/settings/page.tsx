@@ -1,8 +1,10 @@
+
 "use client"
 
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
-import { checkAdminStatus } from "@/lib/admin-actions"
+import { checkAdminStatus, updateAdminPreferences } from "@/lib/admin-actions" // ✅ ADDED: updateAdminPreferences import
+import { useTheme } from "next-themes" // ✅ ADDED: next-themes import
 import type { AdminUser } from "@/lib/admin-types"
 import {
   Settings,
@@ -94,6 +96,9 @@ export default function AdminSettingsPage() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [themeSaving, setThemeSaving] = useState(false) // ✅ ADDED: theme save loading state
+
+  const { theme, setTheme } = useTheme() // ✅ ADDED: next-themes hook
 
   // Settings state
   const [name, setName] = useState("")
@@ -112,6 +117,11 @@ export default function AdminSettingsPage() {
         if (adminUser) {
           setName(adminUser.name || "")
           setEmail(adminUser.email)
+
+          // ✅ ADDED: DB se theme load karo
+          const savedTheme = adminUser.preferences?.theme || "dark"
+          setDarkMode(savedTheme === "dark")
+          setTheme(savedTheme)
         }
       } catch (error) {
         console.error("Error loading admin:", error)
@@ -121,14 +131,35 @@ export default function AdminSettingsPage() {
     }
 
     loadAdmin()
-  }, [])
+  }, [setTheme])
 
   const handleSaveProfile = async () => {
     setSaving(true)
-    // Simulate save
     await new Promise((resolve) => setTimeout(resolve, 1000))
     toast.success("Profile updated successfully")
     setSaving(false)
+  }
+
+  // ✅ ADDED: Theme toggle handler — DB mein save + next-themes update
+  const handleThemeChange = async (checked: boolean) => {
+    const newTheme = checked ? "dark" : "light"
+    setDarkMode(checked)
+    setTheme(newTheme) // turant UI update
+
+    if (!adminUser?.user_id) return
+
+    setThemeSaving(true)
+    const result = await updateAdminPreferences(adminUser.user_id, { theme: newTheme })
+    setThemeSaving(false)
+
+    if (result.success) {
+      toast.success(`Switched to ${newTheme} mode`)
+    } else {
+      toast.error("Failed to save theme preference")
+      // revert karo agar save fail ho
+      setDarkMode(!checked)
+      setTheme(checked ? "light" : "dark")
+    }
   }
 
   if (loading) {
@@ -196,7 +227,6 @@ export default function AdminSettingsPage() {
             delay={0.1}
           >
             <div className="flex flex-col md:flex-row gap-6">
-              {/* Avatar */}
               <div className="flex flex-col items-center gap-4">
                 <Avatar className="w-24 h-24 border-4 border-indigo-500/30">
                   <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-2xl font-bold">
@@ -212,13 +242,10 @@ export default function AdminSettingsPage() {
                 </Button>
               </div>
 
-              {/* Form */}
               <div className="flex-1 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-gray-300">
-                      Full Name
-                    </Label>
+                    <Label htmlFor="name" className="text-gray-300">Full Name</Label>
                     <Input
                       id="name"
                       value={name}
@@ -227,9 +254,7 @@ export default function AdminSettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-gray-300">
-                      Email Address
-                    </Label>
+                    <Label htmlFor="email" className="text-gray-300">Email Address</Label>
                     <Input
                       id="email"
                       type="email"
@@ -256,15 +281,9 @@ export default function AdminSettingsPage() {
                   className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white"
                 >
                   {saving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
                   ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Changes
-                    </>
+                    <><Save className="w-4 h-4 mr-2" />Save Changes</>
                   )}
                 </Button>
               </div>
@@ -338,41 +357,20 @@ export default function AdminSettingsPage() {
           >
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="current-password" className="text-gray-300">
-                  Current Password
-                </Label>
-                <Input
-                  id="current-password"
-                  type="password"
-                  className="bg-white/5 border-white/10 text-white"
-                />
+                <Label htmlFor="current-password" className="text-gray-300">Current Password</Label>
+                <Input id="current-password" type="password" className="bg-white/5 border-white/10 text-white" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="new-password" className="text-gray-300">
-                    New Password
-                  </Label>
-                  <Input
-                    id="new-password"
-                    type="password"
-                    className="bg-white/5 border-white/10 text-white"
-                  />
+                  <Label htmlFor="new-password" className="text-gray-300">New Password</Label>
+                  <Input id="new-password" type="password" className="bg-white/5 border-white/10 text-white" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password" className="text-gray-300">
-                    Confirm New Password
-                  </Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    className="bg-white/5 border-white/10 text-white"
-                  />
+                  <Label htmlFor="confirm-password" className="text-gray-300">Confirm New Password</Label>
+                  <Input id="confirm-password" type="password" className="bg-white/5 border-white/10 text-white" />
                 </div>
               </div>
-              <Button
-                variant="outline"
-                className="bg-white/5 border-white/10 text-white hover:bg-white/10"
-              >
+              <Button variant="outline" className="bg-white/5 border-white/10 text-white hover:bg-white/10">
                 Update Password
               </Button>
             </div>
@@ -396,13 +394,9 @@ export default function AdminSettingsPage() {
                   </div>
                 )}
                 <div>
-                  <p className="text-white font-medium">
-                    {twoFactor ? "2FA Enabled" : "2FA Disabled"}
-                  </p>
+                  <p className="text-white font-medium">{twoFactor ? "2FA Enabled" : "2FA Disabled"}</p>
                   <p className="text-gray-500 text-sm">
-                    {twoFactor
-                      ? "Your account is protected with 2FA"
-                      : "Enable 2FA for enhanced security"}
+                    {twoFactor ? "Your account is protected with 2FA" : "Enable 2FA for enhanced security"}
                   </p>
                 </div>
               </div>
@@ -424,25 +418,29 @@ export default function AdminSettingsPage() {
             delay={0.1}
           >
             <div className="space-y-4">
+              {/* ✅ CHANGED: handleThemeChange use ho raha hai ab */}
               <div className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
-                  {darkMode ? (
+                  {/* {darkMode ? (
                     <Moon className="w-5 h-5 text-indigo-400" />
                   ) : (
                     <Sun className="w-5 h-5 text-amber-400" />
-                  )}
+                  )} */}
                   <div>
                     <p className="text-white font-medium">Dark Mode</p>
-                    <p className="text-gray-500 text-sm">
-                      Use dark theme for the admin panel
-                    </p>
+                    <p className="text-gray-500 text-sm">Use dark theme for the admin panel</p>
                   </div>
                 </div>
-                <Switch
-                  checked={darkMode}
-                  onCheckedChange={setDarkMode}
-                  className="data-[state=checked]:bg-indigo-500"
-                />
+                {/* ✅ CHANGED: saving indicator + handleThemeChange */}
+                <div className="flex items-center gap-2">
+                  {themeSaving && <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />}
+                  <Switch
+                    checked={darkMode}
+                    onCheckedChange={handleThemeChange}
+                    disabled={themeSaving}
+                    className="data-[state=checked]:bg-indigo-500"
+                  />
+                </div>
               </div>
             </div>
           </SettingsSection>
@@ -456,19 +454,11 @@ export default function AdminSettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-gray-300">Language</Label>
-                <Input
-                  value="English (US)"
-                  readOnly
-                  className="bg-white/5 border-white/10 text-white"
-                />
+                <Input value="English (US)" readOnly className="bg-white/5 border-white/10 text-white" />
               </div>
               <div className="space-y-2">
                 <Label className="text-gray-300">Timezone</Label>
-                <Input
-                  value="(UTC+00:00) London"
-                  readOnly
-                  className="bg-white/5 border-white/10 text-white"
-                />
+                <Input value="(UTC+00:00) London" readOnly className="bg-white/5 border-white/10 text-white" />
               </div>
             </div>
           </SettingsSection>

@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { AdminThemeToggle } from "@/components/admin-theme-toggle"
 
 interface NavItem {
   href: string
@@ -296,7 +297,7 @@ function AdminHeader({
         {/* Right Section */}
         <div className="flex items-center gap-3">
           {/* Theme Toggle */}
-          <ThemeToggle />
+          <AdminThemeToggle />
 
           {/* Notifications */}
           <motion.button

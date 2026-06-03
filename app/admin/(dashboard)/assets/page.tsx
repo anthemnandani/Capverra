@@ -88,7 +88,7 @@ function AssetDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-slate-900 border-white/10 text-white max-w-lg">
+      <DialogContent className="bg-slate-900 border-white/10 text-white max-w-lg max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center">
@@ -104,7 +104,7 @@ function AssetDetailModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-6 space-y-4 overflow-y-auto flex-1 pr-1">
           <div className="grid grid-cols-2 gap-4">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -206,7 +206,7 @@ function AssetDetailModal({
               </div>
               <div>
                 <p className="text-white font-medium">{ownerName}</p>
-                <p className="text-gray-500 text-xs">{ownerEmail}</p>
+                <p className="text-gray-500 text-xs">{asset.type}</p>
               </div>
             </div>
           </motion.div>
@@ -267,7 +267,7 @@ function AssetCard({
           {/* Owner */}
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <User className="w-3 h-3" />
-            <span className="truncate">{asset.owner?.email || asset.user_email || "N/A"}</span>
+            <span className="truncate">{asset.owner?.name || asset.user_email || "N/A"}</span>
           </div>
 
           {/* Date */}
@@ -337,16 +337,19 @@ function AssetTableRow({
           <span className="text-gray-500">—</span>
         )}
       </TableCell>
-      <TableCell>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500/50 to-purple-500/50 flex items-center justify-center text-white text-xs font-medium">
-            {(asset.owner?.name || asset.owner?.email || asset.user_email || "?")[0]?.toUpperCase()}
-          </div>
-          <span className="text-gray-400 text-sm truncate max-w-[150px]">
-            {asset.owner?.email || asset.user_email || "N/A"}
-          </span>
-        </div>
-      </TableCell>
+     
+<TableCell>
+  <div className="flex items-center gap-2">
+    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500/50 to-purple-500/50 flex items-center justify-center text-white text-xs font-medium">
+      {(asset.owner?.name || asset.owner?.email || "?")[0]?.toUpperCase()}
+    </div>
+    <div>
+      <p className="text-white text-sm">{asset.owner?.name || "—"}</p>  {/* ✅ Name */}
+      <p className="text-gray-500 text-xs">{asset.type || "N/A"}</p>  {/* Email */}
+    </div>
+  </div>
+</TableCell>
+     
       <TableCell>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -412,7 +415,6 @@ export default function AdminAssetsPage() {
       }
       
       const data = await response.json()
-      console.log("[v0] Assets data loaded:", { total: data.total, count: data.assets?.length })
       setAssets(data.assets || [])
       setTotal(data.total || 0)
       // Extract unique asset types from the fetched data
