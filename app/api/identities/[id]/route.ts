@@ -73,37 +73,62 @@ export async function PATCH(
   }
 }
 
-// ── DELETE /api/identities/[id] ───────────────────────────────────────────────
+// ── DELETE /api/identities/[id] (Soft Delete) ───────────────────────────────
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: { id: string } },
 ) {
   try {
     const supabase = await createSupabaseServerClient()
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
     if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const { id } = params
+
     if (!id) {
       return NextResponse.json({ error: "id is required" }, { status: 400 })
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("identities")
-      .delete()
+      .update({
+        is_deleted: true,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", id)
       .eq("user_id", user.id)
+      .eq("is_deleted", false)
+      .select("id")
+      .single()
 
     if (error) throw error
 
-    return NextResponse.json({ success: true })
+    if (!data) {
+      return NextResponse.json(
+        { error: "Identity not found or already deleted" },
+        { status: 404 },
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Identity deleted successfully",
+    })
   } catch (error) {
     console.error("[DELETE /api/identities/:id]", error)
+
     return NextResponse.json(
-      { error: "Failed to delete identity", details: error instanceof Error ? error.message : "Unknown" },
+      {
+        error: "Failed to delete identity",
+        details: error instanceof Error ? error.message : "Unknown",
+      },
       { status: 500 },
     )
   }
