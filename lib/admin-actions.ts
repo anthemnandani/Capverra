@@ -10,10 +10,6 @@ import type {
   AdminReport,
 } from "@/lib/admin-types"
 
-// ─────────────────────────────────────────────
-// Check if currently logged-in user is an admin
-// Uses custom `users` table — role must be 'admin' or 'super_admin'
-// ─────────────────────────────────────────────
 export async function checkAdminStatus(): Promise<{
   isAdmin: boolean
   adminUser: AdminUser | null
@@ -52,15 +48,13 @@ export async function checkAdminStatus(): Promise<{
     last_login: userData.last_login ?? null,
     created_at: userData.created_at,
     updated_at: userData.updated_at ?? userData.created_at,
+    avatar_url: userData.avatar_url ?? null,
     preferences: userData.preferences ?? { theme: "dark" },
   }
 
   return { isAdmin: true, adminUser }
 }
 
-// ─────────────────────────────────────────────
-// Save theme / UI preference to users table
-// ─────────────────────────────────────────────
 export async function updateAdminPreferences(
   userId: string,
   preferences: { theme: "dark" | "light" }
@@ -98,7 +92,6 @@ export async function adminLogin(
   try {
     const adminClient = createSupabaseAdminClient()
 
-    // Check custom users table — role must be admin or super_admin
     const { data: userData, error: userError } = await adminClient
       .from("users")
       .select("*")
@@ -114,7 +107,6 @@ export async function adminLogin(
       }
     }
 
-    // Update last_login timestamp
     await adminClient
       .from("users")
       .update({ last_login: new Date().toISOString() })
@@ -131,6 +123,7 @@ export async function adminLogin(
       last_login: userData.last_login ?? null,
       created_at: userData.created_at,
       updated_at: userData.updated_at ?? userData.created_at,
+      avatar_url: userData.avatar_url ?? null,
       preferences: userData.preferences ?? { theme: "dark" },
     }
 
@@ -144,17 +137,11 @@ export async function adminLogin(
   }
 }
 
-// ─────────────────────────────────────────────
-// Admin logout
-// ─────────────────────────────────────────────
 export async function adminLogout(): Promise<void> {
   const supabase = await createSupabaseServerClient()
   await supabase.auth.signOut()
 }
 
-// ─────────────────────────────────────────────
-// Dashboard statistics
-// ─────────────────────────────────────────────
 export async function getDashboardStats(): Promise<DashboardStats> {
   const adminClient = createSupabaseAdminClient()
 
@@ -235,9 +222,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   }
 }
 
-// ─────────────────────────────────────────────
-// Get all users with their asset / identity counts
-// ─────────────────────────────────────────────
 export async function getAllUsers(
   page: number = 1,
   limit: number = 20,
@@ -287,9 +271,6 @@ export async function getAllUsers(
   return { users, total: count || 0 }
 }
 
-// ─────────────────────────────────────────────
-// Get all assets with owner info
-// ─────────────────────────────────────────────
 export async function getAllAssets(
   page: number = 1,
   limit: number = 20,
@@ -343,9 +324,6 @@ export async function getAllAssets(
   return { assets, total: count || 0 }
 }
 
-// ─────────────────────────────────────────────
-// Get all reports
-// ─────────────────────────────────────────────
 export async function getAllReports(
   page: number = 1,
   limit: number = 20,
@@ -369,9 +347,6 @@ export async function getAllReports(
   return { reports: (data || []) as AdminReport[], total: count || 0 }
 }
 
-// ─────────────────────────────────────────────
-// Create a new report
-// ─────────────────────────────────────────────
 export async function createReport(
   adminId: string,
   reportType: AdminReport["report_type"],
@@ -401,9 +376,6 @@ export async function createReport(
   return { success: true, report: data as AdminReport }
 }
 
-// ─────────────────────────────────────────────
-// Log admin activity
-// ─────────────────────────────────────────────
 export async function logAdminActivity(
   adminId: string,
   action: string,
@@ -422,9 +394,6 @@ export async function logAdminActivity(
   })
 }
 
-// ─────────────────────────────────────────────
-// Get distinct asset types for filter dropdown
-// ─────────────────────────────────────────────
 export async function getAssetTypes(): Promise<string[]> {
   const adminClient = createSupabaseAdminClient()
 
@@ -438,9 +407,6 @@ export async function getAssetTypes(): Promise<string[]> {
   return Array.from(types)
 }
 
-// ─────────────────────────────────────────────
-// Get single user details by ID
-// ─────────────────────────────────────────────
 export async function getUserDetails(userId: string): Promise<UserWithAssets | null> {
   const adminClient = createSupabaseAdminClient()
 

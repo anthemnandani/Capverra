@@ -11,7 +11,13 @@ export interface AdminUser {
   last_login: string | null
   created_at: string
   updated_at: string
-  preferences?: { theme: "dark" | "light" }
+  avatar_url: string | null
+  preferences?: {
+    theme: "dark" | "light"
+    emailNotifications?: boolean
+    pushNotifications?: boolean
+    activityLogs?: boolean
+  }
 }
 
 export interface AdminActivityLog {
@@ -89,7 +95,7 @@ export interface AssetWithOwner {
     id: string
     name: string | null
     email: string
-    type: string | null 
+    type: string | null
   }
   user_email?: string
   user_name?: string | null
