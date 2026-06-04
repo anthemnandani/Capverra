@@ -17,6 +17,7 @@ export async function GET() {
       .from("identities")
       .select("*")
       .eq("user_id", user.id)
+      .not("is_deleted", "eq", true)
       .order("created_at", { ascending: false })
 
     if (error) throw error
@@ -52,21 +53,21 @@ export async function POST(request: NextRequest) {
     const risk = body.risk_profile ?? "medium"
 
     const insertPayload: Record<string, unknown> = {
-      user_id:                user.id,
-      name:                   body.name.trim(),
-      type:                   body.type,
-      citizenship:            body.primary_citizenship ? [body.primary_citizenship] : (body.citizenship ?? []),
-      residency:              body.current_residency ?? body.residency ?? null,
-      risk_profile:           risk,
-      goals:                  body.goals ?? [],
+      user_id: user.id,
+      name: body.name.trim(),
+      type: body.type,
+      citizenship: body.primary_citizenship ? [body.primary_citizenship] : (body.citizenship ?? []),
+      residency: body.current_residency ?? body.residency ?? null,
+      risk_profile: risk,
+      goals: body.goals ?? [],
       additional_information: body.additional_information ?? null,
-      notes:                  body.notes ?? null,
-      primary_citizenship:    body.primary_citizenship ?? null,
-      other_citizenships:     body.other_citizenships  ?? [],
-      current_residency:      body.current_residency   ?? null,
-      state_province:         body.state_province      ?? null,
-      tax_rate:               body.tax_rate != null ? Number(body.tax_rate) : null,
-      annual_income:          body.annual_income != null ? Number(body.annual_income) : null,
+      notes: body.notes ?? null,
+      primary_citizenship: body.primary_citizenship ?? null,
+      other_citizenships: body.other_citizenships ?? [],
+      current_residency: body.current_residency ?? null,
+      state_province: body.state_province ?? null,
+      tax_rate: body.tax_rate != null ? Number(body.tax_rate) : null,
+      annual_income: body.annual_income != null ? Number(body.annual_income) : null,
     }
 
     const { data: newIdentity, error } = await supabase
