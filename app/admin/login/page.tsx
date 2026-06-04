@@ -20,19 +20,18 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isSeeding, setIsSeeding] = useState(false)
 
-  // Test admin credentials
   const testCredentials = {
     email: "admin@capverra.com",
     password: "Admin@2026",
   }
 
-  // Seed admin user on first load
+  // Seed admin on first load (silent)
   useEffect(() => {
     const seedAdmin = async () => {
       try {
         await fetch("/api/admin/seed", { method: "POST" })
       } catch {
-        // Silent fail - admin may already exist
+        // Silent fail — admin may already exist
       }
     }
     seedAdmin()
@@ -100,7 +99,9 @@ export default function AdminLoginPage() {
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-foreground">Admin Email</Label>
+                <Label htmlFor="email" className="text-foreground">
+                  Admin Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -115,7 +116,9 @@ export default function AdminLoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-foreground">Password</Label>
+                <Label htmlFor="password" className="text-foreground">
+                  Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -153,7 +156,7 @@ export default function AdminLoginPage() {
               </Button>
             </form>
 
-            {/* Test Credentials Section */}
+            {/* Test Credentials */}
             <div className="mt-6 pt-6 border-t border-border">
               <Button
                 type="button"
