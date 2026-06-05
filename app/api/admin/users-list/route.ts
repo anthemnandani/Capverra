@@ -80,10 +80,19 @@ export async function GET(request: Request) {
     // ── 4. Batch counts — 2 queries regardless of user count ────────────────
     const filteredIds = filteredUsers.map((u) => u.id)
 
-    const [assetsResult, identitiesResult] = await Promise.all([
-      adminClient.from("assets").select("user_id").in("user_id", filteredIds),
-      adminClient.from("identities").select("user_id").in("user_id", filteredIds),
-    ])
+  const [assetsResult, identitiesResult] = await Promise.all([
+  adminClient
+    .from("assets")
+    .select("user_id")
+    .in("user_id", filteredIds)
+    .eq("is_deleted", false),
+
+  adminClient
+    .from("identities")
+    .select("user_id")
+    .in("user_id", filteredIds)
+    .eq("is_deleted", false),
+])
 
     const assetCountMap = new Map<string, number>()
     for (const row of (assetsResult.data ?? []) as { user_id: string }[]) {
