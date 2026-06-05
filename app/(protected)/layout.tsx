@@ -3,7 +3,6 @@
 import type React from "react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 import { useAuth } from "@/context";
 import { AppShell } from "@/components/layout/app-shell";
 import { Loader2 } from "lucide-react";
@@ -14,17 +13,7 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const { isAuthenticated, isLoading } = useAuth();
-  const { theme, setTheme } = useTheme();
   const router = useRouter();
-
- useEffect(() => {
-  const currentRouteTheme = localStorage.getItem("route-theme");
-
-  if (currentRouteTheme !== "protected") {
-    setTheme("light");
-    localStorage.setItem("route-theme", "protected");
-  }
-}, [setTheme]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

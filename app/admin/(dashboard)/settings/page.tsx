@@ -50,7 +50,7 @@ function SettingsSection({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
     >
-      <Card className="bg-slate-900/50 border-white/5">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
@@ -58,7 +58,7 @@ function SettingsSection({
             </div>
             {title}
           </CardTitle>
-          <CardDescription className="text-gray-400">{description}</CardDescription>
+          <CardDescription className="text-muted-foreground">{description}</CardDescription>
         </CardHeader>
         <CardContent>{children}</CardContent>
       </Card>
@@ -311,22 +311,40 @@ export default function AdminSettingsPage() {
           <Settings className="w-6 h-6 text-indigo-400" />
           Settings
         </h1>
-        <p className="text-gray-400 mt-1">Manage your account and preferences</p>
+        <p className="text-muted-foreground mt-1">
+          Manage your account and preferences
+        </p>
       </motion.div>
 
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList className="bg-white/5 border border-white/10">
-          <TabsTrigger value="profile" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-gray-400">
-            <User className="w-4 h-4 mr-2" />Profile
+          <TabsTrigger
+            value="profile"
+            className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-muted-foreground"
+          >
+            <User className="w-4 h-4 mr-2" />
+            Profile
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-gray-400">
-            <Bell className="w-4 h-4 mr-2" />Notifications
+          <TabsTrigger
+            value="notifications"
+            className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-muted-foreground"
+          >
+            <Bell className="w-4 h-4 mr-2" />
+            Notifications
           </TabsTrigger>
-          <TabsTrigger value="security" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-gray-400">
-            <Shield className="w-4 h-4 mr-2" />Security
+          <TabsTrigger
+            value="security"
+            className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-muted-foreground"
+          >
+            <Shield className="w-4 h-4 mr-2" />
+            Security
           </TabsTrigger>
-          <TabsTrigger value="appearance" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-gray-400">
-            <Palette className="w-4 h-4 mr-2" />Appearance
+          <TabsTrigger
+            value="appearance"
+            className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-muted-foreground"
+          >
+            <Palette className="w-4 h-4 mr-2" />
+            Appearance
           </TabsTrigger>
         </TabsList>
 
@@ -340,22 +358,11 @@ export default function AdminSettingsPage() {
           >
             <div className="flex flex-col md:flex-row gap-6">
               <div className="flex flex-col items-center gap-4">
-                <div className="relative">
-                  <Avatar className="w-24 h-24 border-4 border-indigo-500/30">
-                    <AvatarImage
-                      src={avatarUrl ?? ""}
-                      alt={name}
-                      className="object-cover"
-                    />
-                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-2xl font-bold">
-                      {adminUser?.name?.[0]?.toUpperCase() ?? adminUser?.email[0].toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  {/* Pending indicator */}
-                  {pendingAvatarCleanUrl && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 border-2 border-slate-900" title="Unsaved" />
-                  )}
-                </div>
+                <Avatar className="w-24 h-24 border-4 border-primary/30">
+                  <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-2xl font-bold">
+                    {adminUser?.name?.[0]?.toUpperCase() || adminUser?.email[0].toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <Button
                   variant="outline"
                   size="sm"

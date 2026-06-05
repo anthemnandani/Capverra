@@ -128,7 +128,7 @@ function MetricCard({
       transition={{ delay, duration: 0.5, ease: "easeOut" }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className={`relative group w-full text-left ${onClick ? "cursor-pointer" : ""}`}
+      className={`relative group w-full h-full text-left ${onClick ? "cursor-pointer" : ""}`}
     >
       <motion.div
         animate={{
@@ -138,20 +138,20 @@ function MetricCard({
         }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         style={{ transformStyle: "preserve-3d" }}
-        className="relative"
-      >
+        className="relative h-full">
+      
         {/* Glow effect */}
         <div
           className={`absolute -inset-0.5 bg-gradient-to-r ${colors.bg} rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
         />
 
-        <Card className="relative bg-card border-border backdrop-blur-xl overflow-hidden">
+        <Card className="relative bg-card border-border backdrop-blur-xl overflow-hidden h-full flex flex-col">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-5">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-foreground to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
           </div>
 
-          <CardContent className="p-6 relative">
+          <CardContent className="p-6 relative flex-1 flex flex-col justify-between">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
                 <p className="text-muted-foreground text-sm font-medium">{title}</p>
@@ -429,7 +429,7 @@ export default function AdminDashboard() {
         </motion.div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 auto-rows-fr">
           <MetricCard
             title="Total Users"
             value={stats?.totalUsers || 0}
@@ -467,7 +467,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Secondary Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           <MetricCard
             title="Reports Generated"
             value={stats?.reportsGenerated || 0}
@@ -488,6 +488,13 @@ export default function AdminDashboard() {
             icon={Globe}
             color="rose"
             delay={0.6}
+          />
+          <MetricCard
+            title="Avg. Response Time"
+            value={45}
+            icon={Clock}
+            color="cyan"
+            delay={0.7}
           />
         </div>
 

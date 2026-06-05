@@ -121,7 +121,7 @@ export default function IdentitiesPage() {
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Shield className="w-6 h-6 text-indigo-400" />Identity Management
           </h1>
-          <p className="text-gray-400 mt-1">View and manage all identities</p>
+          <p className="text-muted-foreground mt-1">View and manage all identities</p>
         </div>
         <Button variant="outline" size="sm" onClick={loadIdentities} disabled={loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />Refresh
@@ -145,30 +145,36 @@ export default function IdentitiesPage() {
           <Table>
             <TableHeader className="bg-white/5 border-b border-white/10">
               <TableRow>
-                <TableHead className="text-gray-400">Name / Owner</TableHead>
-                <TableHead className="text-gray-400">Type</TableHead>
-                <TableHead className="text-gray-400">Risk Profile</TableHead>
-                <TableHead className="text-gray-400">Residency</TableHead>
-                <TableHead className="text-gray-400">State/Province</TableHead>
-                <TableHead className="text-gray-400">Citizenship</TableHead>
-                <TableHead className="text-gray-400">Tax Rate</TableHead>
-                <TableHead className="text-gray-400">Annual Income</TableHead>
-                <TableHead className="text-gray-400">Goals</TableHead>
-                <TableHead className="text-gray-400">Created</TableHead>
-                <TableHead className="text-right text-gray-400">Actions</TableHead>
+                <TableHead className="text-muted-foreground">Name / Owner</TableHead>
+                <TableHead className="text-muted-foreground">Type</TableHead>
+                <TableHead className="text-muted-foreground">Risk Profile</TableHead>
+                <TableHead className="text-muted-foreground">Residency</TableHead>
+                <TableHead className="text-muted-foreground">State/Province</TableHead>
+                <TableHead className="text-muted-foreground">Citizenship</TableHead>
+                <TableHead className="text-muted-foreground">Tax Rate</TableHead>
+                <TableHead className="text-muted-foreground">Annual Income</TableHead>
+                <TableHead className="text-muted-foreground">Goals</TableHead>
+                <TableHead className="text-muted-foreground">Created</TableHead>
+                <TableHead className="text-right text-muted-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <AnimatePresence>
                 {loading && identities.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8">
-                      <div className="flex justify-center"><RefreshCw className="w-5 h-5 text-gray-400 animate-spin" /></div>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      <div className="flex justify-center">
+                        <div className="animate-spin">
+                          <RefreshCw className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : identities.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-gray-400">No identities found</TableCell>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      No identities found
+                    </TableCell>
                   </TableRow>
                 ) : (
                   identities.map((identity, idx) => (
@@ -199,23 +205,36 @@ export default function IdentitiesPage() {
                           {identity.risk_profile}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-gray-400">{identity.residency}</TableCell>
-                      <TableCell className="text-gray-400">{identity.state_province ?? "—"}</TableCell>
-                      <TableCell className="text-gray-400">{Array.isArray(identity.citizenship) ? identity.citizenship.join(", ") : identity.citizenship}</TableCell>
-                      <TableCell className="text-gray-400">{identity.tax_rate != null ? `${identity.tax_rate}%` : "—"}</TableCell>
-                      <TableCell className="text-gray-400">{identity.annual_income != null ? `$${Number(identity.annual_income).toLocaleString()}` : "—"}</TableCell>
-                      <TableCell className="text-gray-400">{Array.isArray(identity.goals) ? identity.goals.join(", ") : identity.goals}</TableCell>
-                      <TableCell className="text-gray-400">{new Date(identity.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-muted-foreground">{identity.residency}</TableCell>
+                       <TableCell className="text-muted-foreground">{identity.state_province}</TableCell>
+                        <TableCell className="text-muted-foreground">{identity.citizenship}</TableCell>
+                         <TableCell className="text-muted-foreground">{identity.tax_rate}</TableCell>
+                          <TableCell className="text-muted-foreground">{identity.annual_income}</TableCell>
+                           <TableCell className="text-muted-foreground">{identity.goals}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(identity.created_at).toLocaleDateString()}
+                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white hover:bg-white/10">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-white hover:bg-white/10"
+                            >
                               <MoreVertical className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-slate-900 border-white/10 text-white">
-                            <DropdownMenuItem onClick={() => setSelectedIdentity(identity)} className="cursor-pointer hover:bg-white/5">
-                              <Eye className="w-4 h-4 mr-2" />View Details
+                          <DropdownMenuContent
+                            align="end"
+                            className="bg-background border-border text-foreground"
+                          >
+                            <DropdownMenuItem
+                              onClick={() => setSelectedIdentity(identity)}
+                              className="cursor-pointer hover:bg-white/5"
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
                             </DropdownMenuItem>
                             <DropdownMenuItem className="cursor-pointer hover:bg-white/5">
                               <Download className="w-4 h-4 mr-2" />Download
@@ -235,14 +254,31 @@ export default function IdentitiesPage() {
         </div>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <p className="text-sm text-gray-400">Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, total)} of {total} identities</p>
+      {/* Pagination */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+      >
+        <p className="text-sm text-muted-foreground">
+          Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+          {Math.min(currentPage * itemsPerPage, total)} of {total} identities
+        </p>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1 || loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-gray-400">Page {currentPage} of {totalPages}</span>
-          <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages || loading}
+            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+          >
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
@@ -250,33 +286,58 @@ export default function IdentitiesPage() {
 
       {/* Detail Modal */}
       <Dialog open={!!selectedIdentity} onOpenChange={(open) => !open && setSelectedIdentity(null)}>
-        <DialogContent className="bg-slate-900 border-white/10 text-white max-w-lg">
+        <DialogContent className="bg-background border-border text-foreground max-w-lg">
           <DialogHeader>
             <DialogTitle>{selectedIdentity?.name}</DialogTitle>
-            <DialogDescription className="text-gray-400">Owner: {selectedIdentity?.user_email}</DialogDescription>
+            <DialogDescription className="text-muted-foreground">
+              Owner: {selectedIdentity?.user_email}
+            </DialogDescription>
           </DialogHeader>
           {selectedIdentity && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: "Type", value: selectedIdentity.type },
-                  { label: "Risk Profile", value: selectedIdentity.risk_profile },
-                  { label: "State/Province", value: selectedIdentity.state_province ?? "—" },
-                  { label: "Residency", value: selectedIdentity.residency },
-                  { label: "Tax Rate", value: selectedIdentity.tax_rate != null ? `${selectedIdentity.tax_rate}%` : "—" },
-                  { label: "Annual Income", value: selectedIdentity.annual_income != null ? `$${Number(selectedIdentity.annual_income).toLocaleString()}` : "—" },
-                  { label: "Goals", value: Array.isArray(selectedIdentity.goals) ? selectedIdentity.goals.join(", ") : selectedIdentity.goals },
-                  { label: "Created", value: new Date(selectedIdentity.created_at).toLocaleDateString() },
-                ].map(({ label, value }) => (
-                  <div key={label} className="p-3 rounded-lg bg-white/5 border border-white/10">
-                    <p className="text-xs text-gray-400 uppercase">{label}</p>
-                    <p className="text-white font-medium capitalize">{value}</p>
-                  </div>
-                ))}
+                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-muted-foreground uppercase">Type</p>
+                  <p className="text-white font-medium capitalize">{selectedIdentity.type}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-muted-foreground uppercase">Risk Profile</p>
+                  <p className="text-white font-medium capitalize">{selectedIdentity.risk_profile}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-muted-foreground uppercase">Citizenship</p>
+                  <p className="text-white font-medium">{selectedIdentity.citizenship}</p>
+                </div>
+                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-muted-foreground uppercase">State/Province</p>
+                  <p className="text-white font-medium">{selectedIdentity.state_province}</p>
+                </div>
+                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-muted-foreground uppercase">Residency</p>
+                  <p className="text-white font-medium">{selectedIdentity.residency}</p>
+                </div>
+                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-muted-foreground uppercase">Tax Rate</p>
+                  <p className="text-white font-medium">{selectedIdentity.tax_rate}</p>
+                </div>
+                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-muted-foreground uppercase">Annual Income</p>
+                  <p className="text-white font-medium">{selectedIdentity.annual_income}</p>
+                </div>
+                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-muted-foreground uppercase">Goals</p>
+                  <p className="text-white font-medium">{selectedIdentity.goals}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-muted-foreground uppercase">Created</p>
+                  <p className="text-white font-medium">
+                    {new Date(selectedIdentity.created_at).toLocaleDateString()}
+                  </p>
+                </div>
               </div>
               {selectedIdentity.citizenship && selectedIdentity.citizenship.length > 0 && (
                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                  <p className="text-xs text-gray-400 uppercase mb-2">Citizenship</p>
+                  <p className="text-xs text-muted-foreground uppercase mb-2">Citizenship</p>
                   <div className="flex flex-wrap gap-2">
                     {selectedIdentity.citizenship.map((country) => (
                       <Badge key={country} variant="secondary">{country}</Badge>

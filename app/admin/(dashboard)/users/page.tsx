@@ -87,17 +87,17 @@ function UserDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-slate-900 border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-background border-border text-foreground max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
-            <Avatar className="w-12 h-12 border-2 border-indigo-500/30">
+            <Avatar className="w-12 h-12 border-2 border-primary/30">
               <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold">
                 {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
               <p className="text-lg font-semibold">{user.name || "Unnamed User"}</p>
-              <p className="text-sm text-gray-400 font-normal">{user.email}</p>
+              <p className="text-sm text-muted-foreground font-normal">{user.email}</p>
             </div>
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -116,7 +116,7 @@ function UserDetailModal({
                 transition={{ delay: 0.1 }}
                 className="p-4 rounded-xl bg-white/5 border border-white/5"
               >
-                <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Role</p>
+                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Role</p>
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-indigo-400" />
                   <span className="text-white font-medium capitalize">{user.role}</span>
@@ -129,7 +129,7 @@ function UserDetailModal({
                 transition={{ delay: 0.15 }}
                 className="p-4 rounded-xl bg-white/5 border border-white/5"
               >
-                <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Joined</p>
+                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Joined</p>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-emerald-400" />
                   <span className="text-white font-medium">
@@ -147,7 +147,7 @@ function UserDetailModal({
             </div>
             {loadingDetails ? (
               <div className="flex justify-center py-4">
-                <RefreshCw className="w-5 h-5 animate-spin text-gray-400" />
+                <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
             ) : assets.length > 0 ? (
               <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -162,7 +162,7 @@ function UserDetailModal({
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-white font-medium text-sm">{asset.name}</p>
-                        <p className="text-gray-400 text-xs mt-0.5">Type: {asset.type}</p>
+                        <p className="text-muted-foreground text-xs mt-0.5">Type: {asset.type}</p>
                         {asset.location_country && (
                           <p className="text-gray-500 text-xs mt-0.5">Location: {asset.location_country}</p>
                         )}
@@ -234,7 +234,7 @@ function UserDetailModal({
             transition={{ delay: 0.3 }}
             className="p-4 rounded-xl bg-white/5 border border-white/5"
           >
-            <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">User ID</p>
+            <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">User ID</p>
             <code className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded break-all">
               {user.id}
             </code>
@@ -263,7 +263,7 @@ function UserTableRow({
     >
       <TableCell>
         <div className="flex items-center gap-3">
-          <Avatar className="w-10 h-10 border-2 border-white/10 group-hover:border-indigo-500/30 transition-colors">
+          <Avatar className="w-10 h-10 border-2 border-white/10 group-hover:border-primary/30 transition-colors">
             <AvatarFallback className="bg-gradient-to-br from-indigo-500/80 to-purple-500/80 text-white text-sm font-semibold">
               {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
             </AvatarFallback>
@@ -283,7 +283,7 @@ function UserTableRow({
           className={`capitalize ${
             user.role === "admin"
               ? "border-indigo-500/50 text-indigo-400 bg-indigo-500/10"
-              : "border-gray-500/50 text-gray-400 bg-gray-500/10"
+              : "border-gray-500/50 text-muted-foreground bg-gray-500/10"
           }`}
         >
           {user.role}
@@ -307,7 +307,7 @@ function UserTableRow({
           <span>{user.identity_count}</span>
         </button>
       </TableCell>
-      <TableCell className="text-gray-400">
+      <TableCell className="text-muted-foreground">
         {new Date(user.created_at).toLocaleDateString()}
       </TableCell>
       <TableCell>
@@ -316,14 +316,14 @@ function UserTableRow({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-gray-400 hover:text-white hover:bg-white/10"
+              className="h-8 w-8 text-muted-foreground hover:text-white hover:bg-white/10"
             >
               <MoreVertical className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="bg-slate-900 border-white/10 text-white"
+            className="bg-background border-border text-foreground"
           >
             <DropdownMenuItem
               onClick={() => onView(user)}
@@ -399,7 +399,7 @@ export default function AdminUsersPage() {
             <Users className="w-6 h-6 text-indigo-400" />
             User Management
           </h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             View and manage all registered users
           </p>
         </div>
@@ -451,14 +451,14 @@ export default function AdminUsersPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <Card className="bg-slate-900/50 border-white/5 backdrop-blur-xl overflow-hidden">
+        <Card className="bg-card border-border backdrop-blur-xl overflow-hidden">
           <CardHeader className="border-b border-white/5">
             <CardTitle className="text-white flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <User className="w-5 h-5 text-indigo-400" />
                 All Users
               </span>
-              <span className="text-sm font-normal text-gray-400">
+              <span className="text-sm font-normal text-muted-foreground">
                 {total.toLocaleString()} total
               </span>
             </CardTitle>
@@ -468,12 +468,12 @@ export default function AdminUsersPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-white/5 hover:bg-transparent">
-                    <TableHead className="text-gray-400">User</TableHead>
-                    <TableHead className="text-gray-400">Role</TableHead>
-                    <TableHead className="text-gray-400">Assets</TableHead>
-                    <TableHead className="text-gray-400">Identities</TableHead>
-                    <TableHead className="text-gray-400">Joined</TableHead>
-                    <TableHead className="text-gray-400 w-12"></TableHead>
+                    <TableHead className="text-muted-foreground">User</TableHead>
+                    <TableHead className="text-muted-foreground">Role</TableHead>
+                    <TableHead className="text-muted-foreground">Assets</TableHead>
+                    <TableHead className="text-muted-foreground">Identities</TableHead>
+                    <TableHead className="text-muted-foreground">Joined</TableHead>
+                    <TableHead className="text-muted-foreground w-12"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -519,7 +519,7 @@ export default function AdminUsersPage() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-6 py-4 border-t border-white/5">
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Showing {(page - 1) * limit + 1} to{" "}
                   {Math.min(page * limit, total)} of {total}
                 </p>
@@ -533,7 +533,7 @@ export default function AdminUsersPage() {
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <span className="text-sm text-gray-400">
+                  <span className="text-sm text-muted-foreground">
                     Page {page} of {totalPages}
                   </span>
                   <Button

@@ -160,7 +160,7 @@ export function ReportsHistoryModal({
           {/* ── Header (fixed, never scrolls) ── */}
           <DialogHeader className="px-6 py-4 border-b bg-slate-50 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-slate-900 rounded-lg shrink-0">
+              <div className="p-2 bg-card rounded-lg shrink-0">
                 <FileText className="size-5 text-white" />
               </div>
               <div className="min-w-0">
@@ -201,7 +201,7 @@ export function ReportsHistoryModal({
                 <div className="p-4 bg-slate-100 rounded-full mb-4">
                   <FileText className="size-8 text-slate-400" />
                 </div>
-                <h3 className="font-medium text-slate-900 mb-1">No Reports Yet</h3>
+                <h3 className="font-medium text-foreground mb-1">No Reports Yet</h3>
                 <p className="text-sm text-muted-foreground max-w-sm">
                   Click the Optimize button to generate your first tax optimization
                   analysis for this asset.
