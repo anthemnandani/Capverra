@@ -7,7 +7,7 @@ import type { UserWithAssets } from "@/lib/admin-types"
 import {
   Users, Search, Filter, ChevronLeft, ChevronRight,
   User, Mail, Calendar, FolderOpen, Shield, MoreVertical,
-  Eye, Download, RefreshCw, ChevronDown,
+  Eye, Download, RefreshCw, ChevronDown, Trash2, AlertTriangle,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/table"
 import {
   Dialog, DialogContent, DialogDescription,
-  DialogHeader, DialogTitle,
+  DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { useAuth } from "@/context"
@@ -47,10 +47,10 @@ const ROLE_CONFIG: Record<Role, { label: string; color: string }> = {
 }
 
 const ROLE_FILTER_OPTIONS: { value: Role | "all"; label: string }[] = [
-  { value: "all",        label: "All roles"   },
-  { value: "client",     label: "User"        },
-  { value: "admin",      label: "Admin"       },
-  { value: "super_admin",label: "Super Admin" },
+  { value: "all",         label: "All roles"   },
+  { value: "client",      label: "User"        },
+  { value: "admin",       label: "Admin"       },
+  { value: "super_admin", label: "Super Admin" },
 ]
 
 function RoleBadge({ role }: { role: string }) {
@@ -59,6 +59,116 @@ function RoleBadge({ role }: { role: string }) {
     <Badge variant="outline" className={`capitalize text-xs ${cfg.color}`}>
       {cfg.label}
     </Badge>
+  )
+}
+
+// ── Delete confirmation dialog ────────────────────────────────────────────────
+
+function DeleteUserDialog({
+  user,
+  open,
+  onClose,
+  onDeleted,
+}: {
+  user: UserWithAssets | null
+  open: boolean
+  onClose: () => void
+  onDeleted: (userId: string) => void
+}) {
+  const [loading, setLoading] = useState(false)
+
+  const handleDelete = async () => {
+    if (!user) return
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/delete`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to delete user")
+      toast.success(`${user.name || user.email} has been deleted`)
+      onDeleted(user.id)
+      onClose()
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete user")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!user) return null
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-card border-border text-foreground max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3 text-rose-500">
+            <div className="w-10 h-10 rounded-xl bg-rose-500/15 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-5 h-5 text-rose-500" />
+            </div>
+            Delete User
+          </DialogTitle>
+          <DialogDescription className="text-muted-foreground mt-3 leading-relaxed">
+            Are you sure you want to permanently delete{" "}
+            <span className="text-foreground font-semibold">
+              {user.name || user.email}
+            </span>
+            ?
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Cascade warning */}
+        <div className="mt-1 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5 shrink-0" />
+          <div className="text-sm text-rose-600 dark:text-rose-300 leading-relaxed space-y-1">
+            <p>
+              <strong className="text-rose-700 dark:text-rose-200">Warning:</strong>{" "}
+              The following data will also be permanently deleted:
+            </p>
+            <ul className="list-disc list-inside space-y-0.5 mt-1 text-rose-600 dark:text-rose-300">
+              <li>
+                <strong>{user.asset_count}</strong> asset{user.asset_count !== 1 ? "s" : ""}
+              </li>
+              <li>
+                <strong>{user.identity_count}</strong> {user.identity_count !== 1 ? "identities" : "identity"}
+              </li>
+              <li>All associated optimization reports</li>
+            </ul>
+            <p className="mt-1 font-medium text-rose-700 dark:text-rose-200">
+              This action cannot be undone.
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 mt-4">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={loading}
+            className="border-border text-foreground hover:bg-muted"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            disabled={loading}
+            className="bg-rose-600 hover:bg-rose-700 text-white"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Deleting…
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Trash2 className="w-4 h-4" />
+                Delete User & All Data
+              </span>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -191,7 +301,6 @@ function UserDetailModal({
         </DialogHeader>
 
         <div className="mt-6 space-y-6">
-          {/* Role & Joined */}
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase">Basic Information</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -206,7 +315,6 @@ function UserDetailModal({
                   <Shield className="w-4 h-4 text-indigo-500" />
                   <RoleBadge role={user.role} />
                 </div>
-
                 {currentUserRole === "super_admin" && (
                   <div className="space-y-1 mt-2 pt-2 border-t border-border">
                     <p className="text-muted-foreground text-xs mb-1">Change role</p>
@@ -260,7 +368,6 @@ function UserDetailModal({
             </div>
           </div>
 
-          {/* Assets */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase">Assets ({assets.length})</h3>
             {loadingDetails ? (
@@ -299,7 +406,6 @@ function UserDetailModal({
             )}
           </div>
 
-          {/* Identities */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase">Identities ({identities.length})</h3>
             {identities.length > 0 ? (
@@ -364,15 +470,19 @@ function UserTableRow({
   user,
   index,
   onView,
+  onDelete,
   currentUserRole,
   onRoleChanged,
 }: {
   user: UserWithAssets
   index: number
   onView: (user: UserWithAssets) => void
+  onDelete: (user: UserWithAssets) => void
   currentUserRole: string | undefined
   onRoleChanged: (userId: string, newRole: Role) => void
 }) {
+  const isSuperAdmin = currentUserRole === "super_admin"
+
   return (
     <motion.tr
       initial={{ opacity: 0, x: -20 }}
@@ -448,6 +558,19 @@ function UserTableRow({
               currentUserRole={currentUserRole}
               onRoleChanged={onRoleChanged}
             />
+            {/* Delete — super_admin only, cannot delete self */}
+            {isSuperAdmin && (
+              <>
+                <DropdownMenuSeparator className="bg-border" />
+                <DropdownMenuItem
+                  onClick={() => onDelete(user)}
+                  className="cursor-pointer text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 focus:text-rose-600 dark:focus:text-rose-400"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete User
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </TableCell>
@@ -466,6 +589,7 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState<Role | "all">("all")
   const [loading, setLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState<UserWithAssets | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<UserWithAssets | null>(null)
   const limit = 10
 
   const loadUsers = useCallback(async () => {
@@ -495,6 +619,12 @@ export default function AdminUsersPage() {
     if (selectedUser?.id === userId) {
       setSelectedUser((prev) => prev ? { ...prev, role: newRole } : prev)
     }
+  }
+
+  const handleUserDeleted = (userId: string) => {
+    setUsers((prev) => prev.filter((u) => u.id !== userId))
+    setTotal((prev) => prev - 1)
+    if (selectedUser?.id === userId) setSelectedUser(null)
   }
 
   const activeFilterLabel = ROLE_FILTER_OPTIONS.find((o) => o.value === roleFilter)?.label ?? "All roles"
@@ -552,7 +682,6 @@ export default function AdminUsersPage() {
           />
         </div>
 
-        {/* Role filter dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -603,7 +732,6 @@ export default function AdminUsersPage() {
                 {roleFilter === "all" ? "All Users" : `${activeFilterLabel}s`}
               </span>
               <div className="flex items-center gap-3">
-                {/* Active filter pill */}
                 {roleFilter !== "all" && (
                   <button
                     onClick={() => { setRoleFilter("all"); setPage(1) }}
@@ -650,6 +778,7 @@ export default function AdminUsersPage() {
                           user={user}
                           index={index}
                           onView={setSelectedUser}
+                          onDelete={setDeleteTarget}
                           currentUserRole={currentUser?.role}
                           onRoleChanged={handleRoleChanged}
                         />
@@ -711,6 +840,14 @@ export default function AdminUsersPage() {
         onClose={() => setSelectedUser(null)}
         currentUserRole={currentUser?.role}
         onRoleChanged={handleRoleChanged}
+      />
+
+      {/* Delete confirmation */}
+      <DeleteUserDialog
+        user={deleteTarget}
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onDeleted={handleUserDeleted}
       />
     </div>
   )
