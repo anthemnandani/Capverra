@@ -145,13 +145,13 @@ function MetricCard({
           className={`absolute -inset-0.5 bg-gradient-to-r ${colors.bg} rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
         />
 
-        <Card className="relative bg-card border-border backdrop-blur-xl overflow-hidden">
+        <Card className="relative bg-card border-border backdrop-blur-xl overflow-hidden h-full flex flex-col">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-5">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-foreground to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
           </div>
 
-          <CardContent className="p-6 relative">
+          <CardContent className="p-6 relative flex-1 flex flex-col justify-between">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
                 <p className="text-muted-foreground text-sm font-medium">{title}</p>
