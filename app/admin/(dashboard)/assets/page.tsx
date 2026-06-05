@@ -110,7 +110,7 @@ function AssetDetailModal({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="p-4 rounded-xl bg-white/5 border border-white/5"
+              className="p-4 rounded-xl bg-card border border-border"
             >
               <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Type</p>
               <Badge className="bg-indigo-500/10 text-indigo-400 border-primary/30 capitalize">
@@ -122,7 +122,7 @@ function AssetDetailModal({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="p-4 rounded-xl bg-white/5 border border-white/5"
+              className="p-4 rounded-xl bg-card border border-border"
             >
               <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Created</p>
               <div className="flex items-center gap-2">
@@ -143,9 +143,9 @@ function AssetDetailModal({
     <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">
       Currency
     </p>
-    <p className="text-white font-medium">
-      {asset.currency}
-    </p>
+              <p className="text-foreground font-medium">
+                {asset.type}
+              </p>
   </motion.div>
 )}
           {asset.purchase_value && (
@@ -153,10 +153,10 @@ function AssetDetailModal({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="p-4 rounded-xl bg-white/5 border border-white/5"
+              className="p-4 rounded-xl bg-card border border-border"
             >
               <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">Purchase Value</p>
-              <p className="text-white font-medium">${asset.purchase_value.toLocaleString()}</p>
+                <p className="text-foreground font-medium">${asset.purchase_value.toLocaleString()}</p>
             </motion.div>
           )}
 {asset.latest_valuation_date && (
@@ -169,8 +169,8 @@ function AssetDetailModal({
     <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">
       Latest Valuation Date
     </p>
-    <p className="text-white font-medium">
-      {new Date(asset.latest_valuation_date).toLocaleDateString()}
+    <p className="text-foreground font-medium">
+      {asset.currency}
     </p>
   </motion.div>
 )}
@@ -179,11 +179,11 @@ function AssetDetailModal({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 }}
-              className="p-4 rounded-xl bg-white/5 border border-white/5"
+              className="p-4 rounded-xl bg-card border border-border"
             >
               <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">Current Valuation</p>
               <div className="flex items-center gap-2">
-                <p className="text-white font-medium">${asset.latest_valuation.toLocaleString()}</p>
+                <p className="text-foreground font-medium">${asset.latest_valuation.toLocaleString()}</p>
                 {asset.performance !== null && (
                   <span className={asset.performance >= 0 ? "text-emerald-400" : "text-rose-400"}>
                     {asset.performance >= 0 ? "+" : ""}{asset.performance.toFixed(1)}%
@@ -254,8 +254,8 @@ function AssetCard({
           </div>
 
           {/* Asset Info */}
-          <h3 className="text-white font-medium truncate mb-1">{asset.name}</h3>
-          <p className="text-gray-500 text-xs capitalize mb-3">{asset.type}</p>
+          <h3 className="text-foreground font-medium truncate mb-1">{asset.name}</h3>
+          <p className="text-muted-foreground text-xs capitalize mb-3">{asset.type}</p>
 
           {/* Type Badge */}
           <div className="mb-3">
@@ -271,7 +271,7 @@ function AssetCard({
           </div>
 
           {/* Date */}
-          <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
             <Calendar className="w-3 h-3" />
             <span>{new Date(asset.created_at).toLocaleDateString()}</span>
           </div>
@@ -295,15 +295,15 @@ function AssetTableRow({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.03 }}
-      className="group hover:bg-white/5 transition-colors"
+      className="group hover:bg-card/50 transition-smooth"
     >
       <TableCell>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+          <div className="w-10 h-10 rounded-lg bg-card flex items-center justify-center group-hover:bg-card/70 transition-smooth">
             {getAssetIcon(asset.type)}
           </div>
           <div>
-            <p className="text-white font-medium">{asset.name}</p>
+            <p className="text-foreground font-medium">{asset.name}</p>
           </div>
         </div>
       </TableCell>
@@ -339,7 +339,7 @@ function AssetTableRow({
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500/50 to-purple-500/50 flex items-center justify-center text-white text-xs font-medium">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground text-xs font-medium">
             {(asset.owner?.name || asset.owner?.email || asset.user_email || "?")[0]?.toUpperCase()}
           </div>
           <span className="text-muted-foreground text-sm truncate max-w-[150px]">
@@ -439,7 +439,7 @@ export default function AdminAssetsPage() {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <FolderOpen className="w-6 h-6 text-amber-400" />
             Asset Management
           </h1>
@@ -449,15 +449,15 @@ export default function AdminAssetsPage() {
         </div>
         <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="flex items-center bg-white/5 rounded-lg p-1">
+          <div className="flex items-center bg-card rounded-lg p-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setViewMode("list")}
               className={`h-8 w-8 p-0 ${
                 viewMode === "list"
-                  ? "bg-white/10 text-white"
-                  : "text-muted-foreground hover:text-white"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <List className="w-4 h-4" />
@@ -468,8 +468,8 @@ export default function AdminAssetsPage() {
               onClick={() => setViewMode("grid")}
               className={`h-8 w-8 p-0 ${
                 viewMode === "grid"
-                  ? "bg-white/10 text-white"
-                  : "text-muted-foreground hover:text-white"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <Grid3X3 className="w-4 h-4" />
@@ -480,7 +480,7 @@ export default function AdminAssetsPage() {
             size="sm"
             onClick={loadAssets}
             disabled={loading}
-            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+            className="bg-card border-border text-foreground hover:bg-card/70 transition-smooth"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -514,19 +514,19 @@ export default function AdminAssetsPage() {
             setPage(1)
           }}
         >
-          <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
+          <SelectTrigger className="w-[180px] bg-card border-border text-foreground">
             <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
             <SelectValue placeholder="Asset Type" />
           </SelectTrigger>
-          <SelectContent className="bg-slate-900 border-white/10">
-            <SelectItem value="all" className="text-white hover:bg-white/5">
+          <SelectContent className="bg-background border-border">
+            <SelectItem value="all" className="text-foreground hover:bg-card/50">
               All Types
             </SelectItem>
             {assetTypes.map((type) => (
               <SelectItem
                 key={type}
                 value={type}
-                className="text-white hover:bg-white/5 capitalize"
+                className="text-foreground hover:bg-card/50 capitalize"
               >
                 {type}
               </SelectItem>
@@ -565,8 +565,8 @@ export default function AdminAssetsPage() {
         ) : (
           // List View
           <Card className="bg-card border-border backdrop-blur-xl overflow-hidden">
-            <CardHeader className="border-b border-white/5">
-              <CardTitle className="text-white flex items-center justify-between">
+            <CardHeader className="border-b border-border">
+              <CardTitle className="text-foreground flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <FolderOpen className="w-5 h-5 text-amber-400" />
                   All Assets

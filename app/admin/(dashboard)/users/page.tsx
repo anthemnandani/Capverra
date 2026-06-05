@@ -91,7 +91,7 @@ function UserDetailModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="w-12 h-12 border-2 border-primary/30">
-              <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold">
+              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-semibold">
                 {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -118,8 +118,8 @@ function UserDetailModal({
               >
                 <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Role</p>
                 <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-indigo-400" />
-                  <span className="text-white font-medium capitalize">{user.role}</span>
+                  <Shield className="w-4 h-4 text-primary" />
+                  <span className="text-foreground font-medium capitalize">{user.role}</span>
                 </div>
               </motion.div>
 
@@ -132,7 +132,7 @@ function UserDetailModal({
                 <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Joined</p>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-emerald-400" />
-                  <span className="text-white font-medium">
+                  <span className="text-foreground font-medium">
                     {new Date(user.created_at).toLocaleDateString()}
                   </span>
                 </div>
@@ -259,17 +259,17 @@ function UserTableRow({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.03 }}
-      className="group hover:bg-white/5 transition-colors"
+      className="group hover:bg-card/50 transition-colors"
     >
       <TableCell>
         <div className="flex items-center gap-3">
-          <Avatar className="w-10 h-10 border-2 border-white/10 group-hover:border-primary/30 transition-colors">
-            <AvatarFallback className="bg-gradient-to-br from-indigo-500/80 to-purple-500/80 text-white text-sm font-semibold">
+          <Avatar className="w-10 h-10 border-2 border-border group-hover:border-primary/30 transition-colors">
+            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-sm font-semibold">
               {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="text-white font-medium">{user.name || "Unnamed"}</p>
+            <p className="text-foreground font-medium">{user.name || "Unnamed"}</p>
             <p className="text-muted-foreground text-xs flex items-center gap-1">
               <Mail className="w-3 h-3" />
               {user.email}
@@ -282,8 +282,8 @@ function UserTableRow({
           variant="outline"
           className={`capitalize ${
             user.role === "admin"
-              ? "border-indigo-500/50 text-indigo-400 bg-indigo-500/10"
-              : "border-gray-500/50 text-muted-foreground bg-gray-500/10"
+              ? "border-primary/50 text-primary bg-primary/10"
+              : "border-border text-foreground bg-card"
           }`}
         >
           {user.role}
@@ -316,7 +316,7 @@ function UserTableRow({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-white hover:bg-white/10"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-card/70"
             >
               <MoreVertical className="w-4 h-4" />
             </Button>
@@ -395,8 +395,8 @@ export default function AdminUsersPage() {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-indigo-400" />
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Users className="w-6 h-6 text-primary" />
             User Management
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -409,7 +409,7 @@ export default function AdminUsersPage() {
             size="sm"
             onClick={loadUsers}
             disabled={loading}
-            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+            className="bg-card border-border text-foreground hover:bg-card/70 transition-smooth"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -453,9 +453,9 @@ export default function AdminUsersPage() {
       >
         <Card className="bg-card border-border backdrop-blur-xl overflow-hidden">
           <CardHeader className="border-b border-border">
-            <CardTitle className="text-white flex items-center justify-between">
+            <CardTitle className="text-foreground flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <User className="w-5 h-5 text-indigo-400" />
+                <User className="w-5 h-5 text-primary" />
                 All Users
               </span>
               <span className="text-sm font-normal text-muted-foreground">
