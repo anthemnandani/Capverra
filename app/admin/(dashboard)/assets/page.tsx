@@ -104,7 +104,7 @@ function AssetDetailModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-6 space-y-4 overflow-y-auto flex-1 pr-1">
           <div className="grid grid-cols-2 gap-4">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -206,7 +206,7 @@ function AssetDetailModal({
               </div>
               <div>
                 <p className="text-white font-medium">{ownerName}</p>
-                <p className="text-gray-500 text-xs">{ownerEmail}</p>
+                <p className="text-gray-500 text-xs">{asset.type}</p>
               </div>
             </div>
           </motion.div>
@@ -267,7 +267,7 @@ function AssetCard({
           {/* Owner */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <User className="w-3 h-3" />
-            <span className="truncate">{asset.owner?.email || asset.user_email || "N/A"}</span>
+            <span className="truncate">{asset.owner?.name || asset.user_email || "N/A"}</span>
           </div>
 
           {/* Date */}
@@ -412,7 +412,6 @@ export default function AdminAssetsPage() {
       }
       
       const data = await response.json()
-      console.log("[v0] Assets data loaded:", { total: data.total, count: data.assets?.length })
       setAssets(data.assets || [])
       setTotal(data.total || 0)
       // Extract unique asset types from the fetched data

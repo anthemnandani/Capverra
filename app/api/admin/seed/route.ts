@@ -1,8 +1,6 @@
 import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
 
-// This endpoint creates the test admin user
-// Only works if the admin doesn't already exist
 export async function POST() {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -15,7 +13,6 @@ export async function POST() {
       )
     }
 
-    // Use service role client for admin operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
@@ -26,94 +23,89 @@ export async function POST() {
     const adminEmail = "admin@capverra.com"
     const adminPassword = "Admin@2026"
 
-    // Check if user already exists
-    const { data: existingUsers } = await supabase
+    // ── Step 1: Check if user already exists in custom users table ──
+    const { data: existingUser } = await supabase
       .from("users")
-      .select("id, email")
+      .select("id, role")
       .eq("email", adminEmail)
-      .limit(1)
+      .single()
 
-    if (existingUsers && existingUsers.length > 0) {
-      // User exists, check if admin entry exists
-      const { data: adminEntry } = await supabase
-        .from("admin_users")
-        .select("id")
-        .eq("email", adminEmail)
-        .limit(1)
-
-      if (adminEntry && adminEntry.length > 0) {
-        return NextResponse.json({
-          success: true,
-          message: "Admin user already exists",
-          isNew: false,
-        })
+    if (existingUser) {
+      // Already in users table — make sure role is super_admin
+      if (existingUser.role !== "super_admin") {
+        await supabase
+          .from("users")
+          .update({ role: "super_admin" })
+          .eq("id", existingUser.id)
       }
+      return NextResponse.json({
+        success: true,
+        message: "Admin user already exists",
+        isNew: false,
+      })
     }
 
-    // Create auth user using admin API
+    // ── Step 2: Create auth user ──
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: adminEmail,
       password: adminPassword,
-      email_confirm: true, // Auto-confirm email
+      email_confirm: true,
       user_metadata: {
         name: "Capverra Admin",
-        role: "admin",
+        role: "super_admin",
       },
     })
 
     if (authError) {
-      // If user already exists in auth, try to get their ID
+      // Auth user may already exist even if users table row is missing
       if (authError.message.includes("already been registered")) {
-        const { data: { users } } = await supabase.auth.admin.listUsers()
-        const existingUser = users?.find(u => u.email === adminEmail)
-        
-        if (existingUser) {
-          // Create admin entry for existing auth user
-          await supabase.from("admin_users").upsert({
-            user_id: existingUser.id,
-            email: adminEmail,
-            name: "Capverra Admin",
-            role: "super_admin",
-            is_active: true,
-          }, { onConflict: "user_id" })
+        const {
+          data: { users },
+        } = await supabase.auth.admin.listUsers()
+
+        const existingAuthUser = users?.find((u) => u.email === adminEmail)
+
+        if (existingAuthUser) {
+          // Insert / update users table row with super_admin role
+          await supabase
+            .from("users")
+            .upsert(
+              {
+                id: existingAuthUser.id,
+                email: adminEmail,
+                name: "Capverra Admin",
+                role: "super_admin",
+              },
+              { onConflict: "id" }
+            )
 
           return NextResponse.json({
             success: true,
-            message: "Admin entry created for existing user",
+            message: "Admin role set for existing auth user",
             isNew: false,
           })
         }
       }
-      
-      return NextResponse.json(
-        { error: authError.message },
-        { status: 400 }
-      )
+
+      return NextResponse.json({ error: authError.message }, { status: 400 })
     }
 
     if (!authData.user) {
-      return NextResponse.json(
-        { error: "Failed to create user" },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
     }
 
-    // Create user entry in users table
-    await supabase.from("users").upsert({
-      id: authData.user.id,
-      email: adminEmail,
-      name: "Capverra Admin",
-      role: "client",
-    }, { onConflict: "id" })
-
-    // Create admin entry
-    await supabase.from("admin_users").upsert({
-      user_id: authData.user.id,
-      email: adminEmail,
-      name: "Capverra Admin",
-      role: "super_admin",
-      is_active: true,
-    }, { onConflict: "user_id" })
+    // ── Step 3: Insert into custom users table with role super_admin ──
+    await supabase
+      .from("users")
+      .upsert(
+        {
+          id: authData.user.id,
+          email: adminEmail,
+          name: "Capverra Admin",
+          role: "super_admin",
+        },
+        { onConflict: "id" }
+      )
 
     return NextResponse.json({
       success: true,
@@ -122,9 +114,6 @@ export async function POST() {
     })
   } catch (error) {
     console.error("Admin seed error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -1,38 +1,81 @@
 "use server"
 
 import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase/server"
-import type { AdminUser, DashboardStats, UserWithAssets, AssetWithOwner, AdminActivityLog, AdminReport } from "@/lib/admin-types"
+import type {
+  AdminUser,
+  DashboardStats,
+  UserWithAssets,
+  AssetWithOwner,
+  AdminActivityLog,
+  AdminReport,
+} from "@/lib/admin-types"
 
-// Check if user is admin
-export async function checkAdminStatus(): Promise<{ isAdmin: boolean; adminUser: AdminUser | null }> {
+export async function checkAdminStatus(): Promise<{
+  isAdmin: boolean
+  adminUser: AdminUser | null
+}> {
   const supabase = await createSupabaseServerClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) {
     return { isAdmin: false, adminUser: null }
   }
 
-  // Use admin client to bypass RLS for admin check
   const adminClient = createSupabaseAdminClient()
-  const { data: adminUser } = await adminClient
-    .from("admin_users")
+
+  const { data: userData } = await adminClient
+    .from("users")
     .select("*")
-    .eq("user_id", user.id)
-    .eq("is_active", true)
+    .eq("id", user.id)
+    .in("role", ["admin", "super_admin"])
     .single()
 
-  return { 
-    isAdmin: !!adminUser, 
-    adminUser: adminUser as AdminUser | null 
+  if (!userData) {
+    return { isAdmin: false, adminUser: null }
   }
+
+  const adminUser: AdminUser = {
+    id: userData.id,
+    user_id: userData.id,
+    email: userData.email,
+    name: userData.name ?? null,
+    role: userData.role,
+    is_active: true,
+    permissions: userData.permissions ?? [],
+    last_login: userData.last_login ?? null,
+    created_at: userData.created_at,
+    updated_at: userData.updated_at ?? userData.created_at,
+    avatar_url: userData.avatar_url ?? null,
+    preferences: userData.preferences ?? { theme: "dark" },
+  }
+
+  return { isAdmin: true, adminUser }
 }
 
-// Admin login - verifies admin credentials
-export async function adminLogin(email: string, password: string): Promise<{ success: boolean; error?: string; adminUser?: AdminUser }> {
+export async function updateAdminPreferences(
+  userId: string,
+  preferences: { theme: "dark" | "light" }
+): Promise<{ success: boolean; error?: string }> {
+  const adminClient = createSupabaseAdminClient()
+
+  const { error } = await adminClient
+    .from("users")
+    .update({ preferences })
+    .eq("id", userId)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
+export async function adminLogin(
+  email: string,
+  password: string
+): Promise<{ success: boolean; error?: string; adminUser?: AdminUser }> {
   const supabase = await createSupabaseServerClient()
-  
-  // First sign in with Supabase auth
+
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -46,76 +89,86 @@ export async function adminLogin(email: string, password: string): Promise<{ suc
     return { success: false, error: "Authentication failed" }
   }
 
-  // Use admin client to bypass RLS and check if user is an admin
   try {
     const adminClient = createSupabaseAdminClient()
-    
-    const { data: adminUser, error: adminError } = await adminClient
-      .from("admin_users")
+
+    const { data: userData, error: userError } = await adminClient
+      .from("users")
       .select("*")
-      .eq("user_id", authData.user.id)
-      .eq("is_active", true)
+      .eq("id", authData.user.id)
+      .in("role", ["admin", "super_admin"])
       .single()
 
-    if (adminError || !adminUser) {
-      // Sign out if not an admin
+    if (userError || !userData) {
       await supabase.auth.signOut()
-      return { success: false, error: "Access denied. You are not authorized as an admin." }
+      return {
+        success: false,
+        error: "Access denied. You are not authorized as an admin.",
+      }
     }
 
-    // Update last login
     await adminClient
-      .from("admin_users")
+      .from("users")
       .update({ last_login: new Date().toISOString() })
-      .eq("id", adminUser.id)
+      .eq("id", userData.id)
 
-    return { success: true, adminUser: adminUser as AdminUser }
+    const adminUser: AdminUser = {
+      id: userData.id,
+      user_id: userData.id,
+      email: userData.email,
+      name: userData.name ?? null,
+      role: userData.role,
+      is_active: true,
+      permissions: userData.permissions ?? [],
+      last_login: userData.last_login ?? null,
+      created_at: userData.created_at,
+      updated_at: userData.updated_at ?? userData.created_at,
+      avatar_url: userData.avatar_url ?? null,
+      preferences: userData.preferences ?? { theme: "dark" },
+    }
+
+    return { success: true, adminUser }
   } catch {
     await supabase.auth.signOut()
-    return { success: false, error: "Server configuration error. Please contact support." }
+    return {
+      success: false,
+      error: "Server configuration error. Please contact support.",
+    }
   }
 }
 
-// Admin logout
 export async function adminLogout(): Promise<void> {
   const supabase = await createSupabaseServerClient()
   await supabase.auth.signOut()
 }
 
-// Get dashboard statistics (uses admin client to bypass RLS for counts)
 export async function getDashboardStats(): Promise<DashboardStats> {
   const adminClient = createSupabaseAdminClient()
-  
-  // Get total users count
+
   const { count: totalUsers } = await adminClient
     .from("users")
     .select("*", { count: "exact", head: true })
 
-  // Get active users (logged in within last 30 days)
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  
+
   const { count: activeUsers } = await adminClient
     .from("users")
     .select("*", { count: "exact", head: true })
     .gte("created_at", thirtyDaysAgo.toISOString())
 
-  // Get total assets
   const { count: totalAssets } = await adminClient
     .from("assets")
     .select("*", { count: "exact", head: true })
 
-  // Get total identities
   const { count: totalIdentities } = await adminClient
     .from("identities")
     .select("*", { count: "exact", head: true })
 
-  // Get reports generated
   const { count: reportsGenerated } = await adminClient
     .from("admin_reports")
     .select("*", { count: "exact", head: true })
 
-  // Calculate growth (compare last 7 days vs previous 7 days)
   const sevenDaysAgo = new Date()
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
   const fourteenDaysAgo = new Date()
@@ -132,7 +185,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .gte("created_at", fourteenDaysAgo.toISOString())
     .lt("created_at", sevenDaysAgo.toISOString())
 
-  const userGrowth = previousUsers ? ((recentUsers || 0) - previousUsers) / previousUsers * 100 : 0
+  const userGrowth = previousUsers
+    ? (((recentUsers || 0) - previousUsers) / previousUsers) * 100
+    : 0
 
   const { count: recentAssets } = await adminClient
     .from("assets")
@@ -145,9 +200,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .gte("created_at", fourteenDaysAgo.toISOString())
     .lt("created_at", sevenDaysAgo.toISOString())
 
-  const assetGrowth = previousAssets ? ((recentAssets || 0) - previousAssets) / previousAssets * 100 : 0
+  const assetGrowth = previousAssets
+    ? (((recentAssets || 0) - previousAssets) / previousAssets) * 100
+    : 0
 
-  // Get recent admin activity
   const { data: recentActivity } = await adminClient
     .from("admin_activity_logs")
     .select("*")
@@ -166,10 +222,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   }
 }
 
-// Get all users with their asset counts
 export async function getAllUsers(
-  page: number = 1, 
-  limit: number = 20, 
+  page: number = 1,
+  limit: number = 20,
   search?: string
 ): Promise<{ users: UserWithAssets[]; total: number }> {
   const adminClient = createSupabaseAdminClient()
@@ -177,7 +232,8 @@ export async function getAllUsers(
 
   let query = adminClient
     .from("users")
-    .select(`
+    .select(
+      `
       id,
       email,
       name,
@@ -185,7 +241,9 @@ export async function getAllUsers(
       created_at,
       assets:assets(count),
       identities:identities(count)
-    `, { count: "exact" })
+    `,
+      { count: "exact" }
+    )
 
   if (search) {
     query = query.or(`email.ilike.%${search}%,name.ilike.%${search}%`)
@@ -201,15 +259,18 @@ export async function getAllUsers(
     name: user.name as string | null,
     role: user.role as string,
     created_at: user.created_at as string,
-    asset_count: Array.isArray(user.assets) ? (user.assets[0] as { count: number })?.count || 0 : 0,
-    identity_count: Array.isArray(user.identities) ? (user.identities[0] as { count: number })?.count || 0 : 0,
+    asset_count: Array.isArray(user.assets)
+      ? ((user.assets[0] as { count: number })?.count ?? 0)
+      : 0,
+    identity_count: Array.isArray(user.identities)
+      ? ((user.identities[0] as { count: number })?.count ?? 0)
+      : 0,
     last_login: null,
   }))
 
   return { users, total: count || 0 }
 }
 
-// Get all assets with owner info
 export async function getAllAssets(
   page: number = 1,
   limit: number = 20,
@@ -221,7 +282,8 @@ export async function getAllAssets(
 
   let query = adminClient
     .from("assets")
-    .select(`
+    .select(
+      `
       id,
       name,
       type,
@@ -229,7 +291,9 @@ export async function getAllAssets(
       created_at,
       user_id,
       users:user_id(email, name)
-    `, { count: "exact" })
+    `,
+      { count: "exact" }
+    )
 
   if (search) {
     query = query.or(`name.ilike.%${search}%,type.ilike.%${search}%`)
@@ -260,7 +324,6 @@ export async function getAllAssets(
   return { assets, total: count || 0 }
 }
 
-// Get all reports
 export async function getAllReports(
   page: number = 1,
   limit: number = 20,
@@ -284,7 +347,6 @@ export async function getAllReports(
   return { reports: (data || []) as AdminReport[], total: count || 0 }
 }
 
-// Create a new report
 export async function createReport(
   adminId: string,
   reportType: AdminReport["report_type"],
@@ -314,7 +376,6 @@ export async function createReport(
   return { success: true, report: data as AdminReport }
 }
 
-// Log admin activity
 export async function logAdminActivity(
   adminId: string,
   action: string,
@@ -333,14 +394,10 @@ export async function logAdminActivity(
   })
 }
 
-// Get asset types for filtering
 export async function getAssetTypes(): Promise<string[]> {
   const adminClient = createSupabaseAdminClient()
 
-  const { data } = await adminClient
-    .from("assets")
-    .select("type")
-    .limit(100)
+  const { data } = await adminClient.from("assets").select("type").limit(100)
 
   const types = new Set<string>()
   ;(data || []).forEach((item: { type: string }) => {
@@ -350,13 +407,13 @@ export async function getAssetTypes(): Promise<string[]> {
   return Array.from(types)
 }
 
-// Get user details by ID
 export async function getUserDetails(userId: string): Promise<UserWithAssets | null> {
   const adminClient = createSupabaseAdminClient()
 
   const { data } = await adminClient
     .from("users")
-    .select(`
+    .select(
+      `
       id,
       email,
       name,
@@ -364,7 +421,8 @@ export async function getUserDetails(userId: string): Promise<UserWithAssets | n
       created_at,
       assets:assets(count),
       identities:identities(count)
-    `)
+    `
+    )
     .eq("id", userId)
     .single()
 
@@ -376,8 +434,12 @@ export async function getUserDetails(userId: string): Promise<UserWithAssets | n
     name: data.name,
     role: data.role,
     created_at: data.created_at,
-    asset_count: Array.isArray(data.assets) ? (data.assets[0] as { count: number })?.count || 0 : 0,
-    identity_count: Array.isArray(data.identities) ? (data.identities[0] as { count: number })?.count || 0 : 0,
+    asset_count: Array.isArray(data.assets)
+      ? ((data.assets[0] as { count: number })?.count ?? 0)
+      : 0,
+    identity_count: Array.isArray(data.identities)
+      ? ((data.identities[0] as { count: number })?.count ?? 0)
+      : 0,
     last_login: null,
   }
 }

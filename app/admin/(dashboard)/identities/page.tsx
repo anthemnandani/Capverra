@@ -3,40 +3,17 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useCallback } from "react"
 import {
-  Shield,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  MoreVertical,
-  Eye,
-  Download,
-  RefreshCw,
+  Shield, Search, ChevronLeft, ChevronRight, MoreVertical,
+  Eye, Download, RefreshCw, Trash2,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { toast } from "sonner"
 
 interface Identity {
   id: string
@@ -56,6 +33,33 @@ interface Identity {
   risk_profile: "low" | "medium" | "high" | "aggressive"
 }
 
+function DeleteConfirmDialog({
+  open, onClose, onConfirm, name, loading,
+}: {
+  open: boolean; onClose: () => void; onConfirm: () => void; name: string; loading: boolean
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-slate-900 border-white/10 text-white max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-rose-400">
+            <Trash2 className="w-5 h-5" />Delete Identity
+          </DialogTitle>
+          <DialogDescription className="text-gray-400">
+            Are you sure you want to delete <span className="text-white font-medium">"{name}"</span>? This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 mt-4">
+          <Button variant="outline" onClick={onClose} disabled={loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">Cancel</Button>
+          <Button onClick={onConfirm} disabled={loading} className="bg-rose-500 hover:bg-rose-600 text-white">
+            {loading ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function IdentitiesPage() {
   const [identities, setIdentities] = useState<Identity[]>([])
   const [loading, setLoading] = useState(true)
@@ -64,98 +68,79 @@ export default function IdentitiesPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const [selectedIdentity, setSelectedIdentity] = useState<Identity | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Identity | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const itemsPerPage = 20
 
   const loadIdentities = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: itemsPerPage.toString(),
-      })
+      const params = new URLSearchParams({ page: currentPage.toString(), limit: itemsPerPage.toString() })
       if (searchTerm) params.append("search", searchTerm)
 
       const response = await fetch(`/api/admin/identities-list?${params}`)
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error(`[v0] API error: ${response.status}`, errorText)
-        return
-      }
+      if (!response.ok) { console.error(`API error: ${response.status}`); return }
 
       const data = await response.json()
-      console.log("[v0] Identities data loaded:", {DATA:data, total: data.total, count: data.identities?.length })
       setIdentities(data.identities || [])
       setTotal(data.total || 0)
       setTotalPages(data.totalPages || 1)
     } catch (error) {
-      console.error("[v0] Error loading identities:", error)
+      console.error("Error loading identities:", error)
     } finally {
       setLoading(false)
     }
   }, [currentPage, searchTerm])
 
-  useEffect(() => {
-    loadIdentities()
-  }, [loadIdentities])
+  useEffect(() => { loadIdentities() }, [loadIdentities])
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch("/api/admin/identities-list", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: deleteTarget.id }),
+      })
+      if (!res.ok) throw new Error("Delete failed")
+      toast.success(`"${deleteTarget.name}" deleted successfully`)
+      setDeleteTarget(null)
+      loadIdentities()
+    } catch {
+      toast.error("Failed to delete identity")
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-      >
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Shield className="w-6 h-6 text-indigo-400" />
-            Identity Management
+            <Shield className="w-6 h-6 text-indigo-400" />Identity Management
           </h1>
           <p className="text-muted-foreground mt-1">View and manage all identities</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadIdentities}
-            disabled={loading}
-            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={loadIdentities} disabled={loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">
+          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />Refresh
+        </Button>
       </motion.div>
 
-      {/* Search */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="flex flex-col sm:flex-row gap-4"
-      >
-        <div className="relative flex-1">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <Input
             placeholder="Search identities..."
             value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value)
-              setCurrentPage(1)
-            }}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1) }}
             className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-10 rounded-xl"
           />
         </div>
       </motion.div>
 
-      {/* Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader className="bg-white/5 border-b border-white/10">
@@ -211,21 +196,12 @@ export default function IdentitiesPage() {
                           </div>
                         </div>
                       </TableCell>
+                      <TableCell><Badge variant="outline" className="capitalize">{identity.type}</Badge></TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {identity.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={`capitalize ${identity.risk_profile === "low"
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/50"
-                              : identity.risk_profile === "medium"
-                                ? "bg-amber-500/10 text-amber-400 border-amber-500/50"
-                                : "bg-rose-500/10 text-rose-400 border-rose-500/50"
-                            }`}
-                        >
+                        <Badge variant="outline" className={`capitalize ${identity.risk_profile === "low" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/50"
+                            : identity.risk_profile === "medium" ? "bg-amber-500/10 text-amber-400 border-amber-500/50"
+                              : "bg-rose-500/10 text-rose-400 border-rose-500/50"
+                          }`}>
                           {identity.risk_profile}
                         </Badge>
                       </TableCell>
@@ -261,8 +237,10 @@ export default function IdentitiesPage() {
                               View Details
                             </DropdownMenuItem>
                             <DropdownMenuItem className="cursor-pointer hover:bg-white/5">
-                              <Download className="w-4 h-4 mr-2" />
-                              Download
+                              <Download className="w-4 h-4 mr-2" />Download
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDeleteTarget(identity)} className="cursor-pointer text-rose-400 hover:bg-rose-500/10 focus:text-rose-400">
+                              <Trash2 className="w-4 h-4 mr-2" />Delete Identity
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -288,13 +266,7 @@ export default function IdentitiesPage() {
           {Math.min(currentPage * itemsPerPage, total)} of {total} identities
         </p>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1 || loading}
-            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
-          >
+          <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1 || loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <span className="text-sm text-muted-foreground">
@@ -368,9 +340,7 @@ export default function IdentitiesPage() {
                   <p className="text-xs text-muted-foreground uppercase mb-2">Citizenship</p>
                   <div className="flex flex-wrap gap-2">
                     {selectedIdentity.citizenship.map((country) => (
-                      <Badge key={country} variant="secondary">
-                        {country}
-                      </Badge>
+                      <Badge key={country} variant="secondary">{country}</Badge>
                     ))}
                   </div>
                 </div>
@@ -379,6 +349,14 @@ export default function IdentitiesPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        name={deleteTarget?.name || ""}
+        loading={deleting}
+      />
     </div>
   )
 }
