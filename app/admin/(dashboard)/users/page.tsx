@@ -32,9 +32,18 @@ import { useAuth } from "@/context"
 import type { UserRole as Role } from "@/lib/admin-types"
 
 const ROLE_CONFIG: Record<Role, { label: string; color: string }> = {
-  client: { label: "Client", color: "border-gray-500/50 text-gray-400 bg-gray-500/10" },
-  admin: { label: "Admin", color: "border-blue-500/50 text-blue-400 bg-blue-500/10" },
-  super_admin: { label: "Super Admin", color: "border-indigo-500/50 text-indigo-400 bg-indigo-500/10" },
+  client: {
+    label: "User", // Client → User
+    color: "border-gray-500/50 text-gray-400 bg-gray-500/10",
+  },
+  admin: {
+    label: "Admin",
+    color: "border-blue-500/50 text-blue-400 bg-blue-500/10",
+  },
+  super_admin: {
+    label: "Super Admin",
+    color: "border-indigo-500/50 text-indigo-400 bg-indigo-500/10",
+  },
 }
 
 function RoleBadge({ role }: { role: string }) {
@@ -95,12 +104,18 @@ function RoleChangeMenu({
           className={`cursor-pointer hover:bg-white/5 ${role === user.role ? "opacity-40" : ""}`}
         >
           <div className="flex items-center gap-2">
-            {role === user.role ? (
-              <span className="w-3 h-3 rounded-full bg-indigo-400" />
-            ) : (
-              <span className="w-3 h-3 rounded-full border border-white/20" />
-            )}
-            <span className="capitalize">{ROLE_CONFIG[role].label}</span>
+            <div
+              className={`w-4 h-4 rounded-full border flex items-center justify-center ${role === user.role
+                  ? "border-indigo-400"
+                  : "border-white/20"
+                }`}
+            >
+              {role === user.role && (
+                <div className="w-2 h-2 rounded-full bg-indigo-400" />
+              )}
+            </div>
+
+            <span>{ROLE_CONFIG[role].label}</span>
           </div>
         </DropdownMenuItem>
       ))}
@@ -303,10 +318,10 @@ function UserDetailModal({
                           <Badge
                             variant="outline"
                             className={`capitalize text-xs ${identity.risk_profile === "low"
-                                ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
-                                : identity.risk_profile === "medium"
-                                  ? "border-amber-500/50 text-amber-400 bg-amber-500/10"
-                                  : "border-rose-500/50 text-rose-400 bg-rose-500/10"
+                              ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
+                              : identity.risk_profile === "medium"
+                                ? "border-amber-500/50 text-amber-400 bg-amber-500/10"
+                                : "border-rose-500/50 text-rose-400 bg-rose-500/10"
                               }`}
                           >
                             {identity.risk_profile}

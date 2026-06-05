@@ -76,9 +76,9 @@ export async function GET(request: Request) {
       userData.push({
         id: customUser.id,
         email: authUser.email,
-        name: customUser.name || "—", // from custom users table
-        role: authUser.user_metadata?.role || "user", // same as before
-        created_at: authUser.created_at, // same as before
+        name: customUser.name || "—",
+        role: customUser.role || "client",
+        created_at: authUser.created_at,
         asset_count: assetCount || 0,
         identity_count: identityCount || 0,
       })
