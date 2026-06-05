@@ -40,17 +40,17 @@ function DeleteConfirmDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-slate-900 border-white/10 text-white max-w-md">
+      <DialogContent className="bg-background border-border text-foreground max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-rose-400">
             <Trash2 className="w-5 h-5" />Delete Identity
           </DialogTitle>
-          <DialogDescription className="text-gray-400">
-            Are you sure you want to delete <span className="text-white font-medium">"{name}"</span>? This action cannot be undone.
+          <DialogDescription className="text-muted-foreground">
+            Are you sure you want to delete <span className="text-foreground font-medium">"{name}"</span>? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 mt-4">
-          <Button variant="outline" onClick={onClose} disabled={loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">Cancel</Button>
+          <Button variant="outline" onClick={onClose} disabled={loading} className="bg-card border-border text-foreground hover:bg-card/70 transition-smooth">Cancel</Button>
           <Button onClick={onConfirm} disabled={loading} className="bg-rose-500 hover:bg-rose-600 text-white">
             {loading ? "Deleting..." : "Delete"}
           </Button>
@@ -115,35 +115,39 @@ export default function IdentitiesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-6"
+    >
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Shield className="w-6 h-6 text-indigo-400" />Identity Management
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Shield className="w-6 h-6 text-primary" />Identity Management
           </h1>
           <p className="text-muted-foreground mt-1">View and manage all identities</p>
         </div>
-        <Button variant="outline" size="sm" onClick={loadIdentities} disabled={loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">
+        <Button variant="outline" size="sm" onClick={loadIdentities} disabled={loading} className="bg-card border-border text-foreground hover:bg-card/70 transition-smooth">
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />Refresh
         </Button>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search identities..."
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1) }}
-            className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-10 rounded-xl"
+            className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-muted-foreground h-10 rounded-xl"
           />
         </div>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="rounded-xl border border-border bg-card/5 overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-white/5 border-b border-white/10">
+            <TableHeader className="bg-card border-b border-border">
               <TableRow>
                 <TableHead className="text-muted-foreground">Name / Owner</TableHead>
                 <TableHead className="text-muted-foreground">Type</TableHead>
@@ -183,16 +187,16 @@ export default function IdentitiesPage() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.03 }}
-                      className="group hover:bg-white/5 transition-colors"
+                      className="group hover:bg-card/50 transition-smooth transition-colors"
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-white text-xs font-medium">
+                          <div className="w-10 h-10 rounded-lg bg-card flex items-center justify-center text-foreground text-xs font-medium">
                             {identity.name?.[0]?.toUpperCase()}
                           </div>
                           <div>
                             <p className="text-white font-medium">{identity.name}</p>
-                            <p className="text-gray-500 text-xs">{identity.user_email}</p>
+                            <p className="text-muted-foreground text-xs">{identity.user_email}</p>
                           </div>
                         </div>
                       </TableCell>
@@ -266,7 +270,7 @@ export default function IdentitiesPage() {
           {Math.min(currentPage * itemsPerPage, total)} of {total} identities
         </p>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1 || loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">
+          <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1 || loading} className="bg-card border-border text-foreground hover:bg-card/70 transition-smooth">
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <span className="text-sm text-muted-foreground">
@@ -277,7 +281,7 @@ export default function IdentitiesPage() {
             size="sm"
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages || loading}
-            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+            className="bg-card border-border text-foreground hover:bg-card/70 transition-smooth"
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
@@ -357,6 +361,6 @@ export default function IdentitiesPage() {
         name={deleteTarget?.name || ""}
         loading={deleting}
       />
-    </div>
+    </motion.div>
   )
 }

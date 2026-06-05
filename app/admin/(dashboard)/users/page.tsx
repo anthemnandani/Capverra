@@ -108,13 +108,13 @@ function UserDetailModal({
         <div className="mt-6 space-y-6">
           {/* Basic Info */}
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-300 uppercase">Basic Information</h3>
+            <h3 className="text-sm font-semibold text-foreground uppercase font-semibold">Basic Information</h3>
             <div className="grid grid-cols-2 gap-4">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="p-4 rounded-xl bg-white/5 border border-white/5"
+                className="p-4 rounded-xl bg-white/5 border border-border"
               >
                 <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Role</p>
                 <div className="flex items-center gap-2">
@@ -127,7 +127,7 @@ function UserDetailModal({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="p-4 rounded-xl bg-white/5 border border-white/5"
+                className="p-4 rounded-xl bg-white/5 border border-border"
               >
                 <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Joined</p>
                 <div className="flex items-center gap-2">
@@ -143,7 +143,7 @@ function UserDetailModal({
           {/* Assets Section */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-300 uppercase">Assets ({assets.length})</h3>
+              <h3 className="text-sm font-semibold text-foreground uppercase font-semibold">Assets ({assets.length})</h3>
             </div>
             {loadingDetails ? (
               <div className="flex justify-center py-4">
@@ -157,14 +157,14 @@ function UserDetailModal({
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+                    className="p-3 rounded-lg bg-white/5 border border-border hover:bg-white/10 transition-colors"
                   >
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-white font-medium text-sm">{asset.name}</p>
                         <p className="text-muted-foreground text-xs mt-0.5">Type: {asset.type}</p>
                         {asset.location_country && (
-                          <p className="text-gray-500 text-xs mt-0.5">Location: {asset.location_country}</p>
+                          <p className="text-muted-foreground text-xs mt-0.5">Location: {asset.location_country}</p>
                         )}
                       </div>
                       {asset.latest_valuation && (
@@ -179,14 +179,14 @@ function UserDetailModal({
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm py-4">No assets found for this user</p>
+              <p className="text-muted-foreground text-sm py-4">No assets found for this user</p>
             )}
           </div>
 
           {/* Identities Section */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-300 uppercase">Identities ({identities.length})</h3>
+              <h3 className="text-sm font-semibold text-foreground uppercase font-semibold">Identities ({identities.length})</h3>
             </div>
             {identities.length > 0 ? (
               <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -196,7 +196,7 @@ function UserDetailModal({
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+                    className="p-3 rounded-lg bg-white/5 border border-border hover:bg-white/10 transition-colors"
                   >
                     <div className="flex items-start justify-between">
                       <div>
@@ -224,7 +224,7 @@ function UserDetailModal({
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm py-4">No identities found for this user</p>
+              <p className="text-muted-foreground text-sm py-4">No identities found for this user</p>
             )}
           </div>
 
@@ -232,7 +232,7 @@ function UserDetailModal({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="p-4 rounded-xl bg-white/5 border border-white/5"
+            className="p-4 rounded-xl bg-white/5 border border-border"
           >
             <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">User ID</p>
             <code className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded break-all">
@@ -270,7 +270,7 @@ function UserTableRow({
           </Avatar>
           <div>
             <p className="text-white font-medium">{user.name || "Unnamed"}</p>
-            <p className="text-gray-500 text-xs flex items-center gap-1">
+            <p className="text-muted-foreground text-xs flex items-center gap-1">
               <Mail className="w-3 h-3" />
               {user.email}
             </p>
@@ -425,7 +425,7 @@ export default function AdminUsersPage() {
         className="flex flex-col sm:flex-row gap-4"
       >
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search by name or email..."
             value={search}
@@ -433,12 +433,12 @@ export default function AdminUsersPage() {
               setSearch(e.target.value)
               setPage(1)
             }}
-            className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-indigo-500"
+            className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-muted-foreground focus:border-indigo-500"
           />
         </div>
         <Button
           variant="outline"
-          className="bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:text-white"
+          className="bg-card border-border text-foreground hover:bg-card/70 hover:text-foreground transition-smooth"
         >
           <Filter className="w-4 h-4 mr-2" />
           Filters
@@ -452,7 +452,7 @@ export default function AdminUsersPage() {
         transition={{ delay: 0.2 }}
       >
         <Card className="bg-card border-border backdrop-blur-xl overflow-hidden">
-          <CardHeader className="border-b border-white/5">
+          <CardHeader className="border-b border-border">
             <CardTitle className="text-white flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <User className="w-5 h-5 text-indigo-400" />
@@ -467,7 +467,7 @@ export default function AdminUsersPage() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-white/5 hover:bg-transparent">
+                  <TableRow className="border-border hover:bg-card/50 transition-smooth">
                     <TableHead className="text-muted-foreground">User</TableHead>
                     <TableHead className="text-muted-foreground">Role</TableHead>
                     <TableHead className="text-muted-foreground">Assets</TableHead>
@@ -480,7 +480,7 @@ export default function AdminUsersPage() {
                   <AnimatePresence mode="popLayout">
                     {loading ? (
                       [...Array(5)].map((_, i) => (
-                        <TableRow key={i} className="border-white/5">
+                        <TableRow key={i} className="border-border">
                           <TableCell colSpan={6}>
                             <div className="h-12 bg-white/5 rounded animate-pulse" />
                           </TableCell>
@@ -496,10 +496,10 @@ export default function AdminUsersPage() {
                         />
                       ))
                     ) : (
-                      <TableRow className="border-white/5">
+                      <TableRow className="border-border">
                         <TableCell
                           colSpan={6}
-                          className="text-center py-12 text-gray-500"
+                          className="text-center py-12 text-muted-foreground"
                         >
                           <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
                           <p>No users found</p>
@@ -518,7 +518,7 @@ export default function AdminUsersPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t border-white/5">
+              <div className="flex items-center justify-between px-6 py-4 border-t border-border">
                 <p className="text-sm text-muted-foreground">
                   Showing {(page - 1) * limit + 1} to{" "}
                   {Math.min(page * limit, total)} of {total}
