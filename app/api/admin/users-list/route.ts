@@ -42,8 +42,9 @@ export async function GET(request: Request) {
     const userData = []
 
     for (const customUser of customUsers || []) {
+
       const authUser = authUsers.find(
-        (user) => user.id === customUser.id
+        (user: { id: string }) => user.id === customUser.id
       )
 
       // Skip if auth user not found
