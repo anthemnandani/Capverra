@@ -1,7 +1,5 @@
 "use client"
 
-import { motion } from "framer-motion"
-
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useCallback } from "react"
 import type { UserWithAssets } from "@/lib/admin-types"

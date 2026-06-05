@@ -305,7 +305,11 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-6"
+    >
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Settings className="w-6 h-6 text-primary" />
@@ -378,16 +382,16 @@ export default function AdminSettingsPage() {
               <div className="flex-1 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-gray-300">Full Name</Label>
+                    <Label htmlFor="name" className="text-foreground">Full Name</Label>
                     <Input
                       id="name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="bg-white/5 border-white/10 text-white"
+                      className="bg-card border-border text-foreground placeholder-muted"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-gray-300">Email Address</Label>
+                    <Label htmlFor="email" className="text-foreground">Email Address</Label>
                     <Input
                       id="email"
                       type="email"
@@ -399,7 +403,7 @@ export default function AdminSettingsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Role</Label>
+                  <Label className="text-foreground">Role</Label>
                   <div className="flex items-center gap-2">
                     <Shield className="w-4 h-4 text-primary" />
                     <span className="text-foreground capitalize">
@@ -433,9 +437,9 @@ export default function AdminSettingsPage() {
                 checked={emailNotifications}
                 onCheckedChange={(v) => { setEmailNotifications(v); handleSaveNotifications() }}
               />
-              <Separator className="bg-white/5" />
+              <Separator className="bg-border" />
               <ToggleSetting label="Weekly Reports" description="Receive weekly summary reports via email" checked={true} onCheckedChange={() => {}} />
-              <Separator className="bg-white/5" />
+              <Separator className="bg-border" />
               <ToggleSetting label="New User Alerts" description="Get notified when new users sign up" checked={true} onCheckedChange={() => {}} />
             </div>
           </SettingsSection>
@@ -448,7 +452,7 @@ export default function AdminSettingsPage() {
                 checked={pushNotifications}
                 onCheckedChange={(v) => { setPushNotifications(v); handleSaveNotifications() }}
               />
-              <Separator className="bg-white/5" />
+              <Separator className="bg-border" />
               <ToggleSetting
                 label="Activity Alerts"
                 description="Get notified about important activities"
@@ -464,7 +468,7 @@ export default function AdminSettingsPage() {
           <SettingsSection title="Password" description="Update your password" icon={Key} delay={0.1}>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="current-password" className="text-gray-300">Current Password</Label>
+                <Label htmlFor="current-password" className="text-foreground">Current Password</Label>
                 <div className="relative">
                   <Input
                     id="current-password"
@@ -473,14 +477,14 @@ export default function AdminSettingsPage() {
                     onChange={(e) => setCurrentPw(e.target.value)}
                     className="bg-card border-border text-foreground placeholder-muted pr-10 transition-smooth focus-ring"
                   />
-                  <button type="button" onClick={() => setShowCurrentPw((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
+                  <button type="button" onClick={() => setShowCurrentPw((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-smooth">
                     {showCurrentPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="new-password" className="text-gray-300">New Password</Label>
+                  <Label htmlFor="new-password" className="text-foreground">New Password</Label>
                   <div className="relative">
                     <Input
                       id="new-password"
@@ -489,19 +493,19 @@ export default function AdminSettingsPage() {
                       onChange={(e) => setNewPw(e.target.value)}
                       className="bg-card border-border text-foreground placeholder-muted pr-10 transition-smooth focus-ring"
                     />
-                    <button type="button" onClick={() => setShowNewPw((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
+                    <button type="button" onClick={() => setShowNewPw((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-smooth">
                       {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password" className="text-gray-300">Confirm New Password</Label>
+                  <Label htmlFor="confirm-password" className="text-foreground">Confirm New Password</Label>
                   <Input
                     id="confirm-password"
                     type={showNewPw ? "text" : "password"}
                     value={confirmPw}
                     onChange={(e) => setConfirmPw(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
+                    className="bg-card border-border text-foreground placeholder-muted"
                   />
                 </div>
               </div>
@@ -559,12 +563,12 @@ export default function AdminSettingsPage() {
           <SettingsSection title="Language & Region" description="Set your preferred language and timezone" icon={Globe} delay={0.2}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-gray-300">Language</Label>
-                <Input value="English (US)" readOnly className="bg-white/5 border-white/10 text-white" />
+                <Label className="text-foreground">Language</Label>
+                <Input value="English (US)" readOnly className="bg-card border-border text-foreground placeholder-muted" />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Timezone</Label>
-                <Input value="(UTC+00:00) London" readOnly className="bg-white/5 border-white/10 text-white" />
+                <Label className="text-foreground">Timezone</Label>
+                <Input value="(UTC+00:00) London" readOnly className="bg-card border-border text-foreground placeholder-muted" />
               </div>
             </div>
           </SettingsSection>
