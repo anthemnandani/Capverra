@@ -439,7 +439,7 @@ export default function AdminAssetsPage() {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <FolderOpen className="w-6 h-6 text-amber-400" />
             Asset Management
           </h1>
@@ -449,15 +449,15 @@ export default function AdminAssetsPage() {
         </div>
         <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="flex items-center bg-white/5 rounded-lg p-1">
+          <div className="flex items-center bg-card rounded-lg p-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setViewMode("list")}
               className={`h-8 w-8 p-0 ${
                 viewMode === "list"
-                  ? "bg-white/10 text-white"
-                  : "text-muted-foreground hover:text-white"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <List className="w-4 h-4" />
@@ -468,8 +468,8 @@ export default function AdminAssetsPage() {
               onClick={() => setViewMode("grid")}
               className={`h-8 w-8 p-0 ${
                 viewMode === "grid"
-                  ? "bg-white/10 text-white"
-                  : "text-muted-foreground hover:text-white"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <Grid3X3 className="w-4 h-4" />
@@ -480,7 +480,7 @@ export default function AdminAssetsPage() {
             size="sm"
             onClick={loadAssets}
             disabled={loading}
-            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+            className="bg-card border-border text-foreground hover:bg-card/70 transition-smooth"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -514,19 +514,19 @@ export default function AdminAssetsPage() {
             setPage(1)
           }}
         >
-          <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
+          <SelectTrigger className="w-[180px] bg-card border-border text-foreground">
             <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
             <SelectValue placeholder="Asset Type" />
           </SelectTrigger>
-          <SelectContent className="bg-slate-900 border-white/10">
-            <SelectItem value="all" className="text-white hover:bg-white/5">
+          <SelectContent className="bg-background border-border">
+            <SelectItem value="all" className="text-foreground hover:bg-card/50">
               All Types
             </SelectItem>
             {assetTypes.map((type) => (
               <SelectItem
                 key={type}
                 value={type}
-                className="text-white hover:bg-white/5 capitalize"
+                className="text-foreground hover:bg-card/50 capitalize"
               >
                 {type}
               </SelectItem>
@@ -565,8 +565,8 @@ export default function AdminAssetsPage() {
         ) : (
           // List View
           <Card className="bg-card border-border backdrop-blur-xl overflow-hidden">
-            <CardHeader className="border-b border-white/5">
-              <CardTitle className="text-white flex items-center justify-between">
+            <CardHeader className="border-b border-border">
+              <CardTitle className="text-foreground flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <FolderOpen className="w-5 h-5 text-amber-400" />
                   All Assets

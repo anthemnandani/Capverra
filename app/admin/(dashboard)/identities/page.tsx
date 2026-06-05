@@ -195,7 +195,7 @@ export default function IdentitiesPage() {
                             {identity.name?.[0]?.toUpperCase()}
                           </div>
                           <div>
-                            <p className="text-white font-medium">{identity.name}</p>
+                            <p className="text-foreground font-medium">{identity.name}</p>
                             <p className="text-muted-foreground text-xs">{identity.user_email}</p>
                           </div>
                         </div>
@@ -300,41 +300,41 @@ export default function IdentitiesPage() {
           {selectedIdentity && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                <div className="p-3 rounded-lg bg-card border border-border">
                   <p className="text-xs text-muted-foreground uppercase">Type</p>
-                  <p className="text-white font-medium capitalize">{selectedIdentity.type}</p>
+                  <p className="text-foreground font-medium capitalize">{selectedIdentity.type}</p>
                 </div>
-                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                <div className="p-3 rounded-lg bg-card border border-border">
                   <p className="text-xs text-muted-foreground uppercase">Risk Profile</p>
-                  <p className="text-white font-medium capitalize">{selectedIdentity.risk_profile}</p>
+                  <p className="text-foreground font-medium capitalize">{selectedIdentity.risk_profile}</p>
                 </div>
-                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                <div className="p-3 rounded-lg bg-card border border-border">
                   <p className="text-xs text-muted-foreground uppercase">Citizenship</p>
-                  <p className="text-white font-medium">{selectedIdentity.citizenship}</p>
+                  <p className="text-foreground font-medium">{selectedIdentity.citizenship}</p>
                 </div>
-                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                 <div className="p-3 rounded-lg bg-card border border-border">
                   <p className="text-xs text-muted-foreground uppercase">State/Province</p>
-                  <p className="text-white font-medium">{selectedIdentity.state_province}</p>
+                  <p className="text-foreground font-medium">{selectedIdentity.state_province}</p>
                 </div>
-                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                 <div className="p-3 rounded-lg bg-card border border-border">
                   <p className="text-xs text-muted-foreground uppercase">Residency</p>
-                  <p className="text-white font-medium">{selectedIdentity.residency}</p>
+                  <p className="text-foreground font-medium">{selectedIdentity.residency}</p>
                 </div>
-                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                 <div className="p-3 rounded-lg bg-card border border-border">
                   <p className="text-xs text-muted-foreground uppercase">Tax Rate</p>
-                  <p className="text-white font-medium">{selectedIdentity.tax_rate}</p>
+                  <p className="text-foreground font-medium">{selectedIdentity.tax_rate}</p>
                 </div>
-                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                 <div className="p-3 rounded-lg bg-card border border-border">
                   <p className="text-xs text-muted-foreground uppercase">Annual Income</p>
-                  <p className="text-white font-medium">{selectedIdentity.annual_income}</p>
+                  <p className="text-foreground font-medium">{selectedIdentity.annual_income}</p>
                 </div>
-                 <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                 <div className="p-3 rounded-lg bg-card border border-border">
                   <p className="text-xs text-muted-foreground uppercase">Goals</p>
-                  <p className="text-white font-medium">{selectedIdentity.goals}</p>
+                  <p className="text-foreground font-medium">{selectedIdentity.goals}</p>
                 </div>
-                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                <div className="p-3 rounded-lg bg-card border border-border">
                   <p className="text-xs text-muted-foreground uppercase">Created</p>
-                  <p className="text-white font-medium">
+                  <p className="text-foreground font-medium">
                     {new Date(selectedIdentity.created_at).toLocaleDateString()}
                   </p>
                 </div>
