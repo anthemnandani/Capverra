@@ -70,11 +70,8 @@ export async function updateAdminPreferences(
   return { success: true }
 }
 
-// lib/admin-actions.ts  — updated adminLogin + new updateUserRole
-// Only the changed/added functions shown below. Keep the rest of the file as-is.
-
-// ── adminLogin (updated) ──────────────────────────────────────────────────────
-// Now allows both 'admin' AND 'super_admin' roles.
+// ── adminLogin ────────────────────────────────────────────────────────────────
+// Allows both 'admin' AND 'super_admin' roles.
 // Returns error code "ACCESS_DENIED_CLIENT" when a client tries to use admin portal.
 export async function adminLogin(
   email: string,
@@ -203,9 +200,11 @@ export async function adminLogout(): Promise<void> {
   await supabase.auth.signOut()
 }
 
+// ── getDashboardStats — all counts exclude soft-deleted rows ──────────────────
 export async function getDashboardStats(): Promise<DashboardStats> {
   const adminClient = createSupabaseAdminClient()
 
+  // Users — no soft delete on users table
   const { count: totalUsers } = await adminClient
     .from("users")
     .select("*", { count: "exact", head: true })
@@ -218,18 +217,25 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .select("*", { count: "exact", head: true })
     .gte("created_at", thirtyDaysAgo.toISOString())
 
+  // Assets — exclude soft-deleted
   const { count: totalAssets } = await adminClient
     .from("assets")
     .select("*", { count: "exact", head: true })
+    .eq("is_deleted", false)
 
+  // Identities — exclude soft-deleted
   const { count: totalIdentities } = await adminClient
     .from("identities")
     .select("*", { count: "exact", head: true })
+    .eq("is_deleted", false)
 
+  // Optimization reports — exclude soft-deleted
   const { count: reportsGenerated } = await adminClient
-    .from("admin_reports")
+    .from("optimization_reports")
     .select("*", { count: "exact", head: true })
+    .eq("is_deleted", false)
 
+  // Growth: users (7d vs prev 7d)
   const sevenDaysAgo = new Date()
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
   const fourteenDaysAgo = new Date()
@@ -250,14 +256,17 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     ? (((recentUsers || 0) - previousUsers) / previousUsers) * 100
     : 0
 
+  // Growth: assets (7d vs prev 7d) — exclude soft-deleted
   const { count: recentAssets } = await adminClient
     .from("assets")
     .select("*", { count: "exact", head: true })
+    .eq("is_deleted", false)
     .gte("created_at", sevenDaysAgo.toISOString())
 
   const { count: previousAssets } = await adminClient
     .from("assets")
     .select("*", { count: "exact", head: true })
+    .eq("is_deleted", false)
     .gte("created_at", fourteenDaysAgo.toISOString())
     .lt("created_at", sevenDaysAgo.toISOString())
 
@@ -355,6 +364,7 @@ export async function getAllAssets(
     `,
       { count: "exact" }
     )
+    .eq("is_deleted", false) // exclude soft-deleted
 
   if (search) {
     query = query.or(`name.ilike.%${search}%,type.ilike.%${search}%`)
@@ -458,7 +468,11 @@ export async function logAdminActivity(
 export async function getAssetTypes(): Promise<string[]> {
   const adminClient = createSupabaseAdminClient()
 
-  const { data } = await adminClient.from("assets").select("type").limit(100)
+  const { data } = await adminClient
+    .from("assets")
+    .select("type")
+    .eq("is_deleted", false) // exclude soft-deleted
+    .limit(100)
 
   const types = new Set<string>()
   ;(data || []).forEach((item: { type: string }) => {

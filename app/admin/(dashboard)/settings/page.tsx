@@ -50,15 +50,15 @@ function SettingsSection({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
     >
-      <Card className="bg-slate-900/50 border-white/5">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
-              <Icon className="w-4 h-4 text-indigo-400" />
+              <Icon className="w-4 h-4 text-indigo-500" />
             </div>
             {title}
           </CardTitle>
-          <CardDescription className="text-gray-400">{description}</CardDescription>
+          <CardDescription className="text-muted-foreground">{description}</CardDescription>
         </CardHeader>
         <CardContent>{children}</CardContent>
       </Card>
@@ -80,8 +80,8 @@ function ToggleSetting({
   return (
     <div className="flex items-center justify-between py-3">
       <div>
-        <p className="text-white font-medium">{label}</p>
-        <p className="text-gray-500 text-sm">{description}</p>
+        <p className="text-foreground font-medium">{label}</p>
+        <p className="text-muted-foreground text-sm">{description}</p>
       </div>
       <Switch
         checked={checked}
@@ -110,7 +110,6 @@ export default function AdminSettingsPage() {
   const [twoFactor, setTwoFactor] = useState(false)
   const [activityLogs, setActivityLogs] = useState(true)
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>()
-  // pendingAvatarCleanUrl: upload ho gaya but save nahi hua yet
   const [pendingAvatarCleanUrl, setPendingAvatarCleanUrl] = useState<string | undefined>()
 
   const [currentPw, setCurrentPw] = useState("")
@@ -155,15 +154,12 @@ export default function AdminSettingsPage() {
     loadAdmin()
   }, [setTheme])
 
-  // ── Profile save — avatar bhi yahan save hoga ─────────────────────────────
   const handleSaveProfile = async () => {
     if (!name.trim()) { toast.error("Name is required"); return }
     if (!adminUser?.user_id) return
     setSaving(true)
     try {
       const supabase = createSupabaseBrowserClient()
-
-      // pendingAvatarCleanUrl hai toh woh save karo, warna existing clean url
       const urlToSave = pendingAvatarCleanUrl
         ?? (adminUser.avatar_url ? adminUser.avatar_url.split("?")[0] : null)
 
@@ -178,7 +174,6 @@ export default function AdminSettingsPage() {
 
       if (error) throw error
 
-      // Pending clear karo after successful save
       setPendingAvatarCleanUrl(undefined)
       toast.success("Profile updated successfully")
     } catch (err: unknown) {
@@ -189,7 +184,6 @@ export default function AdminSettingsPage() {
     }
   }
 
-  // ── Avatar upload — sirf storage mein upload, DB save nahi ───────────────
   const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !adminUser?.user_id) return
@@ -209,7 +203,6 @@ export default function AdminSettingsPage() {
       const { data } = supabase.storage.from("avatars").getPublicUrl(path)
       const cleanUrl = data.publicUrl
 
-      // Sirf preview update karo, DB save nahi
       setAvatarUrl(`${cleanUrl}?t=${Date.now()}`)
       setPendingAvatarCleanUrl(cleanUrl)
 
@@ -222,7 +215,6 @@ export default function AdminSettingsPage() {
     }
   }
 
-  // ── Theme toggle ──────────────────────────────────────────────────────────
   const handleThemeChange = async (checked: boolean) => {
     const newTheme = checked ? "dark" : "light"
     setDarkMode(checked)
@@ -251,7 +243,6 @@ export default function AdminSettingsPage() {
     }
   }
 
-  // ── Notification preferences save ────────────────────────────────────────
   const handleSaveNotifications = async () => {
     if (!adminUser?.user_id) return
     try {
@@ -272,7 +263,6 @@ export default function AdminSettingsPage() {
     }
   }
 
-  // ── Password change ───────────────────────────────────────────────────────
   const handleUpdatePassword = async () => {
     if (!currentPw) { toast.error("Enter your current password"); return }
     if (newPw.length < 8) { toast.error("New password must be at least 8 characters"); return }
@@ -299,7 +289,7 @@ export default function AdminSettingsPage() {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
       </div>
     )
   }
@@ -307,25 +297,25 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Settings className="w-6 h-6 text-indigo-400" />
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <Settings className="w-6 h-6 text-indigo-500" />
           Settings
         </h1>
-        <p className="text-gray-400 mt-1">Manage your account and preferences</p>
+        <p className="text-muted-foreground mt-1">Manage your account and preferences</p>
       </motion.div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="bg-white/5 border border-white/10">
-          <TabsTrigger value="profile" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-gray-400">
+        <TabsList className="bg-muted border border-border">
+          <TabsTrigger value="profile" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-muted-foreground">
             <User className="w-4 h-4 mr-2" />Profile
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-gray-400">
+          <TabsTrigger value="notifications" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-muted-foreground">
             <Bell className="w-4 h-4 mr-2" />Notifications
           </TabsTrigger>
-          <TabsTrigger value="security" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-gray-400">
+          <TabsTrigger value="security" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-muted-foreground">
             <Shield className="w-4 h-4 mr-2" />Security
           </TabsTrigger>
-          <TabsTrigger value="appearance" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-gray-400">
+          <TabsTrigger value="appearance" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-muted-foreground">
             <Palette className="w-4 h-4 mr-2" />Appearance
           </TabsTrigger>
         </TabsList>
@@ -351,9 +341,8 @@ export default function AdminSettingsPage() {
                       {adminUser?.name?.[0]?.toUpperCase() ?? adminUser?.email[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  {/* Pending indicator */}
                   {pendingAvatarCleanUrl && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 border-2 border-slate-900" title="Unsaved" />
+                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 border-2 border-background" title="Unsaved" />
                   )}
                 </div>
                 <Button
@@ -361,7 +350,7 @@ export default function AdminSettingsPage() {
                   size="sm"
                   disabled={avatarUploading}
                   onClick={() => fileRef.current?.click()}
-                  className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+                  className="border-border text-foreground hover:bg-muted"
                 >
                   {avatarUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Change Avatar"}
                 </Button>
@@ -371,31 +360,31 @@ export default function AdminSettingsPage() {
               <div className="flex-1 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-gray-300">Full Name</Label>
+                    <Label htmlFor="name" className="text-foreground/80">Full Name</Label>
                     <Input
                       id="name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="bg-white/5 border-white/10 text-white"
+                      className="bg-background border-border text-foreground"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-gray-300">Email Address</Label>
+                    <Label htmlFor="email" className="text-foreground/80">Email Address</Label>
                     <Input
                       id="email"
                       type="email"
                       value={email}
                       disabled
-                      className="bg-white/5 border-white/10 text-white opacity-60 cursor-not-allowed"
+                      className="bg-muted border-border text-muted-foreground opacity-60 cursor-not-allowed"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Role</Label>
+                  <Label className="text-foreground/80">Role</Label>
                   <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-indigo-400" />
-                    <span className="text-white capitalize">
+                    <Shield className="w-4 h-4 text-indigo-500" />
+                    <span className="text-foreground capitalize">
                       {adminUser?.role.replace("_", " ")}
                     </span>
                   </div>
@@ -426,9 +415,9 @@ export default function AdminSettingsPage() {
                 checked={emailNotifications}
                 onCheckedChange={(v) => { setEmailNotifications(v); handleSaveNotifications() }}
               />
-              <Separator className="bg-white/5" />
+              <Separator className="bg-border" />
               <ToggleSetting label="Weekly Reports" description="Receive weekly summary reports via email" checked={true} onCheckedChange={() => {}} />
-              <Separator className="bg-white/5" />
+              <Separator className="bg-border" />
               <ToggleSetting label="New User Alerts" description="Get notified when new users sign up" checked={true} onCheckedChange={() => {}} />
             </div>
           </SettingsSection>
@@ -441,7 +430,7 @@ export default function AdminSettingsPage() {
                 checked={pushNotifications}
                 onCheckedChange={(v) => { setPushNotifications(v); handleSaveNotifications() }}
               />
-              <Separator className="bg-white/5" />
+              <Separator className="bg-border" />
               <ToggleSetting
                 label="Activity Alerts"
                 description="Get notified about important activities"
@@ -457,51 +446,51 @@ export default function AdminSettingsPage() {
           <SettingsSection title="Password" description="Update your password" icon={Key} delay={0.1}>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="current-password" className="text-gray-300">Current Password</Label>
+                <Label htmlFor="current-password" className="text-foreground/80">Current Password</Label>
                 <div className="relative">
                   <Input
                     id="current-password"
                     type={showCurrentPw ? "text" : "password"}
                     value={currentPw}
                     onChange={(e) => setCurrentPw(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white pr-10"
+                    className="bg-background border-border text-foreground pr-10"
                   />
-                  <button type="button" onClick={() => setShowCurrentPw((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
+                  <button type="button" onClick={() => setShowCurrentPw((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {showCurrentPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="new-password" className="text-gray-300">New Password</Label>
+                  <Label htmlFor="new-password" className="text-foreground/80">New Password</Label>
                   <div className="relative">
                     <Input
                       id="new-password"
                       type={showNewPw ? "text" : "password"}
                       value={newPw}
                       onChange={(e) => setNewPw(e.target.value)}
-                      className="bg-white/5 border-white/10 text-white pr-10"
+                      className="bg-background border-border text-foreground pr-10"
                     />
-                    <button type="button" onClick={() => setShowNewPw((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
+                    <button type="button" onClick={() => setShowNewPw((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                       {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password" className="text-gray-300">Confirm New Password</Label>
+                  <Label htmlFor="confirm-password" className="text-foreground/80">Confirm New Password</Label>
                   <Input
                     id="confirm-password"
                     type={showNewPw ? "text" : "password"}
                     value={confirmPw}
                     onChange={(e) => setConfirmPw(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white"
+                    className="bg-background border-border text-foreground"
                   />
                 </div>
               </div>
               {confirmPw && newPw !== confirmPw && (
-                <p className="text-xs text-red-400">Passwords do not match</p>
+                <p className="text-xs text-red-500">Passwords do not match</p>
               )}
-              <Button variant="outline" disabled={pwSaving} onClick={handleUpdatePassword} className="bg-white/5 border-white/10 text-white hover:bg-white/10">
+              <Button variant="outline" disabled={pwSaving} onClick={handleUpdatePassword} className="border-border text-foreground hover:bg-muted">
                 {pwSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating...</> : "Update Password"}
               </Button>
             </div>
@@ -512,16 +501,16 @@ export default function AdminSettingsPage() {
               <div className="flex items-center gap-3">
                 {twoFactor ? (
                   <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 text-emerald-400" />
+                    <CheckCircle className="w-5 h-5 text-emerald-500" />
                   </div>
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
-                    <Shield className="w-5 h-5 text-amber-400" />
+                    <Shield className="w-5 h-5 text-amber-500" />
                   </div>
                 )}
                 <div>
-                  <p className="text-white font-medium">{twoFactor ? "2FA Enabled" : "2FA Disabled"}</p>
-                  <p className="text-gray-500 text-sm">{twoFactor ? "Your account is protected with 2FA" : "Enable 2FA for enhanced security"}</p>
+                  <p className="text-foreground font-medium">{twoFactor ? "2FA Enabled" : "2FA Disabled"}</p>
+                  <p className="text-muted-foreground text-sm">{twoFactor ? "Your account is protected with 2FA" : "Enable 2FA for enhanced security"}</p>
                 </div>
               </div>
               <Switch checked={twoFactor} onCheckedChange={setTwoFactor} className="data-[state=checked]:bg-indigo-500" />
@@ -534,11 +523,11 @@ export default function AdminSettingsPage() {
           <SettingsSection title="Theme" description="Customize the look and feel" icon={Palette} delay={0.1}>
             <div className="flex items-center justify-between py-3">
               <div>
-                <p className="text-white font-medium">Dark Mode</p>
-                <p className="text-gray-500 text-sm">Use dark theme for the admin panel</p>
+                <p className="text-foreground font-medium">Dark Mode</p>
+                <p className="text-muted-foreground text-sm">Use dark theme for the admin panel</p>
               </div>
               <div className="flex items-center gap-2">
-                {themeSaving && <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />}
+                {themeSaving && <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />}
                 <Switch
                   checked={darkMode}
                   onCheckedChange={handleThemeChange}
@@ -552,12 +541,12 @@ export default function AdminSettingsPage() {
           <SettingsSection title="Language & Region" description="Set your preferred language and timezone" icon={Globe} delay={0.2}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-gray-300">Language</Label>
-                <Input value="English (US)" readOnly className="bg-white/5 border-white/10 text-white" />
+                <Label className="text-foreground/80">Language</Label>
+                <Input value="English (US)" readOnly className="bg-muted border-border text-foreground" />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Timezone</Label>
-                <Input value="(UTC+00:00) London" readOnly className="bg-white/5 border-white/10 text-white" />
+                <Label className="text-foreground/80">Timezone</Label>
+                <Input value="(UTC+00:00) London" readOnly className="bg-muted border-border text-foreground" />
               </div>
             </div>
           </SettingsSection>

@@ -42,9 +42,9 @@ function AnimatedCounter({ value, duration = 2 }: { value: number; duration?: nu
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp
       const progress = Math.min((timestamp - startTime) / (duration * 1000), 1)
-
+      
       setCount(Math.floor(progress * value))
-
+      
       if (progress < 1) {
         animationFrame = requestAnimationFrame(animate)
       }
@@ -128,7 +128,7 @@ function MetricCard({
       transition={{ delay, duration: 0.5, ease: "easeOut" }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className={`relative group w-full text-left ${onClick ? "cursor-pointer" : ""}`}
+      className={`relative group w-full h-full text-left ${onClick ? "cursor-pointer" : ""}`}
     >
       <motion.div
         animate={{
@@ -138,20 +138,20 @@ function MetricCard({
         }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         style={{ transformStyle: "preserve-3d" }}
-        className="relative"
-      >
+        className="relative h-full">
+      
         {/* Glow effect */}
         <div
           className={`absolute -inset-0.5 bg-gradient-to-r ${colors.bg} rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
         />
 
-        <Card className="relative bg-card border-border backdrop-blur-xl overflow-hidden">
+        <Card className="relative bg-card border-border backdrop-blur-xl overflow-hidden h-full flex flex-col">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-5">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-foreground to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
           </div>
 
-          <CardContent className="p-6 relative">
+          <CardContent className="p-6 relative flex-1 flex flex-col justify-between">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
                 <p className="text-muted-foreground text-sm font-medium">{title}</p>
@@ -171,8 +171,9 @@ function MetricCard({
                       <TrendingDown className="w-4 h-4 text-rose-500" />
                     )}
                     <span
-                      className={`text-sm font-medium ${change >= 0 ? "text-emerald-500" : "text-rose-500"
-                        }`}
+                      className={`text-sm font-medium ${
+                        change >= 0 ? "text-emerald-500" : "text-rose-500"
+                      }`}
                     >
                       {change >= 0 ? "+" : ""}
                       {change}%
@@ -283,7 +284,7 @@ function QuickAction({
 function ParallaxShapes() {
   const containerRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: containerRef })
-
+  
   const y1 = useTransform(scrollYProgress, [0, 1], [0, -100])
   const y2 = useTransform(scrollYProgress, [0, 1], [0, -200])
   const y3 = useTransform(scrollYProgress, [0, 1], [0, -150])
@@ -411,7 +412,7 @@ export default function AdminDashboard() {
           className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
         >
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-3">
+             <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-3">
               Welcome back,{" "}
               {adminUser?.name
                 ? adminUser.name.split(" ")[0].charAt(0).toUpperCase() +
@@ -432,7 +433,7 @@ export default function AdminDashboard() {
         </motion.div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 auto-rows-fr">
           <MetricCard
             title="Total Users"
             value={stats?.totalUsers || 0}
@@ -470,7 +471,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Secondary Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           <MetricCard
             title="Reports Generated"
             value={stats?.reportsGenerated || 0}
@@ -491,6 +492,13 @@ export default function AdminDashboard() {
             icon={Globe}
             color="rose"
             delay={0.6}
+          />
+          <MetricCard
+            title="Avg. Response Time"
+            value={45}
+            icon={Clock}
+            color="cyan"
+            delay={0.7}
           />
         </div>
 

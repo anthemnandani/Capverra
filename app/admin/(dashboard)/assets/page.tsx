@@ -61,10 +61,10 @@ import {
 
 const getAssetIcon = (type: string) => {
   const lower = type.toLowerCase()
-  if (lower.includes("image") || lower.includes("photo")) return <Image className="w-5 h-5 text-emerald-400" />
-  if (lower.includes("video")) return <Video className="w-5 h-5 text-rose-400" />
-  if (lower.includes("document") || lower.includes("pdf")) return <FileText className="w-5 h-5 text-amber-400" />
-  return <File className="w-5 h-5 text-indigo-400" />
+  if (lower.includes("image") || lower.includes("photo")) return <Image className="w-5 h-5 text-emerald-500" />
+  if (lower.includes("video")) return <Video className="w-5 h-5 text-rose-500" />
+  if (lower.includes("document") || lower.includes("pdf")) return <FileText className="w-5 h-5 text-amber-500" />
+  return <File className="w-5 h-5 text-indigo-500" />
 }
 
 const currencySymbols: Record<string, string> = {
@@ -94,24 +94,24 @@ function DeleteAssetDialog({
   if (!asset) return null
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-slate-900 border-white/10 text-white max-w-md">
+      <DialogContent className="bg-card border-border text-foreground max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 text-rose-400">
+          <DialogTitle className="flex items-center gap-3 text-rose-500">
             <div className="w-10 h-10 rounded-xl bg-rose-500/15 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-rose-400" />
+              <AlertTriangle className="w-5 h-5 text-rose-500" />
             </div>
             Delete Asset
           </DialogTitle>
-          <DialogDescription className="text-gray-400 mt-3 leading-relaxed">
+          <DialogDescription className="text-muted-foreground mt-3 leading-relaxed">
             Are you sure you want to delete{" "}
-            <span className="text-white font-semibold">"{asset.name}"</span>?
+            <span className="text-foreground font-semibold">"{asset.name}"</span>?
           </DialogDescription>
         </DialogHeader>
 
         <div className="mt-2 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-rose-400 mt-0.5 shrink-0" />
-          <p className="text-sm text-rose-300 leading-relaxed">
-            <strong className="text-rose-200">Warning:</strong> All optimization reports associated with this asset will also be permanently deleted. This action cannot be undone.
+          <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5 shrink-0" />
+          <p className="text-sm text-rose-600 dark:text-rose-300 leading-relaxed">
+            <strong className="text-rose-700 dark:text-rose-200">Warning:</strong> All optimization reports associated with this asset will also be permanently deleted. This action cannot be undone.
           </p>
         </div>
 
@@ -120,7 +120,7 @@ function DeleteAssetDialog({
             variant="ghost"
             onClick={onClose}
             disabled={deleting}
-            className="text-gray-400 hover:text-white hover:bg-white/10"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted"
           >
             Cancel
           </Button>
@@ -163,15 +163,15 @@ function AssetDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-slate-900 border-white/10 text-white max-w-lg max-h-[90vh] flex flex-col">
+      <DialogContent className="bg-card border-border text-foreground max-w-lg max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center">
               {getAssetIcon(asset.type)}
             </div>
             <div>
-              <p className="text-lg font-semibold">{asset.name}</p>
-              <p className="text-sm text-gray-400 font-normal capitalize">{asset.type}</p>
+              <p className="text-lg font-semibold text-foreground">{asset.name}</p>
+              <p className="text-sm text-muted-foreground font-normal capitalize">{asset.type}</p>
             </div>
           </DialogTitle>
           <DialogDescription className="sr-only">Asset details for {asset.name}</DialogDescription>
@@ -179,48 +179,48 @@ function AssetDetailModal({
 
         <div className="mt-6 space-y-4 overflow-y-auto flex-1 pr-1">
           <div className="grid grid-cols-2 gap-4">
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-4 rounded-xl bg-white/5 border border-white/5">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Type</p>
-              <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/30 capitalize">{asset.type}</Badge>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-4 rounded-xl bg-muted/30 border border-border">
+              <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Type</p>
+              <Badge className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 capitalize">{asset.type}</Badge>
             </motion.div>
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-4 rounded-xl bg-white/5 border border-white/5">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Created</p>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-4 rounded-xl bg-muted/30 border border-border">
+              <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Created</p>
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-emerald-400" />
-                <span className="text-white font-medium">{new Date(asset.created_at).toLocaleDateString()}</span>
+                <Calendar className="w-4 h-4 text-emerald-500" />
+                <span className="text-foreground font-medium">{new Date(asset.created_at).toLocaleDateString()}</span>
               </div>
             </motion.div>
           </div>
 
           {asset.currency && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-4 rounded-xl bg-white/5 border border-white/5">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Currency</p>
-              <p className="text-white font-medium">{asset.currency}</p>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-4 rounded-xl bg-muted/30 border border-border">
+              <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">Currency</p>
+              <p className="text-foreground font-medium">{asset.currency}</p>
             </motion.div>
           )}
           {asset.purchase_value && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-4 rounded-xl bg-white/5 border border-white/5">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Purchase Value</p>
-              <p className="text-white font-medium">${asset.purchase_value.toLocaleString()}</p>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-4 rounded-xl bg-muted/30 border border-border">
+              <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">Purchase Value</p>
+              <p className="text-foreground font-medium">${asset.purchase_value.toLocaleString()}</p>
             </motion.div>
           )}
           {asset.latest_valuation_date && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-4 rounded-xl bg-white/5 border border-white/5">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Latest Valuation Date</p>
-              <p className="text-white font-medium">{new Date(asset.latest_valuation_date).toLocaleDateString()}</p>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-4 rounded-xl bg-muted/30 border border-border">
+              <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">Latest Valuation Date</p>
+              <p className="text-foreground font-medium">{new Date(asset.latest_valuation_date).toLocaleDateString()}</p>
             </motion.div>
           )}
           {asset.latest_valuation && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="p-4 rounded-xl bg-white/5 border border-white/5">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Current Valuation</p>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="p-4 rounded-xl bg-muted/30 border border-border">
+              <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">Current Valuation</p>
               <div className="flex items-center gap-2">
-                <p className="text-white font-medium">${asset.latest_valuation.toLocaleString()}</p>
+                <p className="text-foreground font-medium">${asset.latest_valuation.toLocaleString()}</p>
                 {asset.performance !== null && asset.performance !== undefined && (
                   <div className="flex items-center gap-1">
                     {asset.performance >= 0
-                      ? <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
-                      : <TrendingDown className="h-3.5 w-3.5 text-rose-400" />}
-                    <span className={asset.performance >= 0 ? "text-emerald-400" : "text-rose-400"}>
+                      ? <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                      : <TrendingDown className="h-3.5 w-3.5 text-rose-500" />}
+                    <span className={asset.performance >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}>
                       {asset.performance >= 0 ? "+" : ""}{asset.performance.toFixed(2)}%
                     </span>
                   </div>
@@ -228,21 +228,21 @@ function AssetDetailModal({
               </div>
             </motion.div>
           )}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-4 rounded-xl bg-white/5 border border-white/5">
-            <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Owner</p>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-4 rounded-xl bg-muted/30 border border-border">
+            <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">Owner</p>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-semibold">
                 {ownerName?.[0]?.toUpperCase() || ownerEmail[0].toUpperCase()}
               </div>
               <div>
-                <p className="text-white font-medium">{ownerName}</p>
-                <p className="text-gray-500 text-xs">{asset.type}</p>
+                <p className="text-foreground font-medium">{ownerName}</p>
+                <p className="text-muted-foreground text-xs">{asset.type}</p>
               </div>
             </div>
           </motion.div>
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="p-4 rounded-xl bg-white/5 border border-white/5">
-            <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Asset ID</p>
-            <code className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded">{asset.id}</code>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="p-4 rounded-xl bg-muted/30 border border-border">
+            <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">Asset ID</p>
+            <code className="text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded">{asset.id}</code>
           </motion.div>
         </div>
       </DialogContent>
@@ -251,7 +251,10 @@ function AssetDetailModal({
 }
 
 // ── Asset Card (Grid View) ────────────────────────────────────────────────────
-function AssetCard({ asset, index, onView, onDelete }: { asset: AssetWithOwner; index: number; onView: (a: AssetWithOwner) => void; onDelete: (a: AssetWithOwner) => void }) {
+function AssetCard({ asset, index, onView, onDelete }: {
+  asset: AssetWithOwner; index: number
+  onView: (a: AssetWithOwner) => void; onDelete: (a: AssetWithOwner) => void
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -259,29 +262,29 @@ function AssetCard({ asset, index, onView, onDelete }: { asset: AssetWithOwner; 
       className="group cursor-pointer"
       onClick={() => onView(asset)}
     >
-      <Card className="bg-slate-900/50 border-white/5 hover:border-indigo-500/30 transition-all duration-300 overflow-hidden">
+      <Card className="bg-card border-border hover:border-indigo-500/30 transition-all duration-300 overflow-hidden">
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-white/5 to-white/0 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center group-hover:scale-110 transition-transform">
               {getAssetIcon(asset.type)}
             </div>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(asset) }}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-rose-500/15 text-rose-400"
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-rose-500/15 text-rose-500"
             >
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
-          <h3 className="text-white font-medium truncate mb-1">{asset.name}</h3>
-          <p className="text-gray-500 text-xs capitalize mb-3">{asset.type}</p>
+          <h3 className="text-foreground font-medium truncate mb-1">{asset.name}</h3>
+          <p className="text-muted-foreground text-xs capitalize mb-3">{asset.type}</p>
           <div className="mb-3">
-            <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/30 capitalize text-xs">{asset.type}</Badge>
+            <Badge className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 capitalize text-xs">{asset.type}</Badge>
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <User className="w-3 h-3" />
             <span className="truncate">{asset.owner?.name || asset.user_email || "N/A"}</span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
             <Calendar className="w-3 h-3" />
             <span>{new Date(asset.created_at).toLocaleDateString()}</span>
           </div>
@@ -292,42 +295,45 @@ function AssetCard({ asset, index, onView, onDelete }: { asset: AssetWithOwner; 
 }
 
 // ── Asset Table Row ───────────────────────────────────────────────────────────
-function AssetTableRow({ asset, index, onView, onDelete }: { asset: AssetWithOwner; index: number; onView: (a: AssetWithOwner) => void; onDelete: (a: AssetWithOwner) => void }) {
+function AssetTableRow({ asset, index, onView, onDelete }: {
+  asset: AssetWithOwner; index: number
+  onView: (a: AssetWithOwner) => void; onDelete: (a: AssetWithOwner) => void
+}) {
   return (
     <motion.tr
       initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.03 }}
-      className="group hover:bg-white/5 transition-colors"
+      className="group hover:bg-muted/40 transition-colors border-border"
     >
       <TableCell>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-muted/70 transition-colors">
             {getAssetIcon(asset.type)}
           </div>
-          <p className="text-white font-medium">{asset.name}</p>
+          <p className="text-foreground font-medium">{asset.name}</p>
         </div>
       </TableCell>
-      <TableCell className="text-gray-400 capitalize">{asset.type}</TableCell>
-      <TableCell className="text-gray-400">{[asset.location_state, asset.location_country].filter(Boolean).join(", ") || "—"}</TableCell>
-      <TableCell className="text-gray-400">{asset.currency ? `${asset.currency} (${currencySymbols[asset.currency] ?? asset.currency})` : "—"}</TableCell>
-      <TableCell className="text-right text-gray-400">{formatCurrency(asset.purchase_value, asset.currency || "USD")}</TableCell>
-      <TableCell className="text-gray-400">{asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString() : "—"}</TableCell>
-      <TableCell className="text-gray-400">{asset.latest_valuation_date ? new Date(asset.latest_valuation_date).toLocaleDateString() : "—"}</TableCell>
-      <TableCell className="text-right text-gray-400">{formatCurrency(asset.latest_valuation, asset.currency || "USD")}</TableCell>
+      <TableCell className="text-muted-foreground capitalize">{asset.type}</TableCell>
+      <TableCell className="text-muted-foreground">{[asset.location_state, asset.location_country].filter(Boolean).join(", ") || "—"}</TableCell>
+      <TableCell className="text-muted-foreground">{asset.currency ? `${asset.currency} (${currencySymbols[asset.currency] ?? asset.currency})` : "—"}</TableCell>
+      <TableCell className="text-right text-muted-foreground">{formatCurrency(asset.purchase_value, asset.currency || "USD")}</TableCell>
+      <TableCell className="text-muted-foreground">{asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString() : "—"}</TableCell>
+      <TableCell className="text-muted-foreground">{asset.latest_valuation_date ? new Date(asset.latest_valuation_date).toLocaleDateString() : "—"}</TableCell>
+      <TableCell className="text-right text-muted-foreground">{formatCurrency(asset.latest_valuation, asset.currency || "USD")}</TableCell>
       <TableCell>
         {asset.performance !== null && asset.performance !== undefined ? (
           <div className="flex items-center gap-1">
             {asset.performance >= 0
-              ? <TrendingUp className="h-4 w-4 text-emerald-400" />
-              : <TrendingDown className="h-4 w-4 text-rose-400" />}
-            <span className={asset.performance >= 0 ? "text-emerald-400" : "text-rose-400"}>
+              ? <TrendingUp className="h-4 w-4 text-emerald-500" />
+              : <TrendingDown className="h-4 w-4 text-rose-500" />}
+            <span className={asset.performance >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}>
               {asset.performance >= 0 ? "+" : ""}{asset.performance.toFixed(2)}%
             </span>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-muted-foreground">
               ({formatCurrency(asset.latest_valuation && asset.purchase_value ? asset.latest_valuation - asset.purchase_value : null, asset.currency || "USD")})
             </span>
           </div>
-        ) : <span className="text-gray-500">—</span>}
+        ) : <span className="text-muted-foreground">—</span>}
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
@@ -335,28 +341,28 @@ function AssetTableRow({ asset, index, onView, onDelete }: { asset: AssetWithOwn
             {(asset.owner?.name || asset.owner?.email || "?")[0]?.toUpperCase()}
           </div>
           <div>
-            <p className="text-white text-sm">{asset.owner?.name || "—"}</p>
-            <p className="text-gray-500 text-xs">{asset.type || "N/A"}</p>
+            <p className="text-foreground text-sm">{asset.owner?.name || "—"}</p>
+            <p className="text-muted-foreground text-xs">{asset.type || "N/A"}</p>
           </div>
         </div>
       </TableCell>
       <TableCell>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white hover:bg-white/10">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted">
               <MoreVertical className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-slate-900 border-white/10 text-white">
-            <DropdownMenuItem onClick={() => onView(asset)} className="cursor-pointer hover:bg-white/5">
+          <DropdownMenuContent align="end" className="bg-popover border-border text-popover-foreground">
+            <DropdownMenuItem onClick={() => onView(asset)} className="cursor-pointer hover:bg-muted">
               <Eye className="w-4 h-4 mr-2" />View Details
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer hover:bg-white/5">
+            <DropdownMenuItem className="cursor-pointer hover:bg-muted">
               <Download className="w-4 h-4 mr-2" />Export Data
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(asset)}
-              className="cursor-pointer hover:bg-rose-500/10 text-rose-400 focus:text-rose-400"
+              className="cursor-pointer hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 focus:text-rose-600 dark:focus:text-rose-400"
             >
               <Trash2 className="w-4 h-4 mr-2" />Delete Asset
             </DropdownMenuItem>
@@ -378,10 +384,7 @@ export default function AdminAssetsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list")
   const [loading, setLoading] = useState(true)
 
-  // Detail modal
   const [selectedAsset, setSelectedAsset] = useState<AssetWithOwner | null>(null)
-
-  // Delete dialog
   const [deleteTarget, setDeleteTarget] = useState<AssetWithOwner | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -431,7 +434,6 @@ export default function AdminAssetsPage() {
         console.error("[admin] Delete error:", err)
         return
       }
-      // Remove from local state immediately
       setAssets((prev) => prev.filter((a) => a.id !== deleteTarget.id))
       setTotal((prev) => prev - 1)
       setDeleteDialogOpen(false)
@@ -450,22 +452,30 @@ export default function AdminAssetsPage() {
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <FolderOpen className="w-6 h-6 text-amber-400" />
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <FolderOpen className="w-6 h-6 text-amber-500" />
             Asset Management
           </h1>
-          <p className="text-gray-400 mt-1">Browse and manage all user assets</p>
+          <p className="text-muted-foreground mt-1">Browse and manage all user assets</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-white/5 rounded-lg p-1">
-            <Button variant="ghost" size="sm" onClick={() => setViewMode("list")} className={`h-8 w-8 p-0 ${viewMode === "list" ? "bg-white/10 text-white" : "text-gray-400 hover:text-white"}`}>
+          <div className="flex items-center bg-muted rounded-lg p-1">
+            <Button
+              variant="ghost" size="sm"
+              onClick={() => setViewMode("list")}
+              className={`h-8 w-8 p-0 ${viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
               <List className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setViewMode("grid")} className={`h-8 w-8 p-0 ${viewMode === "grid" ? "bg-white/10 text-white" : "text-gray-400 hover:text-white"}`}>
+            <Button
+              variant="ghost" size="sm"
+              onClick={() => setViewMode("grid")}
+              className={`h-8 w-8 p-0 ${viewMode === "grid" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
               <Grid3X3 className="w-4 h-4" />
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={loadAssets} disabled={loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">
+          <Button variant="outline" size="sm" onClick={loadAssets} disabled={loading} className="border-border text-foreground hover:bg-muted">
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
@@ -475,18 +485,23 @@ export default function AdminAssetsPage() {
       {/* Search & Filters */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-          <Input placeholder="Search assets by name or type..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-indigo-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search assets by name or type..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+            className="pl-10 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-indigo-500"
+          />
         </div>
         <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setPage(1) }}>
-          <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
-            <Filter className="w-4 h-4 mr-2 text-gray-400" />
+          <SelectTrigger className="w-[180px] bg-background border-border text-foreground">
+            <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
             <SelectValue placeholder="Asset Type" />
           </SelectTrigger>
-          <SelectContent className="bg-slate-900 border-white/10">
-            <SelectItem value="all" className="text-white hover:bg-white/5">All Types</SelectItem>
+          <SelectContent className="bg-popover border-border text-popover-foreground">
+            <SelectItem value="all" className="hover:bg-muted">All Types</SelectItem>
             {assetTypes.map((type) => (
-              <SelectItem key={type} value={type} className="text-white hover:bg-white/5 capitalize">{type}</SelectItem>
+              <SelectItem key={type} value={type} className="hover:bg-muted capitalize">{type}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -498,47 +513,47 @@ export default function AdminAssetsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <AnimatePresence mode="popLayout">
               {loading
-                ? [...Array(8)].map((_, i) => <Card key={i} className="bg-slate-900/50 border-white/5 h-48 animate-pulse" />)
+                ? [...Array(8)].map((_, i) => <Card key={i} className="bg-card border-border h-48 animate-pulse" />)
                 : assets.map((asset, index) => (
-                    <AssetCard key={asset.id} asset={asset} index={index} onView={setSelectedAsset} onDelete={handleDeleteClick} />
-                  ))}
+                  <AssetCard key={asset.id} asset={asset} index={index} onView={setSelectedAsset} onDelete={handleDeleteClick} />
+                ))}
             </AnimatePresence>
           </div>
         ) : (
-          <Card className="bg-slate-900/50 border-white/5 backdrop-blur-xl overflow-hidden">
-            <CardHeader className="border-b border-white/5">
-              <CardTitle className="text-white flex items-center justify-between">
+          <Card className="bg-card border-border backdrop-blur-xl overflow-hidden">
+            <CardHeader className="border-b border-border">
+              <CardTitle className="text-foreground flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <FolderOpen className="w-5 h-5 text-amber-400" />
+                  <FolderOpen className="w-5 h-5 text-amber-500" />
                   All Assets
                 </span>
-                <span className="text-sm font-normal text-gray-400">{total.toLocaleString()} total</span>
+                <span className="text-sm font-normal text-muted-foreground">{total.toLocaleString()} total</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-gray-400">Asset Name</TableHead>
-                      <TableHead className="text-gray-400">Type</TableHead>
-                      <TableHead className="text-gray-400">Location</TableHead>
-                      <TableHead className="text-gray-400">Currency</TableHead>
-                      <TableHead className="text-gray-400">Purchase Value</TableHead>
-                      <TableHead className="text-gray-400">Purchase Date</TableHead>
-                      <TableHead className="text-gray-400">Valuation Date</TableHead>
-                      <TableHead className="text-gray-400">Current Value</TableHead>
-                      <TableHead className="text-gray-400">Performance</TableHead>
-                      <TableHead className="text-gray-400">Owner</TableHead>
-                      <TableHead className="text-gray-400 w-12">Actions</TableHead>
+                    <TableRow className="border-border hover:bg-transparent">
+                      <TableHead className="text-muted-foreground">Asset Name</TableHead>
+                      <TableHead className="text-muted-foreground">Type</TableHead>
+                      <TableHead className="text-muted-foreground">Location</TableHead>
+                      <TableHead className="text-muted-foreground">Currency</TableHead>
+                      <TableHead className="text-muted-foreground">Purchase Value</TableHead>
+                      <TableHead className="text-muted-foreground">Purchase Date</TableHead>
+                      <TableHead className="text-muted-foreground">Valuation Date</TableHead>
+                      <TableHead className="text-muted-foreground">Current Value</TableHead>
+                      <TableHead className="text-muted-foreground">Performance</TableHead>
+                      <TableHead className="text-muted-foreground">Owner</TableHead>
+                      <TableHead className="text-muted-foreground w-12">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     <AnimatePresence mode="popLayout">
                       {loading ? (
                         [...Array(5)].map((_, i) => (
-                          <TableRow key={i} className="border-white/5">
-                            <TableCell colSpan={11}><div className="h-12 bg-white/5 rounded animate-pulse" /></TableCell>
+                          <TableRow key={i} className="border-border">
+                            <TableCell colSpan={11}><div className="h-12 bg-muted/50 rounded animate-pulse" /></TableCell>
                           </TableRow>
                         ))
                       ) : assets.length > 0 ? (
@@ -546,8 +561,8 @@ export default function AdminAssetsPage() {
                           <AssetTableRow key={asset.id} asset={asset} index={index} onView={setSelectedAsset} onDelete={handleDeleteClick} />
                         ))
                       ) : (
-                        <TableRow className="border-white/5">
-                          <TableCell colSpan={11} className="text-center py-12 text-gray-500">
+                        <TableRow className="border-border">
+                          <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
                             <FolderOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
                             <p>No assets found</p>
                             {(search || selectedType !== "all") && <p className="text-sm mt-1">Try different filters</p>}
@@ -565,15 +580,15 @@ export default function AdminAssetsPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-6">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
             </p>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="bg-white/5 border-white/10 text-white hover:bg-white/10 disabled:opacity-50">
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="border-border text-foreground hover:bg-muted disabled:opacity-50">
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <span className="text-sm text-gray-400">Page {page} of {totalPages}</span>
-              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="bg-white/5 border-white/10 text-white hover:bg-white/10 disabled:opacity-50">
+              <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="border-border text-foreground hover:bg-muted disabled:opacity-50">
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>

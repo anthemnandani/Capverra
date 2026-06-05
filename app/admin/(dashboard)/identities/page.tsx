@@ -33,7 +33,6 @@ interface Identity {
   risk_profile: "low" | "medium" | "high" | "aggressive"
 }
 
-
 function DeleteConfirmDialog({
   open, onClose, onConfirm, name, loading,
 }: {
@@ -41,25 +40,24 @@ function DeleteConfirmDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-slate-900 border-white/10 text-white max-w-md">
+      <DialogContent className="bg-card border-border text-foreground max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 text-rose-400">
+          <DialogTitle className="flex items-center gap-3 text-rose-500">
             <div className="w-10 h-10 rounded-xl bg-rose-500/15 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-rose-400" />
+              <AlertTriangle className="w-5 h-5 text-rose-500" />
             </div>
             Delete Identity
           </DialogTitle>
-          <DialogDescription className="text-gray-400 mt-3 leading-relaxed">
+          <DialogDescription className="text-muted-foreground mt-3 leading-relaxed">
             Are you sure you want to delete{" "}
-            <span className="text-white font-semibold">"{name}"</span>?
+            <span className="text-foreground font-semibold">"{name}"</span>?
           </DialogDescription>
         </DialogHeader>
 
-        {/* Warning block — assets + reports cascade */}
         <div className="mt-2 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-rose-400 mt-0.5 shrink-0" />
-          <p className="text-sm text-rose-300 leading-relaxed">
-            <strong className="text-rose-200">Warning:</strong> All assets belonging to this identity and their associated optimization reports will also be permanently deleted. This action cannot be undone.
+          <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5 shrink-0" />
+          <p className="text-sm text-rose-600 dark:text-rose-300 leading-relaxed">
+            <strong className="text-rose-700 dark:text-rose-200">Warning:</strong> All assets belonging to this identity and their associated optimization reports will also be permanently deleted. This action cannot be undone.
           </p>
         </div>
 
@@ -68,7 +66,7 @@ function DeleteConfirmDialog({
             variant="outline"
             onClick={onClose}
             disabled={loading}
-            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+            className="border-border text-foreground hover:bg-muted"
           >
             Cancel
           </Button>
@@ -151,59 +149,62 @@ export default function IdentitiesPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Shield className="w-6 h-6 text-indigo-400" />Identity Management
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Shield className="w-6 h-6 text-indigo-500" />Identity Management
           </h1>
-          <p className="text-gray-400 mt-1">View and manage all identities</p>
+          <p className="text-muted-foreground mt-1">View and manage all identities</p>
         </div>
-        <Button variant="outline" size="sm" onClick={loadIdentities} disabled={loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">
+        <Button variant="outline" size="sm" onClick={loadIdentities} disabled={loading} className="border-border text-foreground hover:bg-muted">
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />Refresh
         </Button>
       </motion.div>
 
+      {/* Search */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search identities..."
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1) }}
-            className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-10 rounded-xl"
+            className="pl-10 bg-background border-border text-foreground placeholder:text-muted-foreground h-10 rounded-xl"
           />
         </div>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
+      {/* Table */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-white/5 border-b border-white/10">
-              <TableRow>
-                <TableHead className="text-gray-400">Name / Owner</TableHead>
-                <TableHead className="text-gray-400">Type</TableHead>
-                <TableHead className="text-gray-400">Risk Profile</TableHead>
-                <TableHead className="text-gray-400">Residency</TableHead>
-                <TableHead className="text-gray-400">State/Province</TableHead>
-                <TableHead className="text-gray-400">Citizenship</TableHead>
-                <TableHead className="text-gray-400">Tax Rate</TableHead>
-                <TableHead className="text-gray-400">Annual Income</TableHead>
-                <TableHead className="text-gray-400">Goals</TableHead>
-                <TableHead className="text-gray-400">Created</TableHead>
-                <TableHead className="text-right text-gray-400">Actions</TableHead>
+            <TableHeader className="bg-muted/40 border-b border-border">
+              <TableRow className="border-border hover:bg-transparent">
+                <TableHead className="text-muted-foreground">Name / Owner</TableHead>
+                <TableHead className="text-muted-foreground">Type</TableHead>
+                <TableHead className="text-muted-foreground">Risk Profile</TableHead>
+                <TableHead className="text-muted-foreground">Residency</TableHead>
+                <TableHead className="text-muted-foreground">State/Province</TableHead>
+                <TableHead className="text-muted-foreground">Citizenship</TableHead>
+                <TableHead className="text-muted-foreground">Tax Rate</TableHead>
+                <TableHead className="text-muted-foreground">Annual Income</TableHead>
+                <TableHead className="text-muted-foreground">Goals</TableHead>
+                <TableHead className="text-muted-foreground">Created</TableHead>
+                <TableHead className="text-right text-muted-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <AnimatePresence>
                 {loading && identities.length === 0 ? (
-                  <TableRow>
+                  <TableRow className="border-border">
                     <TableCell colSpan={11} className="text-center py-8">
-                      <div className="flex justify-center"><RefreshCw className="w-5 h-5 text-gray-400 animate-spin" /></div>
+                      <div className="flex justify-center"><RefreshCw className="w-5 h-5 text-muted-foreground animate-spin" /></div>
                     </TableCell>
                   </TableRow>
                 ) : identities.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-gray-400">No identities found</TableCell>
+                  <TableRow className="border-border">
+                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">No identities found</TableCell>
                   </TableRow>
                 ) : (
                   identities.map((identity, idx) => (
@@ -212,50 +213,57 @@ export default function IdentitiesPage() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.03 }}
-                      className="group hover:bg-white/5 transition-colors"
+                      className="group hover:bg-muted/40 transition-colors border-border"
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-white text-xs font-medium">
+                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-foreground text-xs font-medium">
                             {identity.name?.[0]?.toUpperCase()}
                           </div>
                           <div>
-                            <p className="text-white font-medium">{identity.name}</p>
-                            <p className="text-gray-500 text-xs">{identity.user_email}</p>
+                            <p className="text-foreground font-medium">{identity.name}</p>
+                            <p className="text-muted-foreground text-xs">{identity.user_email}</p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell><Badge variant="outline" className="capitalize">{identity.type}</Badge></TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={`capitalize ${identity.risk_profile === "low" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/50"
-                            : identity.risk_profile === "medium" ? "bg-amber-500/10 text-amber-400 border-amber-500/50"
-                              : "bg-rose-500/10 text-rose-400 border-rose-500/50"
-                          }`}>
+                        <Badge variant="outline" className="capitalize border-border text-foreground">
+                          {identity.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={`capitalize ${
+                          identity.risk_profile === "low"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/50"
+                            : identity.risk_profile === "medium"
+                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/50"
+                              : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/50"
+                        }`}>
                           {identity.risk_profile}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-gray-400">{identity.residency}</TableCell>
-                      <TableCell className="text-gray-400">{identity.state_province ?? "—"}</TableCell>
-                      <TableCell className="text-gray-400">{Array.isArray(identity.citizenship) ? identity.citizenship.join(", ") : identity.citizenship}</TableCell>
-                      <TableCell className="text-gray-400">{identity.tax_rate != null ? `${identity.tax_rate}%` : "—"}</TableCell>
-                      <TableCell className="text-gray-400">{identity.annual_income != null ? `$${Number(identity.annual_income).toLocaleString()}` : "—"}</TableCell>
-                      <TableCell className="text-gray-400">{Array.isArray(identity.goals) ? identity.goals.join(", ") : identity.goals}</TableCell>
-                      <TableCell className="text-gray-400">{new Date(identity.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-muted-foreground">{identity.residency}</TableCell>
+                      <TableCell className="text-muted-foreground">{identity.state_province ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{Array.isArray(identity.citizenship) ? identity.citizenship.join(", ") : identity.citizenship}</TableCell>
+                      <TableCell className="text-muted-foreground">{identity.tax_rate != null ? `${identity.tax_rate}%` : "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{identity.annual_income != null ? `$${Number(identity.annual_income).toLocaleString()}` : "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{Array.isArray(identity.goals) ? identity.goals.join(", ") : identity.goals}</TableCell>
+                      <TableCell className="text-muted-foreground">{new Date(identity.created_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white hover:bg-white/10">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted">
                               <MoreVertical className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-slate-900 border-white/10 text-white">
-                            <DropdownMenuItem onClick={() => setSelectedIdentity(identity)} className="cursor-pointer hover:bg-white/5">
+                          <DropdownMenuContent align="end" className="bg-popover border-border text-popover-foreground">
+                            <DropdownMenuItem onClick={() => setSelectedIdentity(identity)} className="cursor-pointer hover:bg-muted">
                               <Eye className="w-4 h-4 mr-2" />View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer hover:bg-white/5">
+                            <DropdownMenuItem className="cursor-pointer hover:bg-muted">
                               <Download className="w-4 h-4 mr-2" />Download
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setDeleteTarget(identity)} className="cursor-pointer text-rose-400 hover:bg-rose-500/10 focus:text-rose-400">
+                            <DropdownMenuItem onClick={() => setDeleteTarget(identity)} className="cursor-pointer text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 focus:text-rose-600 dark:focus:text-rose-400">
                               <Trash2 className="w-4 h-4 mr-2" />Delete Identity
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -270,14 +278,17 @@ export default function IdentitiesPage() {
         </div>
       </motion.div>
 
+      {/* Pagination */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <p className="text-sm text-gray-400">Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, total)} of {total} identities</p>
+        <p className="text-sm text-muted-foreground">
+          Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, total)} of {total} identities
+        </p>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1 || loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">
+          <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1 || loading} className="border-border text-foreground hover:bg-muted disabled:opacity-50">
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-gray-400">Page {currentPage} of {totalPages}</span>
-          <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">
+          <span className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</span>
+          <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || loading} className="border-border text-foreground hover:bg-muted disabled:opacity-50">
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
@@ -285,10 +296,10 @@ export default function IdentitiesPage() {
 
       {/* Detail Modal */}
       <Dialog open={!!selectedIdentity} onOpenChange={(open) => !open && setSelectedIdentity(null)}>
-        <DialogContent className="bg-slate-900 border-white/10 text-white max-w-lg">
+        <DialogContent className="bg-card border-border text-foreground max-w-lg">
           <DialogHeader>
-            <DialogTitle>{selectedIdentity?.name}</DialogTitle>
-            <DialogDescription className="text-gray-400">Owner: {selectedIdentity?.user_email}</DialogDescription>
+            <DialogTitle className="text-foreground">{selectedIdentity?.name}</DialogTitle>
+            <DialogDescription className="text-muted-foreground">Owner: {selectedIdentity?.user_email}</DialogDescription>
           </DialogHeader>
           {selectedIdentity && (
             <div className="space-y-4">
@@ -303,15 +314,15 @@ export default function IdentitiesPage() {
                   { label: "Goals", value: Array.isArray(selectedIdentity.goals) ? selectedIdentity.goals.join(", ") : selectedIdentity.goals },
                   { label: "Created", value: new Date(selectedIdentity.created_at).toLocaleDateString() },
                 ].map(({ label, value }) => (
-                  <div key={label} className="p-3 rounded-lg bg-white/5 border border-white/10">
-                    <p className="text-xs text-gray-400 uppercase">{label}</p>
-                    <p className="text-white font-medium capitalize">{value}</p>
+                  <div key={label} className="p-3 rounded-lg bg-muted/30 border border-border">
+                    <p className="text-xs text-muted-foreground uppercase">{label}</p>
+                    <p className="text-foreground font-medium capitalize">{value}</p>
                   </div>
                 ))}
               </div>
               {selectedIdentity.citizenship && selectedIdentity.citizenship.length > 0 && (
-                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                  <p className="text-xs text-gray-400 uppercase mb-2">Citizenship</p>
+                <div className="p-3 rounded-lg bg-muted/30 border border-border">
+                  <p className="text-xs text-muted-foreground uppercase mb-2">Citizenship</p>
                   <div className="flex flex-wrap gap-2">
                     {selectedIdentity.citizenship.map((country) => (
                       <Badge key={country} variant="secondary">{country}</Badge>
