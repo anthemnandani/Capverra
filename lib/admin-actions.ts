@@ -70,6 +70,12 @@ export async function updateAdminPreferences(
   return { success: true }
 }
 
+// lib/admin-actions.ts  — updated adminLogin + new updateUserRole
+// Only the changed/added functions shown below. Keep the rest of the file as-is.
+
+// ── adminLogin (updated) ──────────────────────────────────────────────────────
+// Now allows both 'admin' AND 'super_admin' roles.
+// Returns error code "ACCESS_DENIED_CLIENT" when a client tries to use admin portal.
 export async function adminLogin(
   email: string,
   password: string
@@ -96,10 +102,24 @@ export async function adminLogin(
       .from("users")
       .select("*")
       .eq("id", authData.user.id)
-      .in("role", ["admin", "super_admin"])
       .single()
 
     if (userError || !userData) {
+      await supabase.auth.signOut()
+      return { success: false, error: "User not found." }
+    }
+
+    // Block client role from using admin portal
+    if (userData.role === "client") {
+      await supabase.auth.signOut()
+      return {
+        success: false,
+        error: "ACCESS_DENIED_CLIENT",
+      }
+    }
+
+    // Allow only admin and super_admin
+    if (userData.role !== "admin" && userData.role !== "super_admin") {
       await supabase.auth.signOut()
       return {
         success: false,
@@ -135,6 +155,47 @@ export async function adminLogin(
       error: "Server configuration error. Please contact support.",
     }
   }
+}
+
+export async function updateUserRole(
+  targetUserId: string,
+  newRole: "client" | "admin" | "super_admin"
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createSupabaseServerClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Unauthorized" }
+
+  const adminClient = createSupabaseAdminClient()
+
+  // Verify caller is super_admin
+  const { data: callerData } = await adminClient
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single()
+
+  if (!callerData || callerData.role !== "super_admin") {
+    return { success: false, error: "Only super admins can change user roles" }
+  }
+
+  if (targetUserId === user.id) {
+    return { success: false, error: "You cannot change your own role" }
+  }
+
+  const { error } = await adminClient
+    .from("users")
+    .update({ role: newRole, updated_at: new Date().toISOString() })
+    .eq("id", targetUserId)
+
+  if (error) return { success: false, error: error.message }
+
+  // Sync auth metadata
+  await adminClient.auth.admin.updateUserById(targetUserId, {
+    user_metadata: { role: newRole },
+  })
+
+  return { success: true }
 }
 
 export async function adminLogout(): Promise<void> {
@@ -442,4 +503,179 @@ export async function getUserDetails(userId: string): Promise<UserWithAssets | n
       : 0,
     last_login: null,
   }
+}
+
+
+
+
+// Admin-specific TypeScript types
+
+export type UserRole = "client" | "admin" | "super_admin"
+
+export interface AdminUser {
+  id: string
+  user_id: string
+  email: string
+  name: string | null
+  role: UserRole
+  permissions: string[]
+  is_active: boolean
+  last_login: string | null
+  created_at: string
+  updated_at: string
+  avatar_url: string | null
+  preferences?: {
+    theme: "dark" | "light"
+    emailNotifications?: boolean
+    pushNotifications?: boolean
+    activityLogs?: boolean
+  }
+}
+
+export interface AdminActivityLog {
+  id: string
+  admin_id: string
+  action: string
+  resource_type: string
+  resource_id: string | null
+  details: Record<string, unknown>
+  ip_address: string | null
+  user_agent: string | null
+  created_at: string
+}
+
+export interface AdminReport {
+  id: string
+  title: string
+  description: string | null
+  report_type: 'users' | 'assets' | 'identities' | 'optimization' | 'analytics'
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  estimated_savings: number | null
+  asset_name: string | null
+  asset_count: number
+  identity_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminDashboardMetrics {
+  id: string
+  metric_name: string
+  metric_value: number
+  metric_data: Record<string, unknown>
+  updated_at: string
+}
+
+export interface DashboardStats {
+  totalUsers: number
+  activeUsers: number
+  totalAssets: number
+  totalIdentities: number
+  reportsGenerated: number
+  userGrowth: number
+  assetGrowth: number
+  recentActivity: AdminActivityLog[]
+}
+
+export interface UserWithAssets {
+  id: string
+  email: string
+  name: string | null
+  role: UserRole
+  created_at: string
+  asset_count: number
+  identity_count: number
+  last_login: string | null
+}
+
+export interface AssetWithOwner {
+  id: string
+  name: string
+  type: string
+  currency: string
+  location_country: string | null
+  location_state: string | null
+  purchase_value: number | null
+  purchase_date: string | null
+  latest_valuation: number | null
+  latest_valuation_date: string | null
+  performance: number | null
+  created_at: string
+  updated_at: string
+  user_id: string
+  owner?: {
+    id: string
+    name: string | null
+    email: string
+    type: string | null
+  }
+  user_email?: string
+  user_name?: string | null
+}
+
+
+
+
+// ── Identity ──────────────────────────────────────────────────────────────────
+export interface Identity {
+  id: string
+  user_id: string | null
+  name: string
+  type: "individual" | "trust" | "llc" | "corporation" | "partnership" | "other"
+  state_province: string | null
+  primary_citizenship: string | null
+  other_citizenships: string[]
+  current_residency: string | null
+  citizenship: string[]
+  residency: string | null
+  risk_profile: "low" | "medium" | "high"
+  goals: string[]
+  additional_information: string | null
+  notes: string | null
+  tax_rate?:           number | null        // ← NEW (from IdentityModal update)
+  annual_income?:      number | null        // ← NEW (from IdentityModal update)
+  created_at: string
+  updated_at: string
+}
+
+// ── Asset ─────────────────────────────────────────────────────────────────────
+export interface Asset {
+  id: string
+  name: string
+  type: string
+  owner_id: string
+  owner?: Pick<Identity, "id" | "name" | "type">
+  location_state?: string
+  location_country: string
+  purchase_value?: number
+  purchase_date?: string
+  latest_valuation?: number
+  latest_valuation_date?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface AssetWithCalculations extends Asset {
+  value_change_percentage?: number
+  value_change_amount?: number
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+export interface DashboardStats {
+  totalIdentities: number
+  totalAssets: number
+  totalValue: number
+  averageReturn: number
+}
+
+export interface ActivityItem {
+  id: string
+  type:
+    | "asset_added"
+    | "identity_added"
+    | "valuation_updated"
+    | "optimization_generated"
+  title: string
+  description: string
+  timestamp: string
 }

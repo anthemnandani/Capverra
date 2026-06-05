@@ -1,3 +1,4 @@
+// app/admin/login/page.tsx
 "use client"
 
 import type React from "react"
@@ -25,13 +26,12 @@ export default function AdminLoginPage() {
     password: "Admin@2026",
   }
 
-  // Seed admin on first load (silent)
   useEffect(() => {
     const seedAdmin = async () => {
       try {
         await fetch("/api/admin/seed", { method: "POST" })
       } catch {
-        // Silent fail — admin may already exist
+        // Silent fail
       }
     }
     seedAdmin()
@@ -61,12 +61,16 @@ export default function AdminLoginPage() {
       const result = await adminLogin(email, password)
 
       if (!result.success) {
-        setError(result.error || "Login failed")
-        toast.error(result.error || "Login failed")
+        // Show a specific message if the user is a normal client
+        const msg =
+          result.error === "ACCESS_DENIED_CLIENT"
+            ? "This account does not have admin access. Please use the regular login."
+            : result.error || "Login failed"
+        toast.error(msg)
         return
       }
 
-      toast.success("Welcome back, Admin!")
+      toast.success("Welcome back!")
       window.location.href = "/admin/dashboard"
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong"
@@ -83,7 +87,6 @@ export default function AdminLoginPage() {
       <main className="flex flex-1 items-center justify-center px-6 pt-32 pb-12">
         <div className="w-full max-w-md">
           <div className="rounded-xl border border-border bg-card p-8 shadow-lg">
-            {/* Header */}
             <div className="mb-8 text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
                 <Shield className="h-7 w-7 text-primary" />
@@ -92,16 +95,13 @@ export default function AdminLoginPage() {
                 Admin Portal
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Secure access to the Capverra control center
+                Secure access for admins and super admins only
               </p>
             </div>
 
-            {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-foreground">
-                  Admin Email
-                </Label>
+                <Label htmlFor="email" className="text-foreground">Admin Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -116,9 +116,7 @@ export default function AdminLoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-foreground">
-                  Password
-                </Label>
+                <Label htmlFor="password" className="text-foreground">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -142,9 +140,17 @@ export default function AdminLoginPage() {
               </div>
 
               {error && (
-                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive border border-destructive/20">
-                  {error}
-                </p>
+                <div className="rounded-md bg-destructive/10 px-3 py-2 border border-destructive/20">
+                  <p className="text-sm text-destructive">{error}</p>
+                  {error.includes("regular login") && (
+                    <Link
+                      href="/login"
+                      className="text-sm text-primary hover:underline mt-1 block"
+                    >
+                      Go to regular login →
+                    </Link>
+                  )}
+                </div>
               )}
 
               <Button
@@ -156,7 +162,6 @@ export default function AdminLoginPage() {
               </Button>
             </form>
 
-            {/* Test Credentials */}
             <div className="mt-6 pt-6 border-t border-border">
               <Button
                 type="button"
@@ -179,7 +184,6 @@ export default function AdminLoginPage() {
               </Button>
             </div>
 
-            {/* Back to User Login */}
             <div className="mt-6 text-center">
               <Link
                 href="/login"

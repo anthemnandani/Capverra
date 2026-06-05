@@ -64,8 +64,30 @@ export default function LoginPage() {
         return
       }
 
+      // ── LOGIN BRANCH ──────────────────────────────────────────────
       await login(email, password)
-      // Hard navigation — public CSS bundle unload ho, protected fresh load ho
+
+      // After login, check the role from the DB
+      const supabase = createSupabaseBrowserClient()
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+
+      if (authUser) {
+        const { data: userData } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", authUser.id)
+          .maybeSingle()
+
+        if (userData?.role === "admin" || userData?.role === "super_admin") {
+          // Sign them out immediately — admins must use admin portal
+          await supabase.auth.signOut()
+          setError("Admin accounts must log in via the Admin Portal.")
+          toast.error("Please use the Admin Portal to sign in.")
+          setLoading(false)
+          return
+        }
+      }
+
       window.location.href = "/dashboard"
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Something went wrong."
@@ -139,9 +161,17 @@ export default function LoginPage() {
               </div>
 
               {error && (
-                <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 border border-red-200">
-                  {error}
-                </p>
+                <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 border border-red-200">
+                  <p>{error}</p>
+                  {error.includes("Admin Portal") && (
+                    <Link
+                      href="/admin/login"
+                      className="text-sm text-primary hover:underline mt-1 block font-medium"
+                    >
+                      Go to Admin Portal →
+                    </Link>
+                  )}
+                </div>
               )}
 
               <Button

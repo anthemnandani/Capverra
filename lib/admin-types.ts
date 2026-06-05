@@ -1,11 +1,13 @@
 // Admin-specific TypeScript types
 
+export type UserRole = "client" | "admin" | "super_admin"
+
 export interface AdminUser {
   id: string
   user_id: string
   email: string
   name: string | null
-  role: 'admin' | 'super_admin'
+  role: UserRole
   permissions: string[]
   is_active: boolean
   last_login: string | null
@@ -69,7 +71,7 @@ export interface UserWithAssets {
   id: string
   email: string
   name: string | null
-  role: string
+  role: UserRole
   created_at: string
   asset_count: number
   identity_count: number
