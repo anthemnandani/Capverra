@@ -139,7 +139,7 @@ export default function IdentitiesPage() {
             placeholder="Search identities..."
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1) }}
-            className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-muted-foreground h-10 rounded-xl"
+            className="pl-10 bg-card border-border text-foreground placeholder:text-muted-foreground h-10 rounded-xl transition-smooth focus-ring"
           />
         </div>
       </motion.div>

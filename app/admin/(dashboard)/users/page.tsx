@@ -91,7 +91,7 @@ function UserDetailModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="w-12 h-12 border-2 border-primary/30">
-              <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold">
+              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-semibold">
                 {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -118,8 +118,8 @@ function UserDetailModal({
               >
                 <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Role</p>
                 <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-indigo-400" />
-                  <span className="text-white font-medium capitalize">{user.role}</span>
+                  <Shield className="w-4 h-4 text-primary" />
+                  <span className="text-foreground font-medium capitalize">{user.role}</span>
                 </div>
               </motion.div>
 
@@ -132,7 +132,7 @@ function UserDetailModal({
                 <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Joined</p>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-emerald-400" />
-                  <span className="text-white font-medium">
+                  <span className="text-foreground font-medium">
                     {new Date(user.created_at).toLocaleDateString()}
                   </span>
                 </div>
