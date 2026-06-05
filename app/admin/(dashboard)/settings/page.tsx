@@ -86,9 +86,9 @@ function ToggleSetting({
       <Switch
         checked={checked}
         onCheckedChange={onCheckedChange}
-        className="data-[state=checked]:bg-indigo-500"
+        className="data-[state=checked]:bg-primary"
       />
-    </motion.div>
+    </div>
   )
 }
 
