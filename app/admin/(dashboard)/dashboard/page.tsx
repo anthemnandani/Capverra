@@ -128,7 +128,7 @@ function MetricCard({
       transition={{ delay, duration: 0.5, ease: "easeOut" }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className={`relative group w-full text-left ${onClick ? "cursor-pointer" : ""}`}
+      className={`relative group w-full h-full text-left ${onClick ? "cursor-pointer" : ""}`}
     >
       <motion.div
         animate={{
@@ -138,8 +138,8 @@ function MetricCard({
         }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         style={{ transformStyle: "preserve-3d" }}
-        className="relative"
-      >
+        className="relative h-full">
+      
         {/* Glow effect */}
         <div
           className={`absolute -inset-0.5 bg-gradient-to-r ${colors.bg} rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
@@ -429,7 +429,7 @@ export default function AdminDashboard() {
         </motion.div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 auto-rows-fr">
           <MetricCard
             title="Total Users"
             value={stats?.totalUsers || 0}
