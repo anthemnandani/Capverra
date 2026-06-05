@@ -1,5 +1,7 @@
 "use client"
 
+import { motion } from "framer-motion"
+
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useCallback } from "react"
 import {
@@ -130,12 +132,12 @@ export default function IdentitiesPage() {
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search identities..."
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1) }}
-            className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-10 rounded-xl"
+            className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-muted-foreground h-10 rounded-xl"
           />
         </div>
       </motion.div>
@@ -192,7 +194,7 @@ export default function IdentitiesPage() {
                           </div>
                           <div>
                             <p className="text-white font-medium">{identity.name}</p>
-                            <p className="text-gray-500 text-xs">{identity.user_email}</p>
+                            <p className="text-muted-foreground text-xs">{identity.user_email}</p>
                           </div>
                         </div>
                       </TableCell>
@@ -357,6 +359,6 @@ export default function IdentitiesPage() {
         name={deleteTarget?.name || ""}
         loading={deleting}
       />
-    </div>
+    </motion.div>
   )
 }

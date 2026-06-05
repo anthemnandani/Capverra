@@ -52,9 +52,9 @@ function SettingsSection({
     >
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
-              <Icon className="w-4 h-4 text-indigo-400" />
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Icon className="w-4 h-4 text-primary" />
             </div>
             {title}
           </CardTitle>
@@ -80,15 +80,15 @@ function ToggleSetting({
   return (
     <div className="flex items-center justify-between py-3">
       <div>
-        <p className="text-white font-medium">{label}</p>
-        <p className="text-gray-500 text-sm">{description}</p>
+        <p className="text-foreground font-medium">{label}</p>
+        <p className="text-muted-foreground text-sm">{description}</p>
       </div>
       <Switch
         checked={checked}
         onCheckedChange={onCheckedChange}
         className="data-[state=checked]:bg-indigo-500"
       />
-    </div>
+    </motion.div>
   )
 }
 
@@ -299,7 +299,7 @@ export default function AdminSettingsPage() {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     )
   }
@@ -307,8 +307,8 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Settings className="w-6 h-6 text-indigo-400" />
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <Settings className="w-6 h-6 text-primary" />
           Settings
         </h1>
         <p className="text-muted-foreground mt-1">
@@ -317,31 +317,31 @@ export default function AdminSettingsPage() {
       </motion.div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="bg-white/5 border border-white/10">
+        <TabsList className="bg-card border border-border">
           <TabsTrigger
             value="profile"
-            className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-muted-foreground"
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground transition-smooth"
           >
             <User className="w-4 h-4 mr-2" />
             Profile
           </TabsTrigger>
           <TabsTrigger
             value="notifications"
-            className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-muted-foreground"
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground transition-smooth"
           >
             <Bell className="w-4 h-4 mr-2" />
             Notifications
           </TabsTrigger>
           <TabsTrigger
             value="security"
-            className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-muted-foreground"
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground transition-smooth"
           >
             <Shield className="w-4 h-4 mr-2" />
             Security
           </TabsTrigger>
           <TabsTrigger
             value="appearance"
-            className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-muted-foreground"
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground transition-smooth"
           >
             <Palette className="w-4 h-4 mr-2" />
             Appearance
@@ -359,7 +359,7 @@ export default function AdminSettingsPage() {
             <div className="flex flex-col md:flex-row gap-6">
               <div className="flex flex-col items-center gap-4">
                 <Avatar className="w-24 h-24 border-4 border-primary/30">
-                  <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-2xl font-bold">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-2xl font-bold">
                     {adminUser?.name?.[0]?.toUpperCase() || adminUser?.email[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -368,7 +368,7 @@ export default function AdminSettingsPage() {
                   size="sm"
                   disabled={avatarUploading}
                   onClick={() => fileRef.current?.click()}
-                  className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+                  className="bg-card border-border text-foreground placeholder-muted hover:bg-card/70 transition-smooth"
                 >
                   {avatarUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Change Avatar"}
                 </Button>
@@ -393,7 +393,7 @@ export default function AdminSettingsPage() {
                       type="email"
                       value={email}
                       disabled
-                      className="bg-white/5 border-white/10 text-white opacity-60 cursor-not-allowed"
+                      className="bg-card border-border text-foreground opacity-60 cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -401,8 +401,8 @@ export default function AdminSettingsPage() {
                 <div className="space-y-2">
                   <Label className="text-gray-300">Role</Label>
                   <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-indigo-400" />
-                    <span className="text-white capitalize">
+                    <Shield className="w-4 h-4 text-primary" />
+                    <span className="text-foreground capitalize">
                       {adminUser?.role.replace("_", " ")}
                     </span>
                   </div>
@@ -411,7 +411,7 @@ export default function AdminSettingsPage() {
                 <Button
                   onClick={handleSaveProfile}
                   disabled={saving}
-                  className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white"
+                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-smooth"
                 >
                   {saving
                     ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
@@ -471,7 +471,7 @@ export default function AdminSettingsPage() {
                     type={showCurrentPw ? "text" : "password"}
                     value={currentPw}
                     onChange={(e) => setCurrentPw(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white pr-10"
+                    className="bg-card border-border text-foreground placeholder-muted pr-10 transition-smooth focus-ring"
                   />
                   <button type="button" onClick={() => setShowCurrentPw((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
                     {showCurrentPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -487,7 +487,7 @@ export default function AdminSettingsPage() {
                       type={showNewPw ? "text" : "password"}
                       value={newPw}
                       onChange={(e) => setNewPw(e.target.value)}
-                      className="bg-white/5 border-white/10 text-white pr-10"
+                      className="bg-card border-border text-foreground placeholder-muted pr-10 transition-smooth focus-ring"
                     />
                     <button type="button" onClick={() => setShowNewPw((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
                       {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -508,7 +508,7 @@ export default function AdminSettingsPage() {
               {confirmPw && newPw !== confirmPw && (
                 <p className="text-xs text-red-400">Passwords do not match</p>
               )}
-              <Button variant="outline" disabled={pwSaving} onClick={handleUpdatePassword} className="bg-white/5 border-white/10 text-white hover:bg-white/10">
+              <Button variant="outline" disabled={pwSaving} onClick={handleUpdatePassword} className="bg-card border-border text-foreground placeholder-muted hover:bg-card/70 transition-smooth">
                 {pwSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating...</> : "Update Password"}
               </Button>
             </div>
@@ -570,6 +570,6 @@ export default function AdminSettingsPage() {
           </SettingsSection>
         </TabsContent>
       </Tabs>
-    </div>
+    </motion.div>
   )
 }
