@@ -42,9 +42,9 @@ function AnimatedCounter({ value, duration = 2 }: { value: number; duration?: nu
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp
       const progress = Math.min((timestamp - startTime) / (duration * 1000), 1)
-      
+
       setCount(Math.floor(progress * value))
-      
+
       if (progress < 1) {
         animationFrame = requestAnimationFrame(animate)
       }
@@ -171,9 +171,8 @@ function MetricCard({
                       <TrendingDown className="w-4 h-4 text-rose-500" />
                     )}
                     <span
-                      className={`text-sm font-medium ${
-                        change >= 0 ? "text-emerald-500" : "text-rose-500"
-                      }`}
+                      className={`text-sm font-medium ${change >= 0 ? "text-emerald-500" : "text-rose-500"
+                        }`}
                     >
                       {change >= 0 ? "+" : ""}
                       {change}%
@@ -284,7 +283,7 @@ function QuickAction({
 function ParallaxShapes() {
   const containerRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: containerRef })
-  
+
   const y1 = useTransform(scrollYProgress, [0, 1], [0, -100])
   const y2 = useTransform(scrollYProgress, [0, 1], [0, -200])
   const y3 = useTransform(scrollYProgress, [0, 1], [0, -150])
@@ -413,12 +412,16 @@ export default function AdminDashboard() {
         >
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-3">
-              Welcome back, {adminUser?.name || "Admin"}
+              Welcome back,{" "}
+              {adminUser?.name
+                ? adminUser.name.split(" ")[0].charAt(0).toUpperCase() +
+                adminUser.name.split(" ")[0].slice(1).toLowerCase()
+                : "Admin"}
               <motion.span
                 animate={{ rotate: [0, 14, -8, 14, -4, 10, 0] }}
                 transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3 }}
               >
-                <span role="img" aria-label="wave">{"("}</span>
+                <span role="img" aria-label="wave">👋</span>
               </motion.span>
             </h1>
             <p className="text-muted-foreground mt-1">

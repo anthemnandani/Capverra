@@ -9,7 +9,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, Shield, FlaskConical } from "lucide-react"
+import { Eye, EyeOff, Shield, FlaskConical, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
@@ -39,6 +39,7 @@ export default function AdminLoginPage() {
 
   const handleFillTestCredentials = async () => {
     setIsSeeding(true)
+    setError("")
     try {
       await fetch("/api/admin/seed", { method: "POST" })
       setEmail(testCredentials.email)
@@ -61,12 +62,17 @@ export default function AdminLoginPage() {
       const result = await adminLogin(email, password)
 
       if (!result.success) {
-        // Show a specific message if the user is a normal client
-        const msg =
+        if (result.error === "ACCESS_DENIED_CLIENT") {
+          setError("This account does not have admin access. Please use the regular user login.")
+        } else {
+          setError(result.error || "Login failed. Please check your credentials.")
+        }
+        toast.error(
           result.error === "ACCESS_DENIED_CLIENT"
-            ? "This account does not have admin access. Please use the regular login."
+            ? "Access denied — not an admin account."
             : result.error || "Login failed"
-        toast.error(msg)
+        )
+        setLoading(false)
         return
       }
 
@@ -76,7 +82,6 @@ export default function AdminLoginPage() {
       const message = err instanceof Error ? err.message : "Something went wrong"
       setError(message)
       toast.error(message)
-    } finally {
       setLoading(false)
     }
   }
@@ -107,7 +112,7 @@ export default function AdminLoginPage() {
                   type="email"
                   placeholder="admin@capverra.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); setError("") }}
                   required
                   autoFocus
                   disabled={loading}
@@ -123,7 +128,7 @@ export default function AdminLoginPage() {
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => { setPassword(e.target.value); setError("") }}
                     required
                     minLength={6}
                     disabled={loading}
@@ -139,26 +144,19 @@ export default function AdminLoginPage() {
                 </div>
               </div>
 
-              {error && (
-                <div className="rounded-md bg-destructive/10 px-3 py-2 border border-destructive/20">
-                  <p className="text-sm text-destructive">{error}</p>
-                  {error.includes("regular login") && (
-                    <Link
-                      href="/login"
-                      className="text-sm text-primary hover:underline mt-1 block"
-                    >
-                      Go to regular login →
-                    </Link>
-                  )}
-                </div>
-              )}
-
               <Button
                 type="submit"
                 disabled={loading}
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                {loading ? "Authenticating..." : "Access Dashboard"}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    Authenticating...
+                  </span>
+                ) : (
+                  "Access Dashboard"
+                )}
               </Button>
             </form>
 
@@ -166,7 +164,7 @@ export default function AdminLoginPage() {
               <Button
                 type="button"
                 onClick={handleFillTestCredentials}
-                disabled={isSeeding}
+                disabled={isSeeding || loading}
                 variant="outline"
                 className="w-full h-10 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
               >

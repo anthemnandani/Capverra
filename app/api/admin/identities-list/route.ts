@@ -67,12 +67,39 @@ export async function DELETE(request: Request) {
     if (!id) return NextResponse.json({ error: "Identity ID required" }, { status: 400 })
 
     const adminClient = createSupabaseAdminClient()
+    const now = new Date().toISOString()
+
+    // 1. Soft-delete the identity
     const { error } = await adminClient
       .from("identities")
-      .update({ is_deleted: true, updated_at: new Date().toISOString() })
+      .update({ is_deleted: true, updated_at: now })
       .eq("id", id)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // 2. Find all assets owned by this identity
+    const { data: assets } = await adminClient
+      .from("assets")
+      .select("id")
+      .eq("owner_id", id)
+      .eq("is_deleted", false)
+
+    if (assets && assets.length > 0) {
+      const assetIds = assets.map((a: any) => a.id)
+
+      // 3. Soft-delete all those assets
+      await adminClient
+        .from("assets")
+        .update({ is_deleted: true, updated_at: now })
+        .in("id", assetIds)
+
+      // 4. Soft-delete all optimization_reports linked to those assets
+      await adminClient
+        .from("optimization_reports")
+        .update({ is_deleted: true })
+        .in("asset_id", assetIds)
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
     return NextResponse.json({ error: "Failed to delete identity" }, { status: 500 })

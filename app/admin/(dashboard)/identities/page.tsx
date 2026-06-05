@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useCallback } from "react"
 import {
   Shield, Search, ChevronLeft, ChevronRight, MoreVertical,
-  Eye, Download, RefreshCw, Trash2,
+  Eye, Download, RefreshCw, Trash2, AlertTriangle
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -33,6 +33,7 @@ interface Identity {
   risk_profile: "low" | "medium" | "high" | "aggressive"
 }
 
+
 function DeleteConfirmDialog({
   open, onClose, onConfirm, name, loading,
 }: {
@@ -42,17 +43,51 @@ function DeleteConfirmDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="bg-slate-900 border-white/10 text-white max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-rose-400">
-            <Trash2 className="w-5 h-5" />Delete Identity
+          <DialogTitle className="flex items-center gap-3 text-rose-400">
+            <div className="w-10 h-10 rounded-xl bg-rose-500/15 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-rose-400" />
+            </div>
+            Delete Identity
           </DialogTitle>
-          <DialogDescription className="text-gray-400">
-            Are you sure you want to delete <span className="text-white font-medium">"{name}"</span>? This action cannot be undone.
+          <DialogDescription className="text-gray-400 mt-3 leading-relaxed">
+            Are you sure you want to delete{" "}
+            <span className="text-white font-semibold">"{name}"</span>?
           </DialogDescription>
         </DialogHeader>
+
+        {/* Warning block — assets + reports cascade */}
+        <div className="mt-2 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-rose-400 mt-0.5 shrink-0" />
+          <p className="text-sm text-rose-300 leading-relaxed">
+            <strong className="text-rose-200">Warning:</strong> All assets belonging to this identity and their associated optimization reports will also be permanently deleted. This action cannot be undone.
+          </p>
+        </div>
+
         <DialogFooter className="gap-2 mt-4">
-          <Button variant="outline" onClick={onClose} disabled={loading} className="bg-white/5 border-white/10 text-white hover:bg-white/10">Cancel</Button>
-          <Button onClick={onConfirm} disabled={loading} className="bg-rose-500 hover:bg-rose-600 text-white">
-            {loading ? "Deleting..." : "Delete"}
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={loading}
+            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={onConfirm}
+            disabled={loading}
+            className="bg-rose-600 hover:bg-rose-700 text-white"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Deleting…
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Trash2 className="w-4 h-4" />
+                Delete Identity & Assets
+              </span>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       .select("*")
       .eq("user_id", user.id)
       .eq("asset_id", assetId)
+      .eq("is_deleted", false)
       .order("generated_at", { ascending: false })
 
     if (error) throw error
@@ -101,7 +102,7 @@ export async function DELETE(request: NextRequest) {
 
     const { error } = await supabase
       .from("optimization_reports")
-      .delete()
+      .update({ is_deleted: true })
       .eq("id", id)
       .eq("user_id", user.id)
 

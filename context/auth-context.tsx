@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type UserRole = "admin" | "client";
+export type UserRole = "admin" | "super_admin" | "client";
 
 export interface AppUser {
   id: string;
@@ -121,7 +121,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return createSupabaseBrowserClient();
     } catch (error) {
       console.error("[AuthContext] Failed to create Supabase client:", error);
-      // Return null - will be handled in useEffect
       return null;
     }
   }, []);
@@ -147,14 +146,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    // If Supabase client failed to initialize, just set loading to false
     if (!supabase) {
       console.warn("[AuthContext] Supabase client not available");
       setIsLoading(false);
       return;
     }
 
-    // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
       handleSession(session?.user ?? null);
     }).catch((error) => {
@@ -163,14 +160,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // login() ke baad SIGNED_IN event aata hai — skip karo
-      // kyunki login() ne already optimistic user set kar diya hai
       if (event === "SIGNED_IN" && skipNextAuthChange.current) {
         skipNextAuthChange.current = false;
         return;
       }
-
-      // SIGNED_OUT aur baaki events normally handle karo
       handleSession(session?.user ?? null);
     });
 
@@ -178,6 +171,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [handleSession, supabase]);
 
   // ─── login ──────────────────────────────────────────────────────────────────
+  // NOTE: This login() is now only used by components that need programmatic
+  // auth state sync (e.g. after password reset). The main login page does its
+  // own signInWithPassword + role check directly to block admin accounts early.
   const login = async (email: string, password: string) => {
     if (!email || !password) throw new Error("Email and password are required");
     if (!supabase) throw new Error("Authentication service not available");
@@ -192,17 +188,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
       }
       if (data.user) {
-        // onAuthStateChange ko skip karo — hum khud manage kar rahe hain
         skipNextAuthChange.current = true;
-
-        // Turant optimistic user set karo — koi DB wait nahi
+        // Optimistic set — background fetch will update with full profile
         setUser(buildUserFromAuth(data.user));
-
-        // Background mein full profile fetch karo — re-render hoga par tab
-        // user dashboard par hoga, flash nahi hoga
         fetchAppUser(data.user)
           .then(setUser)
-          .catch(() => { /* buildUserFromAuth already set hai */ });
+          .catch(() => { /* buildUserFromAuth already set */ });
       }
     } finally {
       setIsLoading(false);
@@ -228,7 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ─── forgotPassword ────────────────────���─────────────────────────────────────
+  // ─── forgotPassword ───────────────────────────────────────────────────────────
   const forgotPassword = async (email: string) => {
     setIsLoading(true);
     try {
@@ -247,7 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ─── resetPassword ───────────────────────────────────────────────────────────
+  // ─── resetPassword ────────────────────────────────────────────────────────────
   const resetPassword = async (password: string) => {
     setIsLoading(true);
     try {
