@@ -71,11 +71,11 @@ function getTypeLabel(type: string) {
 
 function getRiskBadgeClass(profile: string) {
   switch (profile) {
-    case "low":        return "bg-green-100 text-green-900 dark:bg-green-100 dark:text-green-950"
-    case "medium":     return "bg-yellow-100 text-yellow-900 dark:bg-yellow-100 dark:text-yellow-950"
+    case "low":        return "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-200"
+    case "medium":     return "bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-200"
     case "high":
-    case "aggressive": return "bg-red-100 text-red-900 dark:bg-red-100 dark:text-red-950"
-    default:           return "bg-gray-100 text-gray-900 dark:bg-gray-100 dark:text-gray-950"
+    case "aggressive": return "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-200"
+    default:           return "bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-200"
   }
 }
 
