@@ -487,7 +487,7 @@ export default function AdminAssetsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search assets by name or type..."
+            placeholder="Search assets by name..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             className="pl-10 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-indigo-500"
