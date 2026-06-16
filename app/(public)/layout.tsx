@@ -4,6 +4,7 @@ import type React from "react";
 import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/context";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function PublicLayout({
   children,
@@ -11,25 +12,47 @@ export default function PublicLayout({
   children: React.ReactNode;
 }) {
   const { isAuthenticated, isLoading } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { setTheme } = useTheme();
+  const pathname = usePathname();
+  const router = useRouter();
 
-  useEffect(() => {
-    const currentRouteTheme = localStorage.getItem("route-theme");
+useEffect(() => {
+  const routeTheme = localStorage.getItem("route-theme");
 
-    if (currentRouteTheme !== "public") {
+  if (routeTheme !== "public") {
+    localStorage.setItem("route-theme", "public");
+
+    const manual = localStorage.getItem("user-manual-theme");
+
+    if (!manual) {
       setTheme("dark");
-      localStorage.setItem("route-theme", "public");
     }
-  }, [setTheme]);
+  }
+}, []);
+
+  const authExemptRoutes = [
+    "/forgot-password",
+    "/reset-password",
+    "/callback",
+    "/auth/callback",
+  ];
+
+  const shouldSkipRedirect = authExemptRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      window.location.href = "/dashboard";
+    if (isLoading) return;
+    if (shouldSkipRedirect) return;
+    if (!isAuthenticated) return;
+    if (pathname === "/login") {
+      router.replace("/dashboard");
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, shouldSkipRedirect, pathname, router]);
 
-  if (!isLoading && isAuthenticated) {
-    return null;
+  // Exempt pages hamesha render karo bina redirect ke
+  if (shouldSkipRedirect) {
+    return <>{children}</>;
   }
 
   return <>{children}</>;

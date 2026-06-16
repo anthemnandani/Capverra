@@ -14,17 +14,23 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const { isAuthenticated, isLoading } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { setTheme } = useTheme();
   const router = useRouter();
 
- useEffect(() => {
-  const currentRouteTheme = localStorage.getItem("route-theme");
+useEffect(() => {
+  const routeTheme = localStorage.getItem("route-theme");
 
-  if (currentRouteTheme !== "protected") {
-    setTheme("light");
+  if (routeTheme !== "protected") {
     localStorage.setItem("route-theme", "protected");
+
+    // ONLY set if not manually controlled
+    const manual = localStorage.getItem("user-manual-theme");
+
+    if (!manual) {
+      setTheme("light");
+    }
   }
-}, [setTheme]);
+}, []);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

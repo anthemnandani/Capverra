@@ -113,8 +113,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // login() ne already user set kar diya — onAuthStateChange ko skip karne ke liye
   const skipNextAuthChange = useRef(false);
+
+  // ── isResetPasswordPage detection ─────────────────────────────────────────
+  const isResetPasswordPage = useMemo(
+    () =>
+      typeof window !== "undefined" &&
+      window.location.pathname === "/reset-password",
+    [],
+  );
 
   const supabase = useMemo(() => {
     try {
@@ -127,6 +134,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleSession = useCallback(
     async (supabaseUser: SupabaseUser | null) => {
+      // Reset password page pe session handling skip karo
+      if (isResetPasswordPage) {
+        setIsLoading(false);
+        return;
+      }
+
       if (!supabaseUser) {
         setUser(null);
         setIsLoading(false);
@@ -142,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    [],
+    [isResetPasswordPage],
   );
 
   useEffect(() => {
@@ -152,14 +165,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      handleSession(session?.user ?? null);
-    }).catch((error) => {
-      console.error("[AuthContext] Error getting session:", error);
+    if (isResetPasswordPage) {
+      // Reset password page pe getSession skip karo
       setIsLoading(false);
-    });
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        handleSession(session?.user ?? null);
+      }).catch((error) => {
+        console.error("[AuthContext] Error getting session:", error);
+        setIsLoading(false);
+      });
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Reset password page pe auth state changes ignore karo
+      if (isResetPasswordPage) return;
+
       if (event === "SIGNED_IN" && skipNextAuthChange.current) {
         skipNextAuthChange.current = false;
         return;
@@ -168,12 +189,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [handleSession, supabase]);
+  }, [handleSession, isResetPasswordPage, supabase]);
 
-  // ─── login ──────────────────────────────────────────────────────────────────
-  // NOTE: This login() is now only used by components that need programmatic
-  // auth state sync (e.g. after password reset). The main login page does its
-  // own signInWithPassword + role check directly to block admin accounts early.
+  // ─── login ────────────────────────────────────────────────────────────────
   const login = async (email: string, password: string) => {
     if (!email || !password) throw new Error("Email and password are required");
     if (!supabase) throw new Error("Authentication service not available");
@@ -189,7 +207,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       if (data.user) {
         skipNextAuthChange.current = true;
-        // Optimistic set — background fetch will update with full profile
         setUser(buildUserFromAuth(data.user));
         fetchAppUser(data.user)
           .then(setUser)
@@ -200,7 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ─── logout ─────────────────────────────────────────────────────────────────
+  // ─── logout ───────────────────────────────────────────────────────────────
   const logout = async () => {
     setIsLoading(true);
     try {
@@ -219,13 +236,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ─── forgotPassword ───────────────────────────────────────────────────────────
+  // ─── forgotPassword ───────────────────────────────────────────────────────
   const forgotPassword = async (email: string) => {
     setIsLoading(true);
     try {
       if (!supabase) throw new Error("Authentication service not available");
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/callback?next=/reset-password`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw new Error(error.message);
       toast.success("Password reset email sent. Please check your inbox.");
@@ -238,7 +255,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ─── resetPassword ────────────────────────────────────────────────────────────
+  // ─── resetPassword ────────────────────────────────────────────────────────
   const resetPassword = async (password: string) => {
     setIsLoading(true);
     try {
