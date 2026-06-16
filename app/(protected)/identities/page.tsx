@@ -9,9 +9,18 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   Plus, Edit, Trash2,
   User, Building2, Shield, Users,
-  Loader2, AlertCircle,
+  Loader2, AlertCircle, AlertTriangle,
 } from "lucide-react"
 import { IdentityModal, type IdentityFormData, type IdentityModalShape } from "@/components/identities/identity-modal"
 import { getCountryName } from "@/lib/countries"
@@ -36,6 +45,12 @@ interface Identity {
   annual_income: number | null
   created_at: string
   updated_at: string
+}
+
+interface LinkedAsset {
+  id: string
+  name: string
+  type: string
 }
 
 // ── Goal label lookup ─────────────────────────────────────────────────────────
@@ -71,11 +86,15 @@ function getTypeLabel(type: string) {
 
 function getRiskBadgeClass(profile: string) {
   switch (profile) {
-    case "low":        return "bg-green-100 text-green-900 dark:bg-green-100 dark:text-green-950"
-    case "medium":     return "bg-yellow-100 text-yellow-900 dark:bg-yellow-100 dark:text-yellow-950"
+    case "low":
+      return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
+    case "medium":
+      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"
     case "high":
-    case "aggressive": return "bg-red-100 text-red-900 dark:bg-red-100 dark:text-red-950"
-    default:           return "bg-gray-100 text-gray-900 dark:bg-gray-100 dark:text-gray-950"
+    case "aggressive":
+      return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
+    default:
+      return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
   }
 }
 
@@ -130,15 +149,21 @@ function formDataToPayload(data: IdentityFormData) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function IdentitiesPage() {
-  const [identities,     setIdentities]     = useState<Identity[]>([])
-  const [loading,        setLoading]        = useState(true)
-  const [error,          setError]          = useState<string | null>(null)
-  const [isModalOpen,    setIsModalOpen]    = useState(false)
-  const [editingIdentity,setEditingIdentity]= useState<Identity | null>(null)
-  const [deletingId,     setDeletingId]     = useState<string | null>(null)
-  const [saving,         setSaving]         = useState(false)
+  const [identities,      setIdentities]      = useState<Identity[]>([])
+  const [loading,         setLoading]         = useState(true)
+  const [error,           setError]           = useState<string | null>(null)
+  const [isModalOpen,     setIsModalOpen]     = useState(false)
+  const [editingIdentity, setEditingIdentity] = useState<Identity | null>(null)
+  const [deletingId,      setDeletingId]      = useState<string | null>(null)
+  const [checkingId,      setCheckingId]      = useState<string | null>(null)
+  const [saving,          setSaving]          = useState(false)
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
+  // ── Warning dialog state ──────────────────────────────────────────────────
+  const [warnDialogOpen,    setWarnDialogOpen]    = useState(false)
+  const [warnIdentity,      setWarnIdentity]      = useState<Identity | null>(null)
+  const [warnLinkedAssets,  setWarnLinkedAssets]  = useState<LinkedAsset[]>([])
+
+  // ── Fetch identities ──────────────────────────────────────────────────────
   const fetchIdentities = useCallback(async () => {
     try {
       setLoading(true)
@@ -160,9 +185,9 @@ export default function IdentitiesPage() {
   useEffect(() => { fetchIdentities() }, [fetchIdentities])
 
   // ── Modal helpers ─────────────────────────────────────────────────────────
-  const handleAddIdentity   = () => { setEditingIdentity(null); setIsModalOpen(true) }
-  const handleEditIdentity  = (identity: Identity) => { setEditingIdentity(identity); setIsModalOpen(true) }
-  const handleCloseModal    = () => { if (saving) return; setIsModalOpen(false); setEditingIdentity(null) }
+  const handleAddIdentity  = () => { setEditingIdentity(null); setIsModalOpen(true) }
+  const handleEditIdentity = (identity: Identity) => { setEditingIdentity(identity); setIsModalOpen(true) }
+  const handleCloseModal   = () => { if (saving) return; setIsModalOpen(false); setEditingIdentity(null) }
 
   // ── Save (create or update) ───────────────────────────────────────────────
   const handleSaveIdentity = async (formData: IdentityFormData) => {
@@ -172,7 +197,6 @@ export default function IdentitiesPage() {
 
     try {
       if (editingIdentity) {
-        // ── UPDATE ──
         const res = await fetch(`/api/identities/${editingIdentity.id}`, {
           method:  "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -180,14 +204,12 @@ export default function IdentitiesPage() {
         })
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
-          // 503 = Supabase timeout — show friendly message
           if (res.status === 503) throw new Error("Auth service temporarily unavailable. Please retry.")
           throw new Error(body.error ?? `HTTP ${res.status}`)
         }
         const updated: Identity = await res.json()
         setIdentities((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))
       } else {
-        // ── CREATE ──
         const res = await fetch("/api/identities", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
@@ -210,16 +232,40 @@ export default function IdentitiesPage() {
     }
   }
 
-  // ── Delete ────────────────────────────────────────────────────────────────
-  const handleDeleteIdentity = async (id: string) => {
-    if (deletingId) return
+  // ── Delete: step 1 — check for linked assets first ───────────────────────
+  const handleDeleteClick = async (identity: Identity) => {
+    if (checkingId || deletingId) return
+    setCheckingId(identity.id)
+    try {
+      const res = await fetch(`/api/identities/${identity.id}/linked-assets`)
+      if (!res.ok) throw new Error("Check failed")
+      const { assets }: { assets: LinkedAsset[] } = await res.json()
+
+      if (assets.length > 0) {
+        // Has linked assets → show warning dialog
+        setWarnIdentity(identity)
+        setWarnLinkedAssets(assets)
+        setWarnDialogOpen(true)
+      } else {
+        // Safe to delete directly
+        await executeDelete(identity.id)
+      }
+    } catch {
+      setError("Could not check linked assets. Please try again.")
+    } finally {
+      setCheckingId(null)
+    }
+  }
+
+  // ── Delete: step 2 — actually delete ─────────────────────────────────────
+  const executeDelete = async (id: string) => {
     setDeletingId(id)
-    setIdentities((prev) => prev.filter((i) => i.id !== id))  // optimistic
+    setIdentities((prev) => prev.filter((i) => i.id !== id)) // optimistic
 
     try {
       const res = await fetch(`/api/identities/${id}`, { method: "DELETE" })
       if (!res.ok) {
-        await fetchIdentities()  // roll back
+        await fetchIdentities() // roll back
         const body = await res.json().catch(() => ({}))
         if (res.status === 503) throw new Error("Auth service temporarily unavailable. Please retry.")
         if (res.status === 401) throw new Error("Session expired. Please refresh the page and log in again.")
@@ -230,6 +276,12 @@ export default function IdentitiesPage() {
     } finally {
       setDeletingId(null)
     }
+  }
+
+  const handleWarnClose = () => {
+    setWarnDialogOpen(false)
+    setWarnIdentity(null)
+    setWarnLinkedAssets([])
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -315,10 +367,8 @@ export default function IdentitiesPage() {
                           key={identity.id}
                           className={deletingId === identity.id ? "opacity-40" : ""}
                         >
-                          {/* Name */}
                           <TableCell className="font-medium">{identity.name}</TableCell>
 
-                          {/* Type */}
                           <TableCell>
                             <div className="flex items-center gap-2">
                               {getTypeIcon(identity.type)}
@@ -326,10 +376,8 @@ export default function IdentitiesPage() {
                             </div>
                           </TableCell>
 
-                          {/* State/Province */}
                           <TableCell>{identity.state_province || "—"}</TableCell>
 
-                          {/* Citizenship */}
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {identity.primary_citizenship && (
@@ -351,7 +399,6 @@ export default function IdentitiesPage() {
                             </div>
                           </TableCell>
 
-                          {/* Residency */}
                           <TableCell>
                             {identity.current_residency
                               ? getCountryName(identity.current_residency)
@@ -360,20 +407,16 @@ export default function IdentitiesPage() {
                                 : "—"}
                           </TableCell>
 
-                          {/* Risk Profile */}
                           <TableCell>
                             <Badge className={getRiskBadgeClass(identity.risk_profile)}>
                               {identity.risk_profile === "aggressive" ? "high" : identity.risk_profile}
                             </Badge>
                           </TableCell>
 
-                          {/* Tax Rate */}
                           <TableCell>{formatTaxRate(identity.tax_rate)}</TableCell>
 
-                          {/* Annual Income */}
                           <TableCell>{formatIncome(identity.annual_income)}</TableCell>
 
-                          {/* Goals */}
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {(identity.goals ?? []).slice(0, 2).map((g) => (
@@ -389,22 +432,21 @@ export default function IdentitiesPage() {
                             </div>
                           </TableCell>
 
-                          {/* Actions */}
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Button
                                 variant="ghost" size="sm"
-                                disabled={!!deletingId || saving}
+                                disabled={!!deletingId || !!checkingId || saving}
                                 onClick={() => handleEditIdentity(identity)}
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost" size="sm"
-                                disabled={!!deletingId || saving}
-                                onClick={() => handleDeleteIdentity(identity.id)}
+                                disabled={!!deletingId || !!checkingId || saving}
+                                onClick={() => handleDeleteClick(identity)}
                               >
-                                {deletingId === identity.id
+                                {deletingId === identity.id || checkingId === identity.id
                                   ? <Loader2 className="h-4 w-4 animate-spin" />
                                   : <Trash2 className="h-4 w-4" />}
                               </Button>
@@ -426,7 +468,7 @@ export default function IdentitiesPage() {
           </CardContent>
         </Card>
 
-        {/* Modal */}
+        {/* Identity modal */}
         <IdentityModal
           isOpen={isModalOpen}
           onClose={handleCloseModal}
@@ -434,6 +476,45 @@ export default function IdentitiesPage() {
           onSave={handleSaveIdentity}
           identity={editingIdentity ? identityToModalShape(editingIdentity) : null}
         />
+
+        {/* ── Linked-assets warning dialog (info only — no delete) ── */}
+        <AlertDialog open={warnDialogOpen} onOpenChange={handleWarnClose}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="h-5 w-5" />
+                Cannot delete — identity is linked to assets
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <p>
+                    <span className="font-medium text-foreground">{warnIdentity?.name}</span> cannot
+                    be deleted because it is currently the owner of the following
+                    asset{warnLinkedAssets.length > 1 ? "s" : ""}:
+                  </p>
+                  <ul className="rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40 divide-y divide-amber-200 dark:divide-amber-800">
+                    {warnLinkedAssets.map((a) => (
+                      <li key={a.id} className="flex items-center gap-2 px-3 py-2 text-sm">
+                        <Building2 className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <span className="font-medium text-foreground">{a.name}</span>
+                        <span className="text-muted-foreground">· {a.type}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-sm text-muted-foreground">
+                    Please remove or reassign these assets before deleting this identity.
+                  </p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={handleWarnClose}>
+                OK, got it
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
       </div>
     </div>
   )
