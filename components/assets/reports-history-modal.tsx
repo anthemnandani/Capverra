@@ -158,7 +158,7 @@ export function ReportsHistoryModal({
           }}
         >
           {/* ── Header (fixed, never scrolls) ── */}
-          <DialogHeader className="px-6 py-4 border-b bg-slate-50 shrink-0">
+          <DialogHeader className="px-6 py-4 border-b bg-muted shrink-0">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-slate-900 rounded-lg shrink-0">
                 <FileText className="size-5 text-white" />
@@ -198,7 +198,7 @@ export function ReportsHistoryModal({
             {/* Empty state */}
             {!loading && !error && reports.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center">
-                <div className="p-4 bg-slate-100 rounded-full mb-4">
+                <div className="p-4 bg-muted rounded-full mb-4">
                   <FileText className="size-8 text-slate-400" />
                 </div>
                 <h3 className="font-medium text-slate-900 mb-1">No Reports Yet</h3>
@@ -232,7 +232,7 @@ export function ReportsHistoryModal({
                             </div>
                             <Badge
                               variant="secondary"
-                              className="bg-emerald-50 text-emerald-700 border-emerald-200 shrink-0"
+                              className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 shrink-0"
                             >
                               <DollarSign className="size-3 mr-0.5" />
                               {formatCurrency(report.estimated_savings, report.currency)} potential savings
@@ -254,7 +254,7 @@ export function ReportsHistoryModal({
                                     <Badge
                                       key={idx}
                                       variant="outline"
-                                      className="text-xs font-normal gap-1"
+                                      className="text-xs font-normal bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800"
                                     >
                                       {getTypeIcon(identity.type)}
                                       {identity.name}
@@ -317,7 +317,7 @@ export function ReportsHistoryModal({
           </div>
 
           {/* ── Footer (fixed, never scrolls) ── */}
-          <div className="px-6 py-4 border-t bg-slate-50 shrink-0">
+          <div className="px-6 py-4 border-t bg-muted shrink-0">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
                 {loading
