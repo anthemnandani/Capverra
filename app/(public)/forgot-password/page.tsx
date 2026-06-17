@@ -73,7 +73,7 @@ const handleEmailSubmit = async (e: React.FormEvent) => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="flex flex-1 items-center justify-center px-6 py-20">
+      <main className="flex flex-1 items-center justify-center px-6 py-20 mt-28">
         <Card className="w-full max-w-md border-border bg-card shadow-xl">
           <CardContent className="p-8">
 

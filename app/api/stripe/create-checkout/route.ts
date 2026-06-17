@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? `https://${request.headers.get("host")}`
 console.log("Selected Plan:", planId)
 console.log("Stripe Price ID:", plan.stripePriceId)
+console.log("appUrl:", appUrl);
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     customer: stripeCustomerId,
