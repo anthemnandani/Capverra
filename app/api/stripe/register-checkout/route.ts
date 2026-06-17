@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Create Stripe Checkout Session ────────────────────────────────────────
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? `https://${request.headers.get("host")}`
 
   try {
     const session = await stripe.checkout.sessions.create({

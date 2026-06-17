@@ -16,9 +16,9 @@ import { getPlan } from "@/lib/plans"
 
 export const dynamic = "force-dynamic"
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
 
 export async function GET(request: NextRequest) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? `https://${request.headers.get("host")}`
   const sessionId = request.nextUrl.searchParams.get("session_id")
 
   if (!sessionId) {
