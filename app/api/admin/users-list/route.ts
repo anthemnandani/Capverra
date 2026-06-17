@@ -3,6 +3,9 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server"
 import type { UserRole } from "@/lib/admin-types"
 import { NextResponse } from "next/server"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 // Shape of rows returned from your `users` table
 type CustomUser = {
   id: string
