@@ -1,22 +1,20 @@
 "use client"
 
-import { useState } from "react"
-import { Check, Users, Building2, User, MapPin, Sparkles, AlertCircle } from "lucide-react"
-import { OptimizationResultsModal } from "@/components/assets/optimization-results-modal"
+import { useState, useEffect } from "react"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+  Check, Users, Building2, User, MapPin,
+  Sparkles, AlertCircle, Loader2, Zap,
+} from "lucide-react"
+import { OptimizationResultsModal } from "@/components/assets/optimization-results-modal"
+import { UpgradeModal } from "@/components/subscription/upgrade-modal"
+import { usePlan } from "@/hooks/use-plan"
+import {
+  Dialog, DialogContent, DialogHeader,
+  DialogTitle, DialogDescription,
 } from "@/components/ui/dialog"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell,
+  TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -44,14 +42,12 @@ const JURISDICTIONS = [
   { id: "other",           name: "Other Suitable Jurisdiction",  code: "XX" },
 ]
 
-// ── FIX: resolve country code → country name for display ─────────────────────
 const getCountryName = (code: string | null | undefined): string => {
   if (!code) return ""
   const found = countries.find((c) => c.code === code)
   return found ? found.name : code
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 const ownerTypeIcons: Record<string, React.ReactNode> = {
   Individual:  <User      className="size-3.5" />,
   LLC:         <Building2 className="size-3.5" />,
@@ -75,7 +71,6 @@ const identityTypeBadgeStyles: Record<string, string> = {
   entity:      "bg-purple-100 text-purple-700",
 }
 
-// ── Props ─────────────────────────────────────────────────────────────────────
 interface AssetDetailModalProps {
   asset:         AssetWithCalculations | null
   allIdentities: Identity[]
@@ -83,18 +78,31 @@ interface AssetDetailModalProps {
   onOpenChange:  (open: boolean) => void
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
 export function AssetDetailModal({
-  asset,
-  allIdentities,
-  open,
-  onOpenChange,
+  asset, allIdentities, open, onOpenChange,
 }: AssetDetailModalProps) {
   const [selectedIdentities,    setSelectedIdentities]    = useState<string[]>([])
   const [selectedJurisdictions, setSelectedJurisdictions] = useState<string[]>([])
   const [showResults,           setShowResults]           = useState(false)
-  // FIX: validation error state
+  const [showUpgrade,           setShowUpgrade]           = useState(false)
   const [jurisdictionError,     setJurisdictionError]     = useState(false)
+
+  // ── Plan status ───────────────────────────────────────────────────────────
+  const { planStatus, isLoading: planLoading, refetch: refetchPlan } = usePlan()
+
+  // Max identities user can pick = plan limit - 1 (current identity always included)
+  const maxAdditionalIdentities = Math.max(0, planStatus.identity_limit - 1)
+  const maxJurisdictions        = planStatus.jurisdiction_limit
+
+  // Reset selections when modal opens (in case limits changed after upgrade)
+  useEffect(() => {
+    if (open) {
+      refetchPlan()
+      setSelectedIdentities([])
+      setSelectedJurisdictions([])
+      setJurisdictionError(false)
+    }
+  }, [open, refetchPlan])
 
   if (!asset) return null
 
@@ -102,35 +110,53 @@ export function AssetDetailModal({
   const otherIdentities   = allIdentities.filter((i) => i.id !== currentIdentityId)
   const currentIdentity   = allIdentities.find((i)  => i.id === currentIdentityId)
 
-  // ── Toggles ────────────────────────────────────────────────────────────────
+  // ── Toggles ───────────────────────────────────────────────────────────────
   const handleIdentityToggle = (id: string) => {
     setSelectedIdentities((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id)
-      if (prev.length >= 2)  return prev
+      if (prev.length >= maxAdditionalIdentities) return prev
       return [...prev, id]
     })
   }
 
   const handleJurisdictionToggle = (id: string) => {
-    setJurisdictionError(false) // FIX: clear error on interaction
+    setJurisdictionError(false)
     setSelectedJurisdictions((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id)
-      if (prev.length >= 2)  return prev
+      if (prev.length >= maxJurisdictions) return prev
       return [...prev, id]
     })
   }
 
-  // ── FIX: validate before opening results ──────────────────────────────────
+  // ── Optimize Now ──────────────────────────────────────────────────────────
   const handleOptimizeNow = () => {
+    // 1. Check report limit first
+    if (!planStatus.has_active_plan && planStatus.plan_id === "free") {
+      // Free plan — check remaining via planStatus
+      if (planStatus.reports_remaining <= 0) {
+        setShowUpgrade(true)
+        return
+      }
+    } else if (planStatus.has_active_plan && planStatus.reports_remaining <= 0) {
+      setShowUpgrade(true)
+      return
+    } else if (!planStatus.has_active_plan && planStatus.plan_id !== "free") {
+      // Exhausted paid plan
+      setShowUpgrade(true)
+      return
+    }
+
+    // 2. Check jurisdiction selection
     if (selectedJurisdictions.length === 0) {
       setJurisdictionError(true)
       return
     }
+
     setJurisdictionError(false)
     setShowResults(true)
   }
 
-  // ── Derived selections ─────────────────────────────────────────────────────
+  // ── Derived data ──────────────────────────────────────────────────────────
   const selectedIdentityObjects: Identity[] = [
     ...(currentIdentity ? [currentIdentity] : []),
     ...selectedIdentities
@@ -142,8 +168,7 @@ export function AssetDetailModal({
     .map((id) => JURISDICTIONS.find((j) => j.id === id))
     .filter(Boolean) as typeof JURISDICTIONS
 
-  // ── Performance display ────────────────────────────────────────────────────
-  const pct = asset.value_change_percentage
+  const pct        = asset.value_change_percentage
   const isPositive = (pct ?? 0) >= 0
 
   const formatCurrency = (v: number | null | undefined) =>
@@ -151,8 +176,6 @@ export function AssetDetailModal({
       ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v)
       : "—"
 
-  // FIX: build identity location string correctly
-  // state_province is a free-text field, current_residency is a country code
   const buildIdentityLocation = (identity: Identity | undefined): string => {
     if (!identity) return "—"
     const parts = [
@@ -162,20 +185,44 @@ export function AssetDetailModal({
     return parts.join(", ") || "—"
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Plan limit pill ───────────────────────────────────────────────────────
+  const LimitPill = () => {
+    if (planLoading) return null
+    const isExhausted = planStatus.reports_remaining <= 0
+    return (
+      <div className={cn(
+        "flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border w-fit",
+        isExhausted
+          ? "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400"
+          : "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400"
+      )}>
+        <Sparkles className="size-3" />
+        {isExhausted
+          ? `${planStatus.plan_name} plan exhausted`
+          : `${planStatus.reports_remaining} report${planStatus.reports_remaining === 1 ? "" : "s"} remaining · ${planStatus.plan_name}`
+        }
+      </div>
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl">{asset.name}</DialogTitle>
-          <DialogDescription>
-            View asset details, compare identities, and run AI tax optimization
-          </DialogDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <DialogTitle className="text-xl">{asset.name}</DialogTitle>
+              <DialogDescription>
+                View asset details, compare identities, and run AI tax optimization
+              </DialogDescription>
+            </div>
+            <LimitPill />
+          </div>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
 
-          {/* ── Asset info table ── */}
+          {/* ── Asset info ── */}
           <div>
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
               Asset Information
@@ -195,14 +242,11 @@ export function AssetDetailModal({
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium text-sm py-2">Type</TableCell>
-                    <TableCell className="py-2">
-                      <Badge variant="outline">{asset.type}</Badge>
-                    </TableCell>
+                    <TableCell className="py-2"><Badge variant="outline">{asset.type}</Badge></TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium text-sm py-2">Location</TableCell>
                     <TableCell className="text-sm py-2">
-                      {/* FIX: resolve country code to name */}
                       {[asset.location_state, getCountryName(asset.location_country)]
                         .filter(Boolean).join(", ") || "—"}
                     </TableCell>
@@ -230,7 +274,7 @@ export function AssetDetailModal({
             </div>
           </div>
 
-          {/* ── Current identity table ── */}
+          {/* ── Current identity ── */}
           <div>
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
               Associated Identity
@@ -258,10 +302,7 @@ export function AssetDetailModal({
                     <TableCell className="py-2">
                       <Badge
                         variant="outline"
-                        className={cn(
-                          "capitalize text-xs",
-                          identityTypeBadgeStyles[asset.owner?.type ?? ""] ?? "",
-                        )}
+                        className={cn("capitalize text-xs", identityTypeBadgeStyles[asset.owner?.type ?? ""] ?? "")}
                       >
                         {asset.owner?.type ?? "—"}
                       </Badge>
@@ -272,7 +313,6 @@ export function AssetDetailModal({
                     <TableCell className="py-2">
                       <span className="flex items-center gap-1.5 text-sm">
                         <MapPin className="size-3 text-muted-foreground" />
-                        {/* FIX: use corrected location builder */}
                         {buildIdentityLocation(currentIdentity)}
                       </span>
                     </TableCell>
@@ -288,7 +328,7 @@ export function AssetDetailModal({
                       <TableCell className="font-medium text-sm py-2">Annual Income</TableCell>
                       <TableCell className="text-sm py-2">
                         {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })
-                          .format(Math.round(currentIdentity.annual_income))} {/* FIX: round */}
+                          .format(Math.round(currentIdentity.annual_income))}
                       </TableCell>
                     </TableRow>
                   )}
@@ -316,7 +356,7 @@ export function AssetDetailModal({
             </div>
           </div>
 
-          {/* ── All other identities — select up to 2 to compare ── */}
+          {/* ── Compare other identities — plan-limited ── */}
           {otherIdentities.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -324,24 +364,34 @@ export function AssetDetailModal({
                   Compare Other Identities
                 </h3>
                 <span className="text-xs text-muted-foreground">
-                  Select up to 2 additional:{" "}
-                  <span className="font-medium text-foreground">
-                    {selectedIdentities.length}/2
-                  </span>
+                  {maxAdditionalIdentities === 0 ? (
+                    <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <Zap className="size-3" />
+                      Upgrade to compare identities
+                    </span>
+                  ) : (
+                    <>
+                      Select up to {maxAdditionalIdentities} additional:{" "}
+                      <span className="font-medium text-foreground">
+                        {selectedIdentities.length}/{maxAdditionalIdentities}
+                      </span>
+                    </>
+                  )}
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {otherIdentities.map((identity) => {
                   const isSelected = selectedIdentities.includes(identity.id)
-                  const isDisabled = !isSelected && selectedIdentities.length >= 2
+                  const isDisabled = (!isSelected && selectedIdentities.length >= maxAdditionalIdentities)
+                    || maxAdditionalIdentities === 0
 
                   return (
                     <Card
                       key={identity.id}
                       className={cn(
                         "cursor-pointer transition-all hover:border-primary/50",
-                        isSelected  && "border-primary bg-primary/5",
-                        isDisabled  && "opacity-50 cursor-not-allowed",
+                        isSelected && "border-primary bg-primary/5",
+                        isDisabled && "opacity-50 cursor-not-allowed",
                       )}
                       onClick={() => !isDisabled && handleIdentityToggle(identity.id)}
                     >
@@ -357,17 +407,13 @@ export function AssetDetailModal({
                             <div className="flex items-center gap-2 mt-1.5">
                               <Badge
                                 variant="outline"
-                                className={cn(
-                                  "capitalize text-xs",
-                                  identityTypeBadgeStyles[identity.type] ?? "",
-                                )}
+                                className={cn("capitalize text-xs", identityTypeBadgeStyles[identity.type] ?? "")}
                               >
                                 {identity.type}
                               </Badge>
                             </div>
                             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 truncate">
                               <MapPin className="size-2.5 shrink-0" />
-                              {/* FIX: use corrected location builder */}
                               {buildIdentityLocation(identity)}
                             </p>
                             {identity.tax_rate != null && (
@@ -387,29 +433,40 @@ export function AssetDetailModal({
                   )
                 })}
               </div>
+
+              {/* Upgrade nudge when identity limit hit */}
+              {maxAdditionalIdentities === 0 && (
+                <button
+                  onClick={() => setShowUpgrade(true)}
+                  className="mt-2 text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 underline underline-offset-2 transition-colors"
+                >
+                  Upgrade your plan to compare multiple identities →
+                </button>
+              )}
             </div>
           )}
 
-          {/* ── Jurisdiction selection ── */}
+          {/* ── Jurisdiction selection — plan-limited ── */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                 Optimization Jurisdictions
               </h3>
               <span className="text-xs text-muted-foreground">
-                Select up to 2:{" "}
+                Select up to {maxJurisdictions}:{" "}
                 <span className="font-medium text-foreground">
-                  {selectedJurisdictions.length}/2
+                  {selectedJurisdictions.length}/{maxJurisdictions}
                 </span>
               </span>
             </div>
-            {/* FIX: show validation error if no jurisdiction selected */}
+
             {jurisdictionError && (
               <div className="flex items-center gap-2 text-sm text-red-600 mb-2 px-1">
                 <AlertCircle className="size-4 shrink-0" />
                 Please select at least one jurisdiction to run the optimization.
               </div>
             )}
+
             <div className={cn(
               "border rounded-lg p-4",
               jurisdictionError && "border-red-300 bg-red-50/30"
@@ -417,7 +474,7 @@ export function AssetDetailModal({
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3">
                 {JURISDICTIONS.map((jurisdiction) => {
                   const isSelected = selectedJurisdictions.includes(jurisdiction.id)
-                  const isDisabled = !isSelected && selectedJurisdictions.length >= 2
+                  const isDisabled = !isSelected && selectedJurisdictions.length >= maxJurisdictions
 
                   return (
                     <div key={jurisdiction.id} className="flex items-center space-x-2">
@@ -444,20 +501,45 @@ export function AssetDetailModal({
           </div>
 
           {/* ── Actions ── */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            {/* FIX: use validated handler */}
-            <Button onClick={handleOptimizeNow} className="gap-2">
-              <Sparkles className="size-4" />
-              Optimize Now
-            </Button>
+          <div className="flex items-center justify-between pt-4 border-t">
+            {/* Upgrade nudge in footer */}
+            {planStatus.reports_remaining <= 0 ? (
+              <button
+                onClick={() => setShowUpgrade(true)}
+                className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 underline underline-offset-2 transition-colors flex items-center gap-1"
+              >
+                <Zap className="size-3" />
+                Upgrade plan to generate more reports →
+              </button>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {planStatus.reports_remaining} report{planStatus.reports_remaining === 1 ? "" : "s"} remaining
+              </p>
+            )}
+
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleOptimizeNow}
+                className="gap-2"
+                disabled={planLoading}
+              >
+                {planLoading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Sparkles className="size-4" />
+                )}
+                Optimize Now
+              </Button>
+            </div>
           </div>
+
         </div>
       </DialogContent>
 
-      {/* Optimization results modal */}
+      {/* ── Results modal ── */}
       <OptimizationResultsModal
         asset={asset}
         identities={selectedIdentityObjects}
@@ -465,6 +547,14 @@ export function AssetDetailModal({
         open={showResults}
         onOpenChange={setShowResults}
         onBack={() => setShowResults(false)}
+      />
+
+      {/* ── Upgrade modal ── */}
+      <UpgradeModal
+        open={showUpgrade}
+        onOpenChange={setShowUpgrade}
+        currentPlanId={planStatus.plan_id}
+        reason="report_limit"
       />
     </Dialog>
   )

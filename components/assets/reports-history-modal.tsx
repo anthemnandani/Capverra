@@ -68,7 +68,7 @@ export function ReportsHistoryModal({
     if (!asset) return
     setLoading(true)
     setError(null)
-    fetch(`/api/assets/reports?assetId=${encodeURIComponent(asset.id)}`)
+    fetch(`/api/assets/reports?asset_id=${encodeURIComponent(asset.id)}`)
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to load reports")
         const data: ReportRow[] = await res.json()
