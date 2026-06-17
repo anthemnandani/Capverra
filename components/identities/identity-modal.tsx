@@ -169,7 +169,7 @@ export function IdentityModal({
       open={isOpen}
       onOpenChange={(open) => { if (!open && !isSaving) onClose() }}
     >
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-50">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background">
         <DialogHeader>
           <DialogTitle>{identity ? "Edit Identity" : "Add New Identity"}</DialogTitle>
         </DialogHeader>

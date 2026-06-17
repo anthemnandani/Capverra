@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
     }
 
     await transporter.sendMail({
-      from: `"${process.env.SMTP_SENDER_NAME}" <${process.env.SMTP_SENDER_NAME}>`,
-      to: process.env.SMTP_SENDER_NAME,
+      from: `"${process.env.SMTP_USERNAME}" <${process.env.SMTP_USERNAME}>`,
+      to: process.env.SMTP_USERNAME,
       replyTo: email,
       subject: `New Contact Request from ${name}`,
       html: `

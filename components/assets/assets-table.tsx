@@ -9,53 +9,55 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { AssetWithCalculations, Identity } from "@/lib/types"
 import { AddAssetDialog } from "./add-asset-dialog"
-import { AssetDetailModal } from "./asset-detail-modal"        // ← NEW
-import { TrendingUp, TrendingDown, User, Building2, Shield, Sparkles, FileText } from "lucide-react"
+import { AssetDetailModal } from "./asset-detail-modal"
+import { TrendingUp, TrendingDown, User, Building2, Shield, Sparkles, FileText, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ReportsHistoryModal } from "./reports-history-modal"
+import { UpgradeModal } from "@/components/subscription/upgrade-modal"
+import { usePlan } from "@/hooks/use-plan"
+import { cn } from "@/lib/utils"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type Currency = "USD" | "EUR" | "GBP" | "ZAR" | "CHF" | "JPY" | "AUD" | "CAD"
-
 const currencies: Currency[] = ["USD", "EUR", "GBP", "ZAR", "CHF", "JPY", "AUD", "CAD"]
-
 const currencySymbols: Record<Currency, string> = {
   USD: "$", EUR: "€", GBP: "£", ZAR: "R", CHF: "CHF", JPY: "¥", AUD: "A$", CAD: "C$",
 }
 
 const ASSET_TYPE_COLORS: Record<string, string> = {
-  "Real Estate": "bg-emerald-600 text-white hover:bg-emerald-600",
-  Stocks: "bg-amber-600 text-white hover:bg-amber-600",
-  Bonds: "bg-purple-600 text-white hover:bg-purple-600",
-  Cryptocurrency: "bg-orange-600 text-white hover:bg-orange-600",
-  "Mutual Funds": "bg-cyan-600 text-white hover:bg-cyan-600",
-  ETFs: "bg-indigo-600 text-white hover:bg-indigo-600",
-  "Private Equity": "bg-rose-600 text-white hover:bg-rose-600",
-  "Hedge Funds": "bg-pink-600 text-white hover:bg-pink-600",
-  Commodities: "bg-amber-600 text-white hover:bg-amber-600",
-  "Art & Collectibles": "bg-violet-600 text-white hover:bg-violet-600",
-  "Business Interest": "bg-teal-600 text-white hover:bg-teal-600",
-  "Cash & Cash Equivalents": "bg-green-600 text-white hover:bg-green-600",
+  "Real Estate":            "bg-emerald-600 text-white hover:bg-emerald-600",
+  Stocks:                   "bg-amber-600 text-white hover:bg-amber-600",
+  Bonds:                    "bg-purple-600 text-white hover:bg-purple-600",
+  Cryptocurrency:           "bg-orange-600 text-white hover:bg-orange-600",
+  "Mutual Funds":           "bg-cyan-600 text-white hover:bg-cyan-600",
+  ETFs:                     "bg-indigo-600 text-white hover:bg-indigo-600",
+  "Private Equity":         "bg-rose-600 text-white hover:bg-rose-600",
+  "Hedge Funds":            "bg-pink-600 text-white hover:bg-pink-600",
+  Commodities:              "bg-amber-600 text-white hover:bg-amber-600",
+  "Art & Collectibles":     "bg-violet-600 text-white hover:bg-violet-600",
+  "Business Interest":      "bg-teal-600 text-white hover:bg-teal-600",
+  "Cash & Cash Equivalents":"bg-green-600 text-white hover:bg-green-600",
 }
 
 const ownerTypeIcons: Record<string, React.ReactNode> = {
   Individual: <User className="size-3.5" />,
-  LLC: <Building2 className="size-3.5" />,
-  Trust: <Shield className="size-3.5" />,
+  LLC:        <Building2 className="size-3.5" />,
+  Trust:      <Shield className="size-3.5" />,
 }
 
-// ── Editable Cells (unchanged from original) ──────────────────────────────────
-function EditableTextCell({ value, onSave, className = "" }: { value: string; onSave: (v: string) => void; className?: string }) {
-  const [editing, setEditing] = useState(false)
+// ── Editable Cells ────────────────────────────────────────────────────────────
+function EditableTextCell({ value, onSave, className = "" }: {
+  value: string; onSave: (v: string) => void; className?: string
+}) {
+  const [editing,   setEditing]   = useState(false)
   const [editValue, setEditValue] = useState(value)
   const inputRef = useRef<HTMLInputElement>(null)
-  
   useEffect(() => { if (editing) { inputRef.current?.focus(); inputRef.current?.select() } }, [editing])
-    
-  const save = () => { onSave(editValue); setEditing(false) }
+  const save   = () => { onSave(editValue); setEditing(false) }
   const cancel = () => { setEditValue(value); setEditing(false) }
-  const onKey = (e: React.KeyboardEvent) => { if (e.key === "Enter") save(); else if (e.key === "Escape") cancel() }
-
+  const onKey  = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") save(); else if (e.key === "Escape") cancel()
+  }
   if (editing) return (
     <Input ref={inputRef} value={editValue} onChange={(e) => setEditValue(e.target.value)}
       onKeyDown={onKey} onBlur={save} className="h-8 min-w-[100px]" />
@@ -68,18 +70,21 @@ function EditableTextCell({ value, onSave, className = "" }: { value: string; on
   )
 }
 
-function EditableCurrencyCell({ value, currency = "USD", onSave }: { value: number; currency?: string; onSave: (v: number) => void }) {
-  const [editing, setEditing] = useState(false)
+function EditableCurrencyCell({ value, currency = "USD", onSave }: {
+  value: number; currency?: string; onSave: (v: number) => void
+}) {
+  const [editing,   setEditing]   = useState(false)
   const [editValue, setEditValue] = useState(value.toString())
   const inputRef = useRef<HTMLInputElement>(null)
-  
   useEffect(() => { if (editing) { inputRef.current?.focus(); inputRef.current?.select() } }, [editing])
-    
-  const save = () => { onSave(parseFloat(editValue.replace(/[^0-9.]/g, "")) || 0); setEditing(false) }
-  const onKey = (e: React.KeyboardEvent) => { if (e.key === "Enter") save(); else if (e.key === "Escape") { setEditValue(value.toString()); setEditing(false) } }
-  
-  const fmt = (v: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: currency in currencySymbols ? currency : "USD" }).format(v)
-  
+  const save  = () => { onSave(parseFloat(editValue.replace(/[^0-9.]/g, "")) || 0); setEditing(false) }
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") save()
+    else if (e.key === "Escape") { setEditValue(value.toString()); setEditing(false) }
+  }
+  const fmt = (v: number) => new Intl.NumberFormat("en-US", {
+    style: "currency", currency: currency in currencySymbols ? currency : "USD",
+  }).format(v)
   if (editing) return (
     <Input ref={inputRef} type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)}
       onKeyDown={onKey} onBlur={save} className="h-8 w-[140px] text-right" />
@@ -106,16 +111,20 @@ function EditableSelectCell<T extends string>({ value, options, onSave, renderVa
       </SelectContent>
     </Select>
   )
-  return <span onClick={() => setEditing(true)} className="cursor-pointer">{renderValue ? renderValue(value) : value}</span>
+  return (
+    <span onClick={() => setEditing(true)} className="cursor-pointer">
+      {renderValue ? renderValue(value) : value}
+    </span>
+  )
 }
 
-function EditableDateCell({ value, onSave }: { value: string | null | undefined; onSave: (v: string) => void }) {
-  const [editing, setEditing] = useState(false)
+function EditableDateCell({ value, onSave }: {
+  value: string | null | undefined; onSave: (v: string) => void
+}) {
+  const [editing,   setEditing]   = useState(false)
   const [editValue, setEditValue] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
-  
-  const display = value ? new Date(value).toLocaleDateString() : "-"
-  
+  const display  = value ? new Date(value).toLocaleDateString() : "-"
   useEffect(() => {
     if (editing && inputRef.current) {
       if (value) {
@@ -125,10 +134,10 @@ function EditableDateCell({ value, onSave }: { value: string | null | undefined;
       inputRef.current.focus()
     }
   }, [editing, value])
-  
-  const save = () => { if (editValue) onSave(editValue); setEditing(false) }
-  const onKey = (e: React.KeyboardEvent) => { if (e.key === "Enter") save(); else if (e.key === "Escape") setEditing(false) }
-  
+  const save  = () => { if (editValue) onSave(editValue); setEditing(false) }
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") save(); else if (e.key === "Escape") setEditing(false)
+  }
   if (editing) return (
     <Input ref={inputRef} type="date" value={editValue}
       onChange={(e) => setEditValue(e.target.value)} onKeyDown={onKey} onBlur={save}
@@ -149,7 +158,6 @@ function EditableOwnerCell({ identities, ownerId, onSave }: {
 }) {
   const [editing, setEditing] = useState(false)
   const owner = identities.find((i) => i.id === ownerId)
-  
   if (editing) return (
     <Select value={ownerId ?? ""} onValueChange={(v) => { onSave(v); setEditing(false) }}>
       <SelectTrigger className="h-auto w-[260px]" autoFocus onBlur={() => setEditing(false)}>
@@ -168,11 +176,14 @@ function EditableOwnerCell({ identities, ownerId, onSave }: {
       </SelectContent>
     </Select>
   )
-
-  if (!owner) return <span className="text-muted-foreground cursor-pointer" onClick={() => setEditing(true)}>Unknown</span>
-
+  if (!owner) return (
+    <span className="text-muted-foreground cursor-pointer" onClick={() => setEditing(true)}>
+      Unknown
+    </span>
+  )
   return (
-    <div onClick={() => setEditing(true)} className="cursor-pointer rounded px-1 py-0.5 hover:bg-muted transition-colors">
+    <div onClick={() => setEditing(true)}
+      className="cursor-pointer rounded px-1 py-0.5 hover:bg-muted transition-colors">
       <div className="flex items-center gap-2">
         {ownerTypeIcons[owner.type] ?? <User className="size-3.5" />}
         <div className="flex flex-col">
@@ -184,17 +195,64 @@ function EditableOwnerCell({ identities, ownerId, onSave }: {
   )
 }
 
+// ── Plan Status Banner ────────────────────────────────────────────────────────
+function PlanStatusBanner({
+  onUpgrade,
+}: {
+  onUpgrade: () => void
+}) {
+  const { planStatus, isLoading } = usePlan()
+
+  if (isLoading) return null
+
+  const isExhausted = planStatus.reports_remaining <= 0
+  const isLow       = !isExhausted && planStatus.reports_remaining === 1
+
+  if (!isExhausted && !isLow) return null
+
+  return (
+    <div className={cn(
+      "flex items-center justify-between gap-4 px-4 py-3 rounded-lg border text-sm mb-4",
+      isExhausted
+        ? "bg-destructive/5 border-destructive/20 text-destructive dark:bg-destructive/10"
+        : "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300"
+    )}>
+      <div className="flex items-center gap-2">
+        <Zap className="size-4 shrink-0" />
+        <span>
+          {isExhausted
+            ? `Your ${planStatus.plan_name} plan has no reports remaining. Upgrade to continue generating tax optimizations.`
+            : `Only 1 report remaining on your ${planStatus.plan_name} plan.`}
+        </span>
+      </div>
+      <Button
+        size="sm"
+        variant={isExhausted ? "default" : "outline"}
+        className={cn(
+          "shrink-0 whitespace-nowrap",
+          isExhausted && "bg-primary text-primary-foreground hover:bg-primary/90"
+        )}
+        onClick={onUpgrade}
+      >
+        {isExhausted ? "Upgrade Plan" : "View Plans"}
+      </Button>
+    </div>
+  )
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 export function AssetsTable() {
-  const [assets, setAssets] = useState<AssetWithCalculations[]>([])
-  const [identities, setIdentities] = useState<Identity[]>([])
-  const [loading, setLoading] = useState(true)
-  const [reportsAsset, setReportsAsset] = useState<AssetWithCalculations | null>(null)
+  const [assets,           setAssets]           = useState<AssetWithCalculations[]>([])
+  const [identities,       setIdentities]       = useState<Identity[]>([])
+  const [loading,          setLoading]          = useState(true)
+  const [reportsAsset,     setReportsAsset]     = useState<AssetWithCalculations | null>(null)
   const [reportsModalOpen, setReportsModalOpen] = useState(false)
+  const [detailAsset,      setDetailAsset]      = useState<AssetWithCalculations | null>(null)
+  const [detailModalOpen,  setDetailModalOpen]  = useState(false)
+  const [showUpgrade,      setShowUpgrade]      = useState(false)
 
-  // State for the new Asset Detail / Optimize modal
-  const [detailAsset, setDetailAsset] = useState<AssetWithCalculations | null>(null)
-  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  // Pre-fetch plan on table mount so modal opens instantly
+  const { planStatus } = usePlan()
 
   const identityOptions = useMemo(
     () => identities.map((i) => ({ id: i.id, name: i.name, type: i.type })),
@@ -203,12 +261,15 @@ export function AssetsTable() {
 
   const loadAssetsAndIdentities = async () => {
     const [assetsRes, identitiesRes] = await Promise.all([
-      fetch("/api/assets", { cache: "no-store" }),
+      fetch("/api/assets",     { cache: "no-store" }),
       fetch("/api/identities", { cache: "no-store" }),
     ])
-    if (!assetsRes.ok) throw new Error("Failed to fetch assets")
+    if (!assetsRes.ok)     throw new Error("Failed to fetch assets")
     if (!identitiesRes.ok) throw new Error("Failed to fetch identities")
-    const [assetsData, identitiesData] = await Promise.all([assetsRes.json(), identitiesRes.json()])
+    const [assetsData, identitiesData] = await Promise.all([
+      assetsRes.json(),
+      identitiesRes.json(),
+    ])
     setAssets(assetsData)
     setIdentities(identitiesData)
   }
@@ -247,7 +308,10 @@ export function AssetsTable() {
 
   const formatCurrency = (value: number | null | undefined, currency = "USD") => {
     if (value === null || value === undefined) return "-"
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: currency in currencySymbols ? currency : "USD" }).format(value)
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency in currencySymbols ? currency : "USD",
+    }).format(value)
   }
 
   const tableHeaders = [
@@ -265,6 +329,10 @@ export function AssetsTable() {
           </div>
         </CardHeader>
         <CardContent>
+
+          {/* ── Plan status banner — shown above table when limit hit ── */}
+          <PlanStatusBanner onUpgrade={() => setShowUpgrade(true)} />
+
           {/* Skeleton */}
           {loading && (
             <div className="rounded-lg border">
@@ -276,7 +344,9 @@ export function AssetsTable() {
                   {Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
                       {Array.from({ length: tableHeaders.length }).map((_, j) => (
-                        <TableCell key={j}><div className="h-4 w-full animate-pulse rounded bg-muted" /></TableCell>
+                        <TableCell key={j}>
+                          <div className="h-4 w-full animate-pulse rounded bg-muted" />
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))}
@@ -298,21 +368,25 @@ export function AssetsTable() {
             <div className="rounded-lg border overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>{tableHeaders.map((h) => <TableHead key={h}>{h}</TableHead>)}</TableRow>
+                  <TableRow>
+                    {tableHeaders.map((h) => <TableHead key={h}>{h}</TableHead>)}
+                  </TableRow>
                 </TableHeader>
                 <TableBody>
                   {assets.map((asset) => {
-                    const pv = asset.purchase_value ?? 0
-                    const lv = asset.latest_valuation ?? 0
-                    const pct = asset.value_change_percentage
-                    const amt = asset.value_change_amount
+                    const pv       = asset.purchase_value ?? 0
+                    const lv       = asset.latest_valuation ?? 0
+                    const pct      = asset.value_change_percentage
+                    const amt      = asset.value_change_amount
                     const currency = (asset as AssetWithCalculations & { currency?: string }).currency ?? "USD"
+                    const isLimitHit = planStatus.reports_remaining <= 0
 
                     return (
                       <TableRow key={asset.id}>
                         {/* ── Actions ── */}
                         <TableCell>
-                          <Button
+                          <div className="flex items-center gap-1">
+                             <Button
                             variant="outline"
                             size="sm"
                             className="gap-1.5 bg-accent/10 hover:bg-accent/20 text-accent-foreground border-accent/20"
@@ -324,23 +398,27 @@ export function AssetsTable() {
                             <Sparkles className="size-4" />
                             Optimize
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="gap-1.5"
-                            onClick={() => {
-                              setReportsAsset(asset)
-                              setReportsModalOpen(true)
-                            }}
-                          >
-                            <FileText className="size-4" />
-                            Reports
-                          </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1.5"
+                              onClick={() => {
+                                setReportsAsset(asset)
+                                setReportsModalOpen(true)
+                              }}
+                            >
+                              <FileText className="size-4" />
+                              Reports
+                            </Button>
+                          </div>
                         </TableCell>
 
                         {/* Asset Name */}
                         <TableCell className="font-medium">
-                          <EditableTextCell value={asset.name} onSave={(v) => updateAsset(asset.id, "name", v)} />
+                          <EditableTextCell
+                            value={asset.name}
+                            onSave={(v) => updateAsset(asset.id, "name", v)}
+                          />
                         </TableCell>
 
                         {/* Type */}
@@ -377,7 +455,7 @@ export function AssetsTable() {
                             onSave={(v) => {
                               const parts = v.split(",").map((s) => s.trim())
                               if (parts.length >= 2) {
-                                updateAsset(asset.id, "location_state", parts[0])
+                                updateAsset(asset.id, "location_state",   parts[0])
                                 updateAsset(asset.id, "location_country", parts.slice(1).join(", "))
                               } else {
                                 updateAsset(asset.id, "location_country", v)
@@ -402,22 +480,34 @@ export function AssetsTable() {
 
                         {/* Purchase Value */}
                         <TableCell className="text-right">
-                          <EditableCurrencyCell value={pv} currency={currency} onSave={(v) => updateAsset(asset.id, "purchase_value", v)} />
+                          <EditableCurrencyCell
+                            value={pv} currency={currency}
+                            onSave={(v) => updateAsset(asset.id, "purchase_value", v)}
+                          />
                         </TableCell>
 
                         {/* Purchase Date */}
                         <TableCell>
-                          <EditableDateCell value={asset.purchase_date} onSave={(v) => updateAsset(asset.id, "purchase_date", v)} />
+                          <EditableDateCell
+                            value={asset.purchase_date}
+                            onSave={(v) => updateAsset(asset.id, "purchase_date", v)}
+                          />
                         </TableCell>
 
                         {/* Latest Valuation */}
                         <TableCell className="text-right">
-                          <EditableCurrencyCell value={lv} currency={currency} onSave={(v) => updateAsset(asset.id, "latest_valuation", v)} />
+                          <EditableCurrencyCell
+                            value={lv} currency={currency}
+                            onSave={(v) => updateAsset(asset.id, "latest_valuation", v)}
+                          />
                         </TableCell>
 
                         {/* Valuation Date */}
                         <TableCell>
-                          <EditableDateCell value={asset.latest_valuation_date} onSave={(v) => updateAsset(asset.id, "latest_valuation_date", v)} />
+                          <EditableDateCell
+                            value={asset.latest_valuation_date}
+                            onSave={(v) => updateAsset(asset.id, "latest_valuation_date", v)}
+                          />
                         </TableCell>
 
                         {/* Performance */}
@@ -425,7 +515,7 @@ export function AssetsTable() {
                           {pct !== null && pct !== undefined ? (
                             <div className="flex items-center gap-1">
                               {pct >= 0
-                                ? <TrendingUp className="h-4 w-4 text-emerald-600" />
+                                ? <TrendingUp  className="h-4 w-4 text-emerald-600" />
                                 : <TrendingDown className="h-4 w-4 text-red-600" />}
                               <span className={pct >= 0 ? "text-emerald-600" : "text-red-600"}>
                                 {pct > 0 ? "+" : ""}{pct.toFixed(2)}%
@@ -446,7 +536,7 @@ export function AssetsTable() {
         </CardContent>
       </Card>
 
-      {/* ── New asset detail / optimize modal ── */}
+      {/* ── Modals ── */}
       <AssetDetailModal
         asset={detailAsset}
         allIdentities={identities}
@@ -458,6 +548,14 @@ export function AssetsTable() {
         asset={reportsAsset}
         open={reportsModalOpen}
         onOpenChange={setReportsModalOpen}
+      />
+
+      {/* Standalone upgrade modal triggered from table banner / Upgrade button */}
+      <UpgradeModal
+        open={showUpgrade}
+        onOpenChange={setShowUpgrade}
+        currentPlanId={planStatus.plan_id}
+        reason="report_limit"
       />
     </>
   )

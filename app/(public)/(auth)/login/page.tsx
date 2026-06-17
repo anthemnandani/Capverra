@@ -8,14 +8,12 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, Shield } from "lucide-react"
+import { Eye, EyeOff, Shield, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { useAuth } from "@/context"
 import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
-  const { login } = useAuth()
   const router = useRouter()
 
   const [email, setEmail] = useState("")
@@ -30,10 +28,10 @@ export default function LoginPage() {
     setError("")
     setLoading(true)
 
+    const supabase = createSupabaseBrowserClient()
+
     try {
       if (isRegister) {
-        const supabase = createSupabaseBrowserClient()
-
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password })
 
         if (signUpError) {
@@ -59,14 +57,45 @@ export default function LoginPage() {
           return
         }
 
-        // Hard navigation — public CSS bundle unload ho, protected fresh load ho
         window.location.href = "/dashboard"
         return
       }
 
-      await login(email, password)
-      // Hard navigation — public CSS bundle unload ho, protected fresh load ho
+      // ── LOGIN BRANCH ──────────────────────────────────────────────
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+
+      if (authError) {
+        const message = authError.message.includes("Email not confirmed")
+          ? "Email not confirmed. Please check your inbox."
+          : "Invalid email or password."
+        setError(message)
+        toast.error(message)
+        return
+      }
+
+      if (!authData.user) {
+        setError("Login failed. Please try again.")
+        return
+      }
+
+      // ── Role check — BEFORE any redirect ─────────────────────────
+      const { data: userData } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", authData.user.id)
+        .maybeSingle()
+
+      if (userData?.role === "admin" || userData?.role === "super_admin") {
+        // Sign out immediately — admin must use admin portal
+        await supabase.auth.signOut()
+        setError("This is an admin account. Please use the Admin Portal to sign in.")
+        toast.error("Admin accounts must use the Admin Portal.")
+        return
+      }
+
+      // Normal client — proceed to dashboard
       window.location.href = "/dashboard"
+
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Something went wrong."
       setError(message)
@@ -99,7 +128,7 @@ export default function LoginPage() {
                   type="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); setError("") }}
                   required
                   autoFocus
                   disabled={loading}
@@ -111,7 +140,10 @@ export default function LoginPage() {
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="text-foreground">Password</Label>
                   {!isRegister && (
-                    <Link href="#" className="text-sm text-primary hover:text-primary/80">
+                    <Link
+                      href="/forgot-password"
+                      className="text-sm text-primary hover:text-primary/80"
+                    >
                       Forgot password?
                     </Link>
                   )}
@@ -122,7 +154,7 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => { setPassword(e.target.value); setError("") }}
                     required
                     minLength={6}
                     disabled={loading}
@@ -138,10 +170,22 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {/* Error block */}
               {error && (
-                <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 border border-red-200">
-                  {error}
-                </p>
+                <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 flex items-start gap-3">
+                  <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-destructive leading-relaxed">{error}</p>
+                    {error.includes("Admin Portal") && (
+                      <Link
+                        href="/admin/login"
+                        className="text-sm text-primary hover:underline mt-1.5 inline-block font-medium"
+                      >
+                        Go to Admin Portal →
+                      </Link>
+                    )}
+                  </div>
+                </div>
               )}
 
               <Button
@@ -149,7 +193,12 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                {loading ? "Processing..." : isRegister ? "Create Account" : "Sign In"}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    Processing...
+                  </span>
+                ) : isRegister ? "Create Account" : "Sign In"}
               </Button>
             </form>
 

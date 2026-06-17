@@ -97,6 +97,7 @@ export async function GET() {
     const { data: assets, error } = await supabase
       .from("assets")
       .select("*, owner:identities(id,name,type)")
+      .eq("is_deleted", false)  
       .order("created_at", { ascending: false })
 
     if (error) {

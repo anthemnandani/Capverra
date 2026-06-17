@@ -26,9 +26,14 @@ export function ThemeToggle() {
     )
   }
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark")
-  }
+const toggleTheme = () => {
+  const newTheme = theme === "dark" ? "light" : "dark";
+
+  localStorage.setItem("user-manual-theme", newTheme);
+  localStorage.setItem("route-theme", "manual"); // ⭐ ADD THIS
+
+  setTheme(newTheme);
+};
 
   return (
     <Button

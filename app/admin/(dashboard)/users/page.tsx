@@ -1,23 +1,13 @@
+// app/admin/users/page.tsx
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useCallback } from "react"
 import type { UserWithAssets } from "@/lib/admin-types"
 import {
-  Users,
-  Search,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  User,
-  Mail,
-  Calendar,
-  FolderOpen,
-  Shield,
-  MoreVertical,
-  Eye,
-  Download,
-  RefreshCw,
+  Users, Search, Filter, ChevronLeft, ChevronRight,
+  User, Mail, Calendar, FolderOpen, Shield, MoreVertical,
+  Eye, Download, RefreshCw, ChevronDown, Trash2, AlertTriangle,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -25,51 +15,256 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead,
+  TableHeader, TableRow,
 } from "@/components/ui/table"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogDescription,
+  DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog"
+import { toast } from "sonner"
+import { useAuth } from "@/context"
+
+import type { UserRole as Role } from "@/lib/admin-types"
+
+const ROLE_CONFIG: Record<Role, { label: string; color: string }> = {
+  client: {
+    label: "User",
+    color: "border-border text-muted-foreground bg-muted/50",
+  },
+  admin: {
+    label: "Admin",
+    color: "border-blue-500/50 text-blue-600 dark:text-blue-400 bg-blue-500/10",
+  },
+  super_admin: {
+    label: "Super Admin",
+    color: "border-indigo-500/50 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
+  },
+}
+
+const ROLE_FILTER_OPTIONS: { value: Role | "all"; label: string }[] = [
+  { value: "all",         label: "All roles"   },
+  { value: "client",      label: "User"        },
+  { value: "admin",       label: "Admin"       },
+  { value: "super_admin", label: "Super Admin" },
+]
+
+function RoleBadge({ role }: { role: string }) {
+  const cfg = ROLE_CONFIG[role as Role] ?? ROLE_CONFIG.client
+  return (
+    <Badge variant="outline" className={`capitalize text-xs ${cfg.color}`}>
+      {cfg.label}
+    </Badge>
+  )
+}
+
+// ── Delete confirmation dialog ────────────────────────────────────────────────
+
+function DeleteUserDialog({
+  user,
+  open,
+  onClose,
+  onDeleted,
+}: {
+  user: UserWithAssets | null
+  open: boolean
+  onClose: () => void
+  onDeleted: (userId: string) => void
+}) {
+  const [loading, setLoading] = useState(false)
+
+  const handleDelete = async () => {
+    if (!user) return
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/delete`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to delete user")
+      toast.success(`${user.name || user.email} has been deleted`)
+      onDeleted(user.id)
+      onClose()
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete user")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!user) return null
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-card border-border text-foreground max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3 text-rose-500">
+            <div className="w-10 h-10 rounded-xl bg-rose-500/15 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-5 h-5 text-rose-500" />
+            </div>
+            Delete User
+          </DialogTitle>
+          <DialogDescription className="text-muted-foreground mt-3 leading-relaxed">
+            Are you sure you want to permanently delete{" "}
+            <span className="text-foreground font-semibold">
+              {user.name || user.email}
+            </span>
+            ?
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Cascade warning */}
+        <div className="mt-1 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5 shrink-0" />
+          <div className="text-sm text-rose-600 dark:text-rose-300 leading-relaxed space-y-1">
+            <p>
+              <strong className="text-rose-700 dark:text-rose-200">Warning:</strong>{" "}
+              The following data will also be permanently deleted:
+            </p>
+            <ul className="list-disc list-inside space-y-0.5 mt-1 text-rose-600 dark:text-rose-300">
+              <li>
+                <strong>{user.asset_count}</strong> asset{user.asset_count !== 1 ? "s" : ""}
+              </li>
+              <li>
+                <strong>{user.identity_count}</strong> {user.identity_count !== 1 ? "identities" : "identity"}
+              </li>
+              <li>All associated optimization reports</li>
+            </ul>
+            <p className="mt-1 font-medium text-rose-700 dark:text-rose-200">
+              This action cannot be undone.
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 mt-4">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={loading}
+            className="border-border text-foreground hover:bg-muted"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            disabled={loading}
+            className="bg-rose-600 hover:bg-rose-700 text-white"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Deleting…
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Trash2 className="w-4 h-4" />
+                Delete User & All Data
+              </span>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ── Role change UI — only shown to super_admins ───────────────────────────────
+
+function RoleChangeMenu({
+  user,
+  currentUserRole,
+  onRoleChanged,
+}: {
+  user: UserWithAssets
+  currentUserRole: string | undefined
+  onRoleChanged: (userId: string, newRole: Role) => void
+}) {
+  const [loading, setLoading] = useState(false)
+
+  if (currentUserRole !== "super_admin") return null
+
+  const changeRole = async (newRole: Role) => {
+    if (newRole === user.role) return
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to update role")
+      toast.success(`${user.name || user.email} is now ${ROLE_CONFIG[newRole].label}`)
+      onRoleChanged(user.id, newRole)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to update role")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const allRoles: Role[] = ["client", "admin", "super_admin"]
+
+  return (
+    <>
+      <DropdownMenuSeparator className="bg-border" />
+      <DropdownMenuLabel className="text-muted-foreground text-xs">Change Role</DropdownMenuLabel>
+      {allRoles.map((role) => (
+        <DropdownMenuItem
+          key={role}
+          disabled={loading || role === user.role}
+          onClick={() => changeRole(role)}
+          className={`cursor-pointer hover:bg-muted ${role === user.role ? "opacity-40" : ""}`}
+        >
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                role === user.role ? "border-indigo-500" : "border-border"
+              }`}
+            >
+              {role === user.role && (
+                <div className="w-2 h-2 rounded-full bg-indigo-500" />
+              )}
+            </div>
+            <span>{ROLE_CONFIG[role].label}</span>
+          </div>
+        </DropdownMenuItem>
+      ))}
+    </>
+  )
+}
+
+// ── User detail modal ─────────────────────────────────────────────────────────
 
 function UserDetailModal({
   user,
   open,
   onClose,
+  currentUserRole,
+  onRoleChanged,
 }: {
   user: UserWithAssets | null
   open: boolean
   onClose: () => void
+  currentUserRole: string | undefined
+  onRoleChanged: (userId: string, newRole: Role) => void
 }) {
   const [assets, setAssets] = useState<any[]>([])
   const [identities, setIdentities] = useState<any[]>([])
   const [loadingDetails, setLoadingDetails] = useState(false)
 
   useEffect(() => {
-    if (open && user) {
-      loadUserDetails()
-    }
+    if (open && user) loadUserDetails()
   }, [open, user])
 
   const loadUserDetails = async () => {
     if (!user) return
     setLoadingDetails(true)
     try {
-      // Fetch user's assets and identities via API
       const response = await fetch(`/api/admin/users/${user.id}/details`)
       if (response.ok) {
         const data = await response.json()
@@ -87,16 +282,16 @@ function UserDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-background border-border text-foreground max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-card border-border text-foreground max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
-            <Avatar className="w-12 h-12 border-2 border-primary/30">
-              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-semibold">
+            <Avatar className="w-12 h-12 border-2 border-indigo-500/30">
+              <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold">
                 {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-lg font-semibold">{user.name || "Unnamed User"}</p>
+              <p className="text-lg font-semibold text-foreground">{user.name || "Unnamed User"}</p>
               <p className="text-sm text-muted-foreground font-normal">{user.email}</p>
             </div>
           </DialogTitle>
@@ -106,32 +301,65 @@ function UserDetailModal({
         </DialogHeader>
 
         <div className="mt-6 space-y-6">
-          {/* Basic Info */}
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-foreground uppercase font-semibold">Basic Information</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase">Basic Information</h3>
             <div className="grid grid-cols-2 gap-4">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="p-4 rounded-xl bg-white/5 border border-border"
+                className="p-4 rounded-xl bg-muted/30 border border-border"
               >
-                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Role</p>
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" />
-                  <span className="text-foreground font-medium capitalize">{user.role}</span>
+                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">Role</p>
+                <div className="flex items-center gap-2 mb-3">
+                  <Shield className="w-4 h-4 text-indigo-500" />
+                  <RoleBadge role={user.role} />
                 </div>
+                {currentUserRole === "super_admin" && (
+                  <div className="space-y-1 mt-2 pt-2 border-t border-border">
+                    <p className="text-muted-foreground text-xs mb-1">Change role</p>
+                    {(["client", "admin", "super_admin"] as Role[]).map((role) => (
+                      <button
+                        key={role}
+                        onClick={async () => {
+                          if (role === user.role) return
+                          try {
+                            const res = await fetch(`/api/admin/users/${user.id}/role`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ role }),
+                            })
+                            const data = await res.json()
+                            if (!res.ok) throw new Error(data.error)
+                            toast.success(`Role updated to ${ROLE_CONFIG[role].label}`)
+                            onRoleChanged(user.id, role)
+                          } catch (err: unknown) {
+                            toast.error(err instanceof Error ? err.message : "Failed")
+                          }
+                        }}
+                        className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-colors flex items-center gap-2
+                          ${role === user.role
+                            ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 cursor-default"
+                            : "hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                          }`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${role === user.role ? "bg-indigo-500" : "bg-border"}`} />
+                        {ROLE_CONFIG[role].label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="p-4 rounded-xl bg-white/5 border border-border"
+                className="p-4 rounded-xl bg-muted/30 border border-border"
               >
                 <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Joined</p>
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-emerald-400" />
+                  <Calendar className="w-4 h-4 text-emerald-500" />
                   <span className="text-foreground font-medium">
                     {new Date(user.created_at).toLocaleDateString()}
                   </span>
@@ -140,11 +368,8 @@ function UserDetailModal({
             </div>
           </div>
 
-          {/* Assets Section */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground uppercase font-semibold">Assets ({assets.length})</h3>
-            </div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase">Assets ({assets.length})</h3>
             {loadingDetails ? (
               <div className="flex justify-center py-4">
                 <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -157,22 +382,20 @@ function UserDetailModal({
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="p-3 rounded-lg bg-white/5 border border-border hover:bg-white/10 transition-colors"
+                    className="p-3 rounded-lg bg-muted/30 border border-border hover:bg-muted/60 transition-colors"
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-white font-medium text-sm">{asset.name}</p>
+                        <p className="text-foreground font-medium text-sm">{asset.name}</p>
                         <p className="text-muted-foreground text-xs mt-0.5">Type: {asset.type}</p>
                         {asset.location_country && (
                           <p className="text-muted-foreground text-xs mt-0.5">Location: {asset.location_country}</p>
                         )}
                       </div>
                       {asset.latest_valuation && (
-                        <div className="text-right">
-                          <p className="text-emerald-400 font-semibold text-sm">
-                            ${asset.latest_valuation.toLocaleString()}
-                          </p>
-                        </div>
+                        <p className="text-emerald-600 dark:text-emerald-400 font-semibold text-sm">
+                          ${asset.latest_valuation.toLocaleString()}
+                        </p>
                       )}
                     </div>
                   </motion.div>
@@ -183,11 +406,8 @@ function UserDetailModal({
             )}
           </div>
 
-          {/* Identities Section */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground uppercase font-semibold">Identities ({identities.length})</h3>
-            </div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase">Identities ({identities.length})</h3>
             {identities.length > 0 ? (
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {identities.map((identity, idx) => (
@@ -196,24 +416,23 @@ function UserDetailModal({
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="p-3 rounded-lg bg-white/5 border border-border hover:bg-white/10 transition-colors"
+                    className="p-3 rounded-lg bg-muted/30 border border-border hover:bg-muted/60 transition-colors"
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-white font-medium text-sm">{identity.name}</p>
+                        <p className="text-foreground font-medium text-sm">{identity.name}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="capitalize bg-indigo-500/10 border-indigo-500/50 text-indigo-400 text-xs">
+                          <Badge variant="outline" className="capitalize bg-indigo-500/10 border-indigo-500/50 text-indigo-600 dark:text-indigo-400 text-xs">
                             {identity.type}
                           </Badge>
                           <Badge
                             variant="outline"
-                            className={`capitalize text-xs ${
-                              identity.risk_profile === "low"
-                                ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
-                                : identity.risk_profile === "medium"
-                                ? "border-amber-500/50 text-amber-400 bg-amber-500/10"
-                                : "border-rose-500/50 text-rose-400 bg-rose-500/10"
-                            }`}
+                            className={`capitalize text-xs ${identity.risk_profile === "low"
+                              ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                              : identity.risk_profile === "medium"
+                                ? "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+                                : "border-rose-500/50 text-rose-600 dark:text-rose-400 bg-rose-500/10"
+                              }`}
                           >
                             {identity.risk_profile}
                           </Badge>
@@ -232,10 +451,10 @@ function UserDetailModal({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="p-4 rounded-xl bg-white/5 border border-border"
+            className="p-4 rounded-xl bg-muted/30 border border-border"
           >
             <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">User ID</p>
-            <code className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded break-all">
+            <code className="text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded break-all">
               {user.id}
             </code>
           </motion.div>
@@ -245,26 +464,36 @@ function UserDetailModal({
   )
 }
 
+// ── Table row ─────────────────────────────────────────────────────────────────
+
 function UserTableRow({
   user,
   index,
   onView,
+  onDelete,
+  currentUserRole,
+  onRoleChanged,
 }: {
   user: UserWithAssets
   index: number
   onView: (user: UserWithAssets) => void
+  onDelete: (user: UserWithAssets) => void
+  currentUserRole: string | undefined
+  onRoleChanged: (userId: string, newRole: Role) => void
 }) {
+  const isSuperAdmin = currentUserRole === "super_admin"
+
   return (
     <motion.tr
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.03 }}
-      className="group hover:bg-card/50 transition-colors"
+      className="group hover:bg-muted/40 transition-colors"
     >
       <TableCell>
         <div className="flex items-center gap-3">
-          <Avatar className="w-10 h-10 border-2 border-border group-hover:border-primary/30 transition-colors">
-            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-sm font-semibold">
+          <Avatar className="w-10 h-10 border-2 border-border group-hover:border-indigo-500/30 transition-colors">
+            <AvatarFallback className="bg-gradient-to-br from-indigo-500/80 to-purple-500/80 text-white text-sm font-semibold">
               {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
             </AvatarFallback>
           </Avatar>
@@ -278,21 +507,12 @@ function UserTableRow({
         </div>
       </TableCell>
       <TableCell>
-        <Badge
-          variant="outline"
-          className={`capitalize ${
-            user.role === "admin"
-              ? "border-primary/50 text-primary bg-primary/10"
-              : "border-border text-foreground bg-card"
-          }`}
-        >
-          {user.role}
-        </Badge>
+        <RoleBadge role={user.role} />
       </TableCell>
       <TableCell>
         <button
           onClick={() => onView(user)}
-          className="flex items-center gap-2 text-amber-400 hover:text-amber-300 transition-colors cursor-pointer font-medium hover:underline"
+          className="flex items-center gap-2 text-amber-600 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300 transition-colors cursor-pointer font-medium hover:underline"
         >
           <FolderOpen className="w-4 h-4" />
           <span>{user.asset_count}</span>
@@ -301,7 +521,7 @@ function UserTableRow({
       <TableCell>
         <button
           onClick={() => onView(user)}
-          className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer font-medium hover:underline"
+          className="flex items-center gap-2 text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300 transition-colors cursor-pointer font-medium hover:underline"
         >
           <Shield className="w-4 h-4" />
           <span>{user.identity_count}</span>
@@ -316,26 +536,41 @@ function UserTableRow({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-card/70"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
             >
               <MoreVertical className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="bg-background border-border text-foreground"
-          >
+          <DropdownMenuContent align="end" className="bg-popover border-border text-popover-foreground min-w-[180px]">
             <DropdownMenuItem
               onClick={() => onView(user)}
-              className="cursor-pointer hover:bg-white/5"
+              className="cursor-pointer hover:bg-muted"
             >
               <Eye className="w-4 h-4 mr-2" />
               View Details
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer hover:bg-white/5">
+            <DropdownMenuItem className="cursor-pointer hover:bg-muted">
               <Download className="w-4 h-4 mr-2" />
               Export Data
             </DropdownMenuItem>
+            <RoleChangeMenu
+              user={user}
+              currentUserRole={currentUserRole}
+              onRoleChanged={onRoleChanged}
+            />
+            {/* Delete — super_admin only, cannot delete self */}
+            {isSuperAdmin && (
+              <>
+                <DropdownMenuSeparator className="bg-border" />
+                <DropdownMenuItem
+                  onClick={() => onDelete(user)}
+                  className="cursor-pointer text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 focus:text-rose-600 dark:focus:text-rose-400"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete User
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </TableCell>
@@ -343,48 +578,58 @@ function UserTableRow({
   )
 }
 
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export default function AdminUsersPage() {
+  const { user: currentUser } = useAuth()
   const [users, setUsers] = useState<UserWithAssets[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
+  const [roleFilter, setRoleFilter] = useState<Role | "all">("all")
   const [loading, setLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState<UserWithAssets | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<UserWithAssets | null>(null)
   const limit = 10
 
   const loadUsers = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-      })
+      const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() })
       if (search) params.append("search", search)
-
+      if (roleFilter !== "all") params.append("role", roleFilter)
       const response = await fetch(`/api/admin/users-list?${params}`)
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error(`[v0] API error: ${response.status}`, errorText)
-        return
-      }
-      
+      if (!response.ok) return
       const data = await response.json()
-      console.log("[v0] Users data loaded:", { total: data.total, count: data.users?.length })
       setUsers(data.users || [])
       setTotal(data.total || 0)
     } catch (error) {
-      console.error("[v0] Error loading users:", error)
+      console.error("Error loading users:", error)
     } finally {
       setLoading(false)
     }
-  }, [page, search])
+  }, [page, search, roleFilter])
 
-  useEffect(() => {
-    loadUsers()
-  }, [loadUsers])
+  useEffect(() => { loadUsers() }, [loadUsers])
 
+  const handleRoleChanged = (userId: string, newRole: Role) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+    )
+    if (selectedUser?.id === userId) {
+      setSelectedUser((prev) => prev ? { ...prev, role: newRole } : prev)
+    }
+  }
+
+  const handleUserDeleted = (userId: string) => {
+    setUsers((prev) => prev.filter((u) => u.id !== userId))
+    setTotal((prev) => prev - 1)
+    if (selectedUser?.id === userId) setSelectedUser(null)
+  }
+
+  const activeFilterLabel = ROLE_FILTER_OPTIONS.find((o) => o.value === roleFilter)?.label ?? "All roles"
   const totalPages = Math.ceil(total / limit)
+  const isSuperAdmin = currentUser?.role === ("super_admin" as Role)
 
   return (
     <div className="space-y-6">
@@ -396,28 +641,31 @@ export default function AdminUsersPage() {
       >
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Users className="w-6 h-6 text-primary" />
+            <Users className="w-6 h-6 text-indigo-500" />
             User Management
           </h1>
           <p className="text-muted-foreground mt-1">
             View and manage all registered users
+            {isSuperAdmin && (
+              <span className="ml-2 text-indigo-500 text-xs">
+                · Role management enabled
+              </span>
+            )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadUsers}
-            disabled={loading}
-            className="bg-card border-border text-foreground hover:bg-card/70 transition-smooth"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={loadUsers}
+          disabled={loading}
+          className="border-border text-foreground hover:bg-muted"
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
       </motion.div>
 
-      {/* Search & Filters */}
+      {/* Search + Role Filter */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -429,45 +677,82 @@ export default function AdminUsersPage() {
           <Input
             placeholder="Search by name or email..."
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(1)
-            }}
-            className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-muted-foreground focus:border-indigo-500"
+            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+            className="pl-10 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-indigo-500"
           />
         </div>
-        <Button
-          variant="outline"
-          className="bg-card border-border text-foreground hover:bg-card/70 hover:text-foreground transition-smooth"
-        >
-          <Filter className="w-4 h-4 mr-2" />
-          Filters
-        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className={`border-border text-foreground hover:bg-muted min-w-[140px] justify-between ${
+                roleFilter !== "all" ? "border-indigo-500/50 text-indigo-600 dark:text-indigo-400 bg-indigo-500/5" : ""
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                {activeFilterLabel}
+              </span>
+              <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-popover border-border text-popover-foreground w-44">
+            <DropdownMenuLabel className="text-muted-foreground text-xs">Filter by role</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-border" />
+            {ROLE_FILTER_OPTIONS.map((option) => (
+              <DropdownMenuItem
+                key={option.value}
+                onClick={() => { setRoleFilter(option.value); setPage(1) }}
+                className={`cursor-pointer hover:bg-muted ${
+                  option.value === roleFilter ? "opacity-40 pointer-events-none" : ""
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      option.value === roleFilter ? "bg-indigo-500" : "bg-border"
+                    }`}
+                  />
+                  {option.label}
+                </div>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </motion.div>
 
-      {/* Users Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
+      {/* Table */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <Card className="bg-card border-border backdrop-blur-xl overflow-hidden">
           <CardHeader className="border-b border-border">
             <CardTitle className="text-foreground flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" />
-                All Users
+                <User className="w-5 h-5 text-indigo-500" />
+                {roleFilter === "all" ? "All Users" : `${activeFilterLabel}s`}
               </span>
-              <span className="text-sm font-normal text-muted-foreground">
-                {total.toLocaleString()} total
-              </span>
+              <div className="flex items-center gap-3">
+                {roleFilter !== "all" && (
+                  <button
+                    onClick={() => { setRoleFilter("all"); setPage(1) }}
+                    className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full
+                      bg-indigo-500/10 border border-indigo-500/30
+                      text-indigo-600 dark:text-indigo-400
+                      hover:bg-indigo-500/20 transition-colors"
+                  >
+                    {activeFilterLabel}
+                    <span className="text-indigo-400 hover:text-indigo-200">✕</span>
+                  </button>
+                )}
+                <span className="text-sm font-normal text-muted-foreground">{total.toLocaleString()} total</span>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-border hover:bg-card/50 transition-smooth">
+                  <TableRow className="border-border hover:bg-transparent">
                     <TableHead className="text-muted-foreground">User</TableHead>
                     <TableHead className="text-muted-foreground">Role</TableHead>
                     <TableHead className="text-muted-foreground">Assets</TableHead>
@@ -482,7 +767,7 @@ export default function AdminUsersPage() {
                       [...Array(5)].map((_, i) => (
                         <TableRow key={i} className="border-border">
                           <TableCell colSpan={6}>
-                            <div className="h-12 bg-white/5 rounded animate-pulse" />
+                            <div className="h-12 bg-muted/50 rounded animate-pulse" />
                           </TableCell>
                         </TableRow>
                       ))
@@ -493,19 +778,21 @@ export default function AdminUsersPage() {
                           user={user}
                           index={index}
                           onView={setSelectedUser}
+                          onDelete={setDeleteTarget}
+                          currentUserRole={currentUser?.role}
+                          onRoleChanged={handleRoleChanged}
                         />
                       ))
                     ) : (
                       <TableRow className="border-border">
-                        <TableCell
-                          colSpan={6}
-                          className="text-center py-12 text-muted-foreground"
-                        >
+                        <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                           <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
                           <p>No users found</p>
-                          {search && (
+                          {search && <p className="text-sm mt-1">Try a different search term</p>}
+                          {roleFilter !== "all" && (
                             <p className="text-sm mt-1">
-                              Try a different search term
+                              No {activeFilterLabel.toLowerCase()}s found
+                              {search ? " matching your search" : ""}
                             </p>
                           )}
                         </TableCell>
@@ -516,32 +803,26 @@ export default function AdminUsersPage() {
               </Table>
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-6 py-4 border-t border-border">
                 <p className="text-sm text-muted-foreground">
-                  Showing {(page - 1) * limit + 1} to{" "}
-                  {Math.min(page * limit, total)} of {total}
+                  Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant="outline" size="sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="bg-white/5 border-white/10 text-white hover:bg-white/10 disabled:opacity-50"
+                    className="border-border text-foreground hover:bg-muted disabled:opacity-50"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <span className="text-sm text-muted-foreground">
-                    Page {page} of {totalPages}
-                  </span>
+                  <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant="outline" size="sm"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="bg-white/5 border-white/10 text-white hover:bg-white/10 disabled:opacity-50"
+                    className="border-border text-foreground hover:bg-muted disabled:opacity-50"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
@@ -552,11 +833,21 @@ export default function AdminUsersPage() {
         </Card>
       </motion.div>
 
-      {/* User Detail Modal */}
+      {/* Detail modal */}
       <UserDetailModal
         user={selectedUser}
         open={!!selectedUser}
         onClose={() => setSelectedUser(null)}
+        currentUserRole={currentUser?.role}
+        onRoleChanged={handleRoleChanged}
+      />
+
+      {/* Delete confirmation */}
+      <DeleteUserDialog
+        user={deleteTarget}
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onDeleted={handleUserDeleted}
       />
     </div>
   )

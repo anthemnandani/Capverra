@@ -412,13 +412,17 @@ export default function AdminDashboard() {
           className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
         >
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-3">
-              Welcome back, {adminUser?.name || "Admin"}
+             <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-3">
+              Welcome back,{" "}
+              {adminUser?.name
+                ? adminUser.name.split(" ")[0].charAt(0).toUpperCase() +
+                adminUser.name.split(" ")[0].slice(1).toLowerCase()
+                : "Admin"}
               <motion.span
                 animate={{ rotate: [0, 14, -8, 14, -4, 10, 0] }}
                 transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3 }}
               >
-                <span role="img" aria-label="wave">{"("}</span>
+                <span role="img" aria-label="wave">👋</span>
               </motion.span>
             </h1>
             <p className="text-muted-foreground mt-1">

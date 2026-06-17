@@ -1,5 +1,3 @@
-// middleware.ts
-
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
@@ -38,6 +36,19 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
+  // ─────────────────────────────────────────────
+  // Bypass: auth-related public routes
+  // ─────────────────────────────────────────────
+  const isForgotPasswordRoute = pathname === "/forgot-password"
+  const isResetPasswordRoute = pathname === "/reset-password"
+  const isAuthCallbackRoute =
+    pathname === "/callback" ||
+    pathname.startsWith("/auth/callback")
+
+  if (isForgotPasswordRoute || isResetPasswordRoute || isAuthCallbackRoute) {
+    return supabaseResponse
+  }
+
   // Route type flags
   const isAdminRoute = pathname.startsWith("/admin")
   const isAdminLoginRoute = pathname === "/admin/login"
@@ -75,7 +86,6 @@ export async function middleware(request: NextRequest) {
 
     const isAdmin = await checkIsAdmin(user.id)
     if (!isAdmin) {
-      // Regular user trying to access admin area
       const dashboardUrl = new URL("/dashboard", request.url)
       return NextResponse.redirect(dashboardUrl)
     }
@@ -124,7 +134,6 @@ export async function middleware(request: NextRequest) {
 
     const isAdmin = await checkIsAdmin(user.id)
     if (isAdmin) {
-      // Admin should not access user dashboard
       const dashboardUrl = new URL("/admin/dashboard", request.url)
       return NextResponse.redirect(dashboardUrl)
     }

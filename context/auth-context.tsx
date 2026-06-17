@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type UserRole = "admin" | "client";
+export type UserRole = "admin" | "super_admin" | "client";
 
 export interface AppUser {
   id: string;
@@ -113,21 +113,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // login() ne already user set kar diya — onAuthStateChange ko skip karne ke liye
   const skipNextAuthChange = useRef(false);
+
+  // ── isResetPasswordPage detection ─────────────────────────────────────────
+  const isResetPasswordPage = useMemo(
+    () =>
+      typeof window !== "undefined" &&
+      window.location.pathname === "/reset-password",
+    [],
+  );
 
   const supabase = useMemo(() => {
     try {
       return createSupabaseBrowserClient();
     } catch (error) {
       console.error("[AuthContext] Failed to create Supabase client:", error);
-      // Return null - will be handled in useEffect
       return null;
     }
   }, []);
 
   const handleSession = useCallback(
     async (supabaseUser: SupabaseUser | null) => {
+      // Reset password page pe session handling skip karo
+      if (isResetPasswordPage) {
+        setIsLoading(false);
+        return;
+      }
+
       if (!supabaseUser) {
         setUser(null);
         setIsLoading(false);
@@ -143,41 +155,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    [],
+    [isResetPasswordPage],
   );
 
   useEffect(() => {
-    // If Supabase client failed to initialize, just set loading to false
     if (!supabase) {
       console.warn("[AuthContext] Supabase client not available");
       setIsLoading(false);
       return;
     }
 
-    // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      handleSession(session?.user ?? null);
-    }).catch((error) => {
-      console.error("[AuthContext] Error getting session:", error);
+    if (isResetPasswordPage) {
+      // Reset password page pe getSession skip karo
       setIsLoading(false);
-    });
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        handleSession(session?.user ?? null);
+      }).catch((error) => {
+        console.error("[AuthContext] Error getting session:", error);
+        setIsLoading(false);
+      });
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // login() ke baad SIGNED_IN event aata hai — skip karo
-      // kyunki login() ne already optimistic user set kar diya hai
+      // Reset password page pe auth state changes ignore karo
+      if (isResetPasswordPage) return;
+
       if (event === "SIGNED_IN" && skipNextAuthChange.current) {
         skipNextAuthChange.current = false;
         return;
       }
-
-      // SIGNED_OUT aur baaki events normally handle karo
       handleSession(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
-  }, [handleSession, supabase]);
+  }, [handleSession, isResetPasswordPage, supabase]);
 
-  // ─── login ──────────────────────────────────────────────────────────────────
+  // ─── login ────────────────────────────────────────────────────────────────
   const login = async (email: string, password: string) => {
     if (!email || !password) throw new Error("Email and password are required");
     if (!supabase) throw new Error("Authentication service not available");
@@ -192,24 +206,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
       }
       if (data.user) {
-        // onAuthStateChange ko skip karo — hum khud manage kar rahe hain
         skipNextAuthChange.current = true;
-
-        // Turant optimistic user set karo — koi DB wait nahi
         setUser(buildUserFromAuth(data.user));
-
-        // Background mein full profile fetch karo — re-render hoga par tab
-        // user dashboard par hoga, flash nahi hoga
         fetchAppUser(data.user)
           .then(setUser)
-          .catch(() => { /* buildUserFromAuth already set hai */ });
+          .catch(() => { /* buildUserFromAuth already set */ });
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ─── logout ─────────────────────────────────────────────────────────────────
+  // ─── logout ───────────────────────────────────────────────────────────────
   const logout = async () => {
     setIsLoading(true);
     try {
@@ -228,13 +236,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ─── forgotPassword ────────────────────���─────────────────────────────────────
+  // ─── forgotPassword ───────────────────────────────────────────────────────
   const forgotPassword = async (email: string) => {
     setIsLoading(true);
     try {
       if (!supabase) throw new Error("Authentication service not available");
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/callback?next=/reset-password`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw new Error(error.message);
       toast.success("Password reset email sent. Please check your inbox.");
@@ -247,7 +255,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ─── resetPassword ───────────────────────────────────────────────────────────
+  // ─── resetPassword ────────────────────────────────────────────────────────
   const resetPassword = async (password: string) => {
     setIsLoading(true);
     try {
