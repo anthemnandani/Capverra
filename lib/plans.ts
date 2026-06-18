@@ -12,7 +12,7 @@ export const PLANS = {
   start: {
     id: "start",
     name: "Start",
-    price: 49,
+    price: 59,
     stripePriceId: process.env.STRIPE_PRICE_START!,
     reportLimit: 2,
     identityLimit: 2,
@@ -22,7 +22,7 @@ export const PLANS = {
   launch: {
     id: "launch",
     name: "Launch",
-    price: 59,
+    price: 245,
     stripePriceId: process.env.STRIPE_PRICE_LAUNCH!,
     reportLimit: 5,
     identityLimit: 3,
@@ -32,7 +32,7 @@ export const PLANS = {
   grow: {
     id: "grow",
     name: "Grow",
-    price: 245,
+    price: 882,
     stripePriceId: process.env.STRIPE_PRICE_GROW!,
     reportLimit: 20,
     identityLimit: 4,
@@ -42,12 +42,22 @@ export const PLANS = {
   dominate: {
     id: "dominate",
     name: "Dominate",
-    price: 882,
+    price: 2205,
     stripePriceId: process.env.STRIPE_PRICE_DOMINATE!,
     reportLimit: 50,
     identityLimit: 4,
     jurisdictionLimit: 4,
     description: "Full-spectrum global tax optimization",
+  },
+  enterprise: {
+    id: "enterprise",
+    name: "Enterprise",
+    price: null,
+    stripePriceId: null,
+    reportLimit: null,
+    identityLimit: null,
+    jurisdictionLimit: null,
+    description: "Custom solutions for large organizations",
   },
 } as const
 
@@ -62,4 +72,8 @@ export function getPlan(planId: string | null | undefined): Plan {
 
 export function getPaidPlans(): Plan[] {
   return [PLANS.start, PLANS.launch, PLANS.grow, PLANS.dominate]
+}
+
+export function getAllDisplayPlans(): Plan[] {
+  return [PLANS.free, PLANS.start, PLANS.launch, PLANS.grow, PLANS.dominate, PLANS.enterprise]
 }

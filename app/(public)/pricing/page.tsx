@@ -14,12 +14,19 @@ import {
 } from "@/components/ui/select"
 import {
   Check, Eye, EyeOff, Loader2, AlertCircle,
-  ArrowLeft, Zap, Sparkles, ChevronDown,
+  ArrowLeft, Zap, Sparkles, ChevronDown, Building2,
 } from "lucide-react"
-import { getPaidPlans, getPlan, type Plan } from "@/lib/plans"
+import { getAllDisplayPlans, getPaidPlans, getPlan, type Plan } from "@/lib/plans"
 
 // ── Plan config ───────────────────────────────────────────────────────────────
 const PLAN_FEATURES: Record<string, string[]> = {
+  free: [
+    "1 optimization report",
+    "2 identities per report",
+    "1 jurisdiction per report",
+    "AI-powered tax analysis",
+    "PDF report export",
+  ],
   start: [
     "2 optimization reports",
     "2 identities per report",
@@ -51,13 +58,24 @@ const PLAN_FEATURES: Record<string, string[]> = {
     "All treaty networks covered",
     "Dedicated report history",
   ],
+  enterprise: [
+    "Everything in Dominate",
+    "Unlimited optimization reports",
+    "Custom identity limits",
+    "All jurisdictions covered",
+    "Dedicated account manager",
+    "Custom integrations & API access",
+    "SLA & priority support",
+  ],
 }
 
 const PLAN_HIGHLIGHTS: Record<string, string[]> = {
-  start:    ["2 reports", "2 identities", "1 jurisdiction"],
-  launch:   ["5 reports", "3 identities", "2 jurisdictions"],
-  grow:     ["20 reports", "4 identities", "3 jurisdictions"],
-  dominate: ["50 reports", "4 identities", "4 jurisdictions"],
+  free:       ["1 report", "2 identities", "1 jurisdiction"],
+  start:      ["2 reports", "2 identities", "1 jurisdiction"],
+  launch:     ["5 reports", "3 identities", "2 jurisdictions"],
+  grow:       ["20 reports", "4 identities", "3 jurisdictions"],
+  dominate:   ["50 reports", "4 identities", "4 jurisdictions"],
+  enterprise: ["Unlimited reports", "Custom identities", "All jurisdictions"],
 }
 
 const POPULAR_PLAN = "launch"
@@ -73,7 +91,7 @@ function PricingCards({
   return (
     <div className="mx-auto max-w-7xl px-6 lg:px-8">
       {/* Header */}
-      <div className="mx-auto max-w-2xl text-center">
+      <div className="mx-auto max-w-2xl text-center pt-10">
         <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
           Investment Tiers
         </h1>
@@ -83,24 +101,13 @@ function PricingCards({
         </p>
       </div>
 
-      <div className="mx-auto mt-8 max-w-lg text-center">
-        <p className="text-sm text-muted-foreground">
-          Want to try first?{" "}
-          <a
-            href="/signup"
-            className="font-medium text-primary hover:text-primary/80 underline underline-offset-2"
-          >
-            Sign up free
-          </a>{" "}
-          and get 1 optimization report at no cost.
-        </p>
-      </div>
-
-      {/* Plan cards */}
-      <div className="mx-auto mt-16 grid max-w-6xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Plan cards — 3 per row max, wraps naturally to 2 rows of 3 */}
+      <div className="mx-auto mt-16 grid max-w-6xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {plans.map((plan) => {
-          const features = PLAN_FEATURES[plan.id] ?? []
-          const isPopular = plan.id === POPULAR_PLAN
+          const features    = PLAN_FEATURES[plan.id] ?? []
+          const isPopular   = plan.id === POPULAR_PLAN
+          const isFree      = plan.id === "free"
+          const isEnterprise = plan.id === "enterprise"
 
           return (
             <div
@@ -113,19 +120,38 @@ function PricingCards({
             >
               {isPopular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <span className="rounded-full bg-primary px-4 py-1 text-xs font-semibold text-primary-foreground">
+                  <span className="rounded-full bg-primary px-4 py-1 text-xs font-semibold text-primary-foreground whitespace-nowrap">
                     Most Popular
                   </span>
                 </div>
               )}
 
               <div className="text-center">
+                {isEnterprise && (
+                  <div className="flex justify-center mb-3">
+                    <Building2 className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
                 <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
                 <div className="mt-4 flex items-baseline justify-center gap-x-2">
-                  <span className="text-4xl font-bold tracking-tight text-primary">
-                    ${plan.price}
-                  </span>
-                  <span className="text-sm text-muted-foreground">one-time</span>
+                  {isEnterprise ? (
+                    <span className="text-2xl font-bold tracking-tight text-primary">
+                      Custom
+                    </span>
+                  ) : isFree ? (
+                    <>
+                      <span className="text-4xl font-bold tracking-tight text-primary">
+                        Free
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-4xl font-bold tracking-tight text-primary">
+                        ${plan.price}
+                      </span>
+                      <span className="text-sm text-muted-foreground">one-time</span>
+                    </>
+                  )}
                 </div>
                 <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
                   {plan.description}
@@ -142,17 +168,37 @@ function PricingCards({
               </ul>
 
               <div className="mt-8">
-                <Button
-                  className={`w-full ${
-                    isPopular
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : "border-primary/50 text-foreground hover:bg-secondary"
-                  }`}
-                  variant={isPopular ? "default" : "outline"}
-                  onClick={() => onSelect(plan)}
-                >
-                  Get Started
-                </Button>
+                {isEnterprise ? (
+                  <a href="/contact">
+                    <Button
+                      className="w-full border-primary/50 text-foreground hover:bg-secondary"
+                      variant="outline"
+                    >
+                      Contact Us
+                    </Button>
+                  </a>
+                ) : isFree ? (
+                  <a href="/signup">
+                    <Button
+                      className="w-full border-primary/50 text-foreground hover:bg-secondary"
+                      variant="outline"
+                    >
+                      Sign Up Free
+                    </Button>
+                  </a>
+                ) : (
+                  <Button
+                    className={`w-full ${
+                      isPopular
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                        : "border-primary/50 text-foreground hover:bg-secondary"
+                    }`}
+                    variant={isPopular ? "default" : "outline"}
+                    onClick={() => onSelect(plan)}
+                  >
+                    Get Started
+                  </Button>
+                )}
               </div>
             </div>
           )
@@ -301,7 +347,7 @@ function RegistrationForm({
               </div>
             </div>
 
-            {/* Plan switcher */}
+            {/* Plan switcher — only paid non-enterprise plans */}
             <div className="shrink-0">
               <Select
                 value={selectedPlanId}
@@ -448,11 +494,13 @@ function RegistrationForm({
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function PricingPage() {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
+  // Show all 6 tiers on pricing page (Free + 4 paid + Enterprise)
+  const displayPlans = getAllDisplayPlans()
+  // Registration form only uses paid non-enterprise plans
   const paidPlans = getPaidPlans()
 
   const handleSelect = (plan: Plan) => {
     setSelectedPlan(plan)
-    // Scroll to top so registration form starts at top
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
@@ -467,13 +515,13 @@ export default function PricingPage() {
       <main className="pt-32 pb-24">
         {selectedPlan ? (
           <RegistrationForm
-            key={selectedPlan.id}          /* ← re-mounts fresh for each plan */
+            key={selectedPlan.id}
             initialPlan={selectedPlan}
             allPlans={paidPlans}
             onBack={handleBack}
           />
         ) : (
-          <PricingCards plans={paidPlans} onSelect={handleSelect} />
+          <PricingCards plans={displayPlans} onSelect={handleSelect} />
         )}
       </main>
       <Footer />
