@@ -15,6 +15,7 @@ import {
 import {
   Check, Eye, EyeOff, Loader2, AlertCircle,
   ArrowLeft, Zap, Sparkles, ChevronDown, Building2,
+  Crown,
 } from "lucide-react"
 import { getAllDisplayPlans, getPaidPlans, getPlan, type Plan } from "@/lib/plans"
 
@@ -119,8 +120,9 @@ function PricingCards({
               }`}
             >
               {isPopular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <span className="rounded-full bg-primary px-4 py-1 text-xs font-semibold text-primary-foreground whitespace-nowrap">
+               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                  <span className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground shadow-md">
+                    <Crown className="size-3.5" />
                     Most Popular
                   </span>
                 </div>
