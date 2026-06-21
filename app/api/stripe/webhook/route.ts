@@ -7,6 +7,14 @@
  *  A) user_id in metadata         → existing user upgrade (dashboard flow)
  *  B) user_id in metadata         → new registration (pricing page flow)
  *     Both are the same now — auth user always exists before checkout.
+ *
+ * Race-safety note: complete-registration (the success_url redirect) and
+ * this webhook can both try to insert the same purchase row at nearly the
+ * same time. A unique constraint on user_plan_purchases.stripe_session_id
+ * (see migration 001_unique_stripe_session_id.sql) makes the DB reject the
+ * second insert instead of creating a duplicate. handleCheckoutCompleted
+ * below catches that specific conflict (Postgres code 23505) and falls
+ * back to reading the row the other path already created.
  */
 
 import { type NextRequest, NextResponse } from "next/server"
@@ -140,12 +148,39 @@ async function handleCheckoutCompleted(
       .select("id")
       .single()
 
-    if (purchaseError || !purchase) {
-      console.error("[webhook] Failed to insert purchase:", purchaseError)
-      throw new Error(`Purchase insert failed: ${purchaseError?.message}`)
-    }
+    if (purchaseError) {
+      // Race condition: complete-registration's redirect inserted the row
+      // in between our existence check and our insert. The unique
+      // constraint on stripe_session_id rejects us with code 23505 —
+      // that's expected here, not a real failure. Just read the row
+      // the other path created and continue normally.
+      const isUniqueViolation =
+        (purchaseError as any)?.code === "23505" ||
+        purchaseError.message?.toLowerCase().includes("duplicate key")
 
-    purchaseId = purchase.id
+      if (isUniqueViolation) {
+        console.log("[webhook] Race detected on insert — fetching row created by the other path:", session.id)
+        const { data: raceWinner, error: refetchError } = await adminSupabase
+          .from("user_plan_purchases")
+          .select("id")
+          .eq("stripe_session_id", session.id)
+          .single()
+
+        if (refetchError || !raceWinner) {
+          console.error("[webhook] Could not fetch purchase row after unique-violation race:", refetchError)
+          throw new Error(`Purchase insert failed (race, then refetch failed): ${refetchError?.message}`)
+        }
+
+        purchaseId = raceWinner.id
+      } else {
+        console.error("[webhook] Failed to insert purchase:", purchaseError)
+        throw new Error(`Purchase insert failed: ${purchaseError.message}`)
+      }
+    } else if (!purchase) {
+      throw new Error("Purchase insert returned no data and no error")
+    } else {
+      purchaseId = purchase.id
+    }
   }
 
   // ── Always update users table (idempotent) ────────────────────────────────
