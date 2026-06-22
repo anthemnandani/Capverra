@@ -3,16 +3,25 @@
  *
  * Simple flow (no bcrypt, no pending_registrations table):
  *   1. Validate inputs
- *   2. Check email not already registered
- *   3. Create Supabase auth user immediately (email_confirm: true)
- *   4. Insert into `users` table
- *   5. Create Stripe Checkout Session with user_id in metadata
- *   6. Return { url }
+ *   2. Create Supabase auth user immediately (email_confirm: true)
+ *      — Supabase itself rejects duplicate emails atomically at the DB
+ *        level, so we don't use a separate listUsers() pre-check here.
+ *        That pre-check was slow at scale (fetches the whole user list)
+ *        and race-prone (two parallel signups for the same email could
+ *        both pass the check before either finished creating the user).
+ *   3. Insert into `users` table
+ *   4. Create Stripe Checkout Session with user_id in metadata
+ *   5. Return { url }
  *
  * Webhook (checkout.session.completed) then:
  *   - Reads user_id from metadata
  *   - Creates user_plan_purchases row
  *   - Updates users.active_purchase_id
+ *
+ * Note: if the user abandons/cancels checkout, the auth user created in
+ * step 2 would otherwise be orphaned (exists with no payment, blocking
+ * that email from registering again). That cleanup is now handled by
+ * /api/stripe/cancel-registration, which cancel_url redirects to below.
  */
 
 import { type NextRequest, NextResponse } from "next/server"
@@ -50,19 +59,8 @@ export async function POST(request: NextRequest) {
 
   const adminSupabase = createSupabaseAdminClient()
 
-  // ── Check if email already exists ────────────────────────────────────────
-  const { data: existingUsers } = await adminSupabase.auth.admin.listUsers()
-  const emailTaken = existingUsers?.users?.some(
-    (u) => u.email?.toLowerCase() === email
-  )
-  if (emailTaken) {
-    return NextResponse.json(
-      { error: "An account with this email already exists. Please sign in." },
-      { status: 409 }
-    )
-  }
-
   // ── Create Supabase auth user ─────────────────────────────────────────────
+  // (No listUsers() pre-check — see comment at top of file for why.)
   const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
     email,
     password,
@@ -71,6 +69,20 @@ export async function POST(request: NextRequest) {
   })
 
   if (authError || !authData.user) {
+    const msg = (authError?.message ?? "").toLowerCase()
+    const isDuplicate =
+      msg.includes("already been registered") ||
+      msg.includes("already registered") ||
+      msg.includes("already exists") ||
+      (authError as any)?.code === "email_exists"
+
+    if (isDuplicate) {
+      return NextResponse.json(
+        { error: "An account with this email already exists. Please sign in." },
+        { status: 409 }
+      )
+    }
+
     console.error("[register-checkout] Failed to create auth user:", authError)
     return NextResponse.json(
       { error: authError?.message ?? "Failed to create account. Please try again." },
@@ -120,13 +132,15 @@ export async function POST(request: NextRequest) {
 
   // ── Create Stripe Checkout Session ────────────────────────────────────────
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? `https://${request.headers.get("host")}`
-console.log("appUrl:", appUrl);
+
   try {
     const session = await stripe.checkout.sessions.create({
       mode:       "payment",
       line_items: [{ price: plan.stripePriceId, quantity: 1 }],
       success_url: `${appUrl}/api/stripe/complete-registration?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `${appUrl}/pricing?checkout=cancel`,
+      // Routes through a cleanup endpoint that deletes this auth user
+      // IF they never completed a payment — see issue #3 fix.
+      cancel_url:  `${appUrl}/api/stripe/cancel-registration?user_id=${userId}`,
       ...(stripeCustomerId
         ? { customer: stripeCustomerId }
         : { customer_email: email }),
