@@ -1,15 +1,58 @@
 // GET /api/user/plan
 import { NextResponse } from "next/server"
+import Stripe from "stripe"
 import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase/server"
 import { getPlan } from "@/lib/plans"
 
 export const dynamic = "force-dynamic"
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-06-20",
+})
 
 function log(step: string, data: Record<string, unknown> = {}, level: "info" | "warn" | "error" = "info") {
   const msg = `[user/plan] [${step}]`
   if (level === "error") console.error(msg, data)
   else if (level === "warn") console.warn(msg, data)
   else console.log(msg, data)
+}
+
+// ── Card details fetch from Stripe (PaymentIntent → latest_charge → card) ───
+async function fetchCardDetails(paymentIntentId: string | null) {
+  if (!paymentIntentId) return null
+
+  try {
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+      expand: ["latest_charge.payment_method_details"],
+    })
+
+    const charge = paymentIntent.latest_charge as Stripe.Charge | null
+    const card   = charge?.payment_method_details?.card
+
+    if (!card) {
+      log("CARD_DETAILS_NOT_FOUND", { paymentIntentId })
+      return null
+    }
+
+    log("CARD_DETAILS_FETCHED", {
+      paymentIntentId,
+      brand: card.brand,
+      last4: card.last4,
+    })
+
+    return {
+      brand:     card.brand,
+      last4:     card.last4,
+      exp_month: card.exp_month,
+      exp_year:  card.exp_year,
+    }
+  } catch (err) {
+    log("CARD_DETAILS_FETCH_FAILED", {
+      paymentIntentId,
+      error: err instanceof Error ? err.message : String(err),
+    }, "error")
+    return null
+  }
 }
 
 export async function GET() {
@@ -71,7 +114,7 @@ export async function GET() {
 
     const { data: purchase, error: purchaseError } = await adminSupabase
       .from("user_plan_purchases")
-      .select("id, plan_id, reports_total, reports_used, status, purchased_at, exhausted_at")
+      .select("id, plan_id, reports_total, reports_used, status, purchased_at, exhausted_at, stripe_payment_intent")
       .eq("id", userData.active_purchase_id)
       .single()
 
@@ -86,6 +129,9 @@ export async function GET() {
     if (purchase) {
       const reportsRemaining = Math.max(0, purchase.reports_total - purchase.reports_used)
 
+      // ── Card details — Stripe se live fetch ──────────────────────────────
+      const card = await fetchCardDetails(purchase.stripe_payment_intent ?? null)
+
       log("RETURNING_PAID_PLAN", {
         planId,
         planName:        plan.name,
@@ -93,6 +139,7 @@ export async function GET() {
         reportsUsed:     purchase.reports_used,
         reportsRemaining,
         status:          purchase.status,
+        hasCard:         !!card,
       })
 
       return NextResponse.json({
@@ -108,6 +155,7 @@ export async function GET() {
         purchase_id:         purchase.id,
         purchased_at:        purchase.purchased_at,
         exhausted_at:        purchase.exhausted_at,
+        card,
       })
     }
 
@@ -156,5 +204,6 @@ export async function GET() {
     purchase_id:         null,
     purchased_at:        null,
     exhausted_at:        null,
+    card:                null,
   })
 }
