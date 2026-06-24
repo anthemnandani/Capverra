@@ -357,9 +357,9 @@ function AssetTableRow({ asset, index, onView, onDelete }: {
             <DropdownMenuItem onClick={() => onView(asset)} className="cursor-pointer hover:bg-muted">
               <Eye className="w-4 h-4 mr-2" />View Details
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer hover:bg-muted">
+            {/* <DropdownMenuItem className="cursor-pointer hover:bg-muted">
               <Download className="w-4 h-4 mr-2" />Export Data
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
             <DropdownMenuItem
               onClick={() => onDelete(asset)}
               className="cursor-pointer hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 focus:text-rose-600 dark:focus:text-rose-400"

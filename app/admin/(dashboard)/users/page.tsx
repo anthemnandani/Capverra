@@ -549,10 +549,10 @@ function UserTableRow({
               <Eye className="w-4 h-4 mr-2" />
               View Details
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer hover:bg-muted">
+            {/* <DropdownMenuItem className="cursor-pointer hover:bg-muted">
               <Download className="w-4 h-4 mr-2" />
               Export Data
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
             <RoleChangeMenu
               user={user}
               currentUserRole={currentUserRole}
