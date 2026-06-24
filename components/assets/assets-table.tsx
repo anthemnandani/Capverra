@@ -1,12 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useMemo, useState, useRef } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { AssetWithCalculations, Identity } from "@/lib/types"
 import { AddAssetDialog } from "./add-asset-dialog"
 import { AssetDetailModal } from "./asset-detail-modal"
@@ -45,151 +43,48 @@ const ownerTypeIcons: Record<string, React.ReactNode> = {
   Trust:      <Shield className="size-3.5" />,
 }
 
-// ── Editable Cells ────────────────────────────────────────────────────────────
-function EditableTextCell({ value, onSave, className = "" }: {
+// ── Read-only Display Cells ───────────────────────────────────────────────────
+function EditableTextCell({ value, className = "" }: {
   value: string; onSave: (v: string) => void; className?: string
 }) {
-  const [editing,   setEditing]   = useState(false)
-  const [editValue, setEditValue] = useState(value)
-  const inputRef = useRef<HTMLInputElement>(null)
-  useEffect(() => { if (editing) { inputRef.current?.focus(); inputRef.current?.select() } }, [editing])
-  const save   = () => { onSave(editValue); setEditing(false) }
-  const cancel = () => { setEditValue(value); setEditing(false) }
-  const onKey  = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") save(); else if (e.key === "Escape") cancel()
-  }
-  if (editing) return (
-    <Input ref={inputRef} value={editValue} onChange={(e) => setEditValue(e.target.value)}
-      onKeyDown={onKey} onBlur={save} className="h-8 min-w-[100px]" />
-  )
-  return (
-    <span onClick={() => setEditing(true)}
-      className={`cursor-pointer rounded px-1 py-0.5 hover:bg-muted transition-colors ${className}`}>
-      {value}
-    </span>
-  )
+  return <span className={className}>{value}</span>
 }
 
-function EditableCurrencyCell({ value, currency = "USD", onSave }: {
+function EditableCurrencyCell({ value, currency = "USD" }: {
   value: number; currency?: string; onSave: (v: number) => void
 }) {
-  const [editing,   setEditing]   = useState(false)
-  const [editValue, setEditValue] = useState(value.toString())
-  const inputRef = useRef<HTMLInputElement>(null)
-  useEffect(() => { if (editing) { inputRef.current?.focus(); inputRef.current?.select() } }, [editing])
-  const save  = () => { onSave(parseFloat(editValue.replace(/[^0-9.]/g, "")) || 0); setEditing(false) }
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") save()
-    else if (e.key === "Escape") { setEditValue(value.toString()); setEditing(false) }
-  }
-  const fmt = (v: number) => new Intl.NumberFormat("en-US", {
+  const fmt = new Intl.NumberFormat("en-US", {
     style: "currency", currency: currency in currencySymbols ? currency : "USD",
-  }).format(v)
-  if (editing) return (
-    <Input ref={inputRef} type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)}
-      onKeyDown={onKey} onBlur={save} className="h-8 w-[140px] text-right" />
-  )
-  return (
-    <span onClick={() => { setEditValue(value.toString()); setEditing(true) }}
-      className="cursor-pointer rounded px-1 py-0.5 hover:bg-muted transition-colors">
-      {fmt(value)}
-    </span>
-  )
+  }).format(value)
+  return <span>{fmt}</span>
 }
 
-function EditableSelectCell<T extends string>({ value, options, onSave, renderValue }: {
+function EditableSelectCell<T extends string>({ value, renderValue }: {
   value: T; options: T[]; onSave: (v: T) => void; renderValue?: (v: T) => React.ReactNode
 }) {
-  const [editing, setEditing] = useState(false)
-  if (editing) return (
-    <Select value={value} onValueChange={(v) => { onSave(v as T); setEditing(false) }}>
-      <SelectTrigger className="h-8 w-[160px]" autoFocus onBlur={() => setEditing(false)}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-      </SelectContent>
-    </Select>
-  )
-  return (
-    <span onClick={() => setEditing(true)} className="cursor-pointer">
-      {renderValue ? renderValue(value) : value}
-    </span>
-  )
+  return <span>{renderValue ? renderValue(value) : value}</span>
 }
 
-function EditableDateCell({ value, onSave }: {
+function EditableDateCell({ value }: {
   value: string | null | undefined; onSave: (v: string) => void
 }) {
-  const [editing,   setEditing]   = useState(false)
-  const [editValue, setEditValue] = useState("")
-  const inputRef = useRef<HTMLInputElement>(null)
-  const display  = value ? new Date(value).toLocaleDateString() : "-"
-  useEffect(() => {
-    if (editing && inputRef.current) {
-      if (value) {
-        const d = new Date(value)
-        setEditValue(d.toISOString().split("T")[0])
-      }
-      inputRef.current.focus()
-    }
-  }, [editing, value])
-  const save  = () => { if (editValue) onSave(editValue); setEditing(false) }
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") save(); else if (e.key === "Escape") setEditing(false)
-  }
-  if (editing) return (
-    <Input ref={inputRef} type="date" value={editValue}
-      onChange={(e) => setEditValue(e.target.value)} onKeyDown={onKey} onBlur={save}
-      className="h-8 w-[140px]" />
-  )
-  return (
-    <span onClick={() => setEditing(true)}
-      className="cursor-pointer rounded px-1 py-0.5 hover:bg-muted transition-colors">
-      {display}
-    </span>
-  )
+  const display = value ? new Date(value).toLocaleDateString() : "-"
+  return <span>{display}</span>
 }
 
-function EditableOwnerCell({ identities, ownerId, onSave }: {
+function EditableOwnerCell({ identities, ownerId }: {
   identities: Array<{ id: string; name: string; type: string }>
   ownerId: string | undefined
   onSave: (id: string) => void
 }) {
-  const [editing, setEditing] = useState(false)
   const owner = identities.find((i) => i.id === ownerId)
-  if (editing) return (
-    <Select value={ownerId ?? ""} onValueChange={(v) => { onSave(v); setEditing(false) }}>
-      <SelectTrigger className="h-auto w-[260px]" autoFocus onBlur={() => setEditing(false)}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {identities.map((i) => (
-          <SelectItem key={i.id} value={i.id}>
-            <div className="flex items-center gap-2">
-              {ownerTypeIcons[i.type] ?? <User className="size-3.5" />}
-              <span className="font-medium">{i.name}</span>
-              <span className="text-muted-foreground">({i.type})</span>
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
-  if (!owner) return (
-    <span className="text-muted-foreground cursor-pointer" onClick={() => setEditing(true)}>
-      Unknown
-    </span>
-  )
+  if (!owner) return <span className="text-muted-foreground">Unknown</span>
   return (
-    <div onClick={() => setEditing(true)}
-      className="cursor-pointer rounded px-1 py-0.5 hover:bg-muted transition-colors">
-      <div className="flex items-center gap-2">
-        {ownerTypeIcons[owner.type] ?? <User className="size-3.5" />}
-        <div className="flex flex-col">
-          <span className="font-medium leading-tight">{owner.name}</span>
-          <span className="text-xs text-muted-foreground">{owner.type}</span>
-        </div>
+    <div className="flex items-center gap-2">
+      {ownerTypeIcons[owner.type] ?? <User className="size-3.5" />}
+      <div className="flex flex-col">
+        <span className="font-medium leading-tight">{owner.name}</span>
+        <span className="text-xs text-muted-foreground">{owner.type}</span>
       </div>
     </div>
   )
@@ -379,25 +274,24 @@ export function AssetsTable() {
                     const pct      = asset.value_change_percentage
                     const amt      = asset.value_change_amount
                     const currency = (asset as AssetWithCalculations & { currency?: string }).currency ?? "USD"
-                    const isLimitHit = planStatus.reports_remaining <= 0
 
                     return (
                       <TableRow key={asset.id}>
                         {/* ── Actions ── */}
                         <TableCell>
                           <div className="flex items-center gap-1">
-                             <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1.5 bg-accent/10 hover:bg-accent/20 text-accent-foreground border-accent/20"
-                            onClick={() => {
-                              setDetailAsset(asset)
-                              setDetailModalOpen(true)
-                            }}
-                          >
-                            <Sparkles className="size-4" />
-                            Optimize
-                          </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1.5 bg-accent/10 hover:bg-accent/20 text-accent-foreground border-accent/20"
+                              onClick={() => {
+                                setDetailAsset(asset)
+                                setDetailModalOpen(true)
+                              }}
+                            >
+                              <Sparkles className="size-4" />
+                              Optimize
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -432,7 +326,7 @@ export function AssetsTable() {
                             ]}
                             onSave={(v) => updateAsset(asset.id, "type", v)}
                             renderValue={(v) => (
-                              <Badge className={`${ASSET_TYPE_COLORS[v] ?? "bg-gray-600 text-white hover:bg-gray-600"} cursor-pointer`}>
+                              <Badge className={`${ASSET_TYPE_COLORS[v] ?? "bg-gray-600 text-white hover:bg-gray-600"}`}>
                                 {v}
                               </Badge>
                             )}
@@ -471,9 +365,7 @@ export function AssetsTable() {
                             options={currencies}
                             onSave={(v) => updateAsset(asset.id, "currency", v)}
                             renderValue={(v) => (
-                              <span className="cursor-pointer rounded px-1 py-0.5 hover:bg-muted transition-colors">
-                                {v} ({currencySymbols[v]})
-                              </span>
+                              <span>{v} ({currencySymbols[v]})</span>
                             )}
                           />
                         </TableCell>
