@@ -16,7 +16,7 @@ export function CTA() {
           <Link href="/contact">
             <Button 
               variant="outline" 
-              className="group gap-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+           className="group gap-2 border-primary text-primary hover:bg-primary hover:text-foreground"
             >
               Get Started Today
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
