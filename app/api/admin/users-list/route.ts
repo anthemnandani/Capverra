@@ -6,14 +6,15 @@ import { NextResponse } from "next/server"
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
-// Shape of rows returned from your `users` table
 type CustomUser = {
   id: string
   name: string | null
   role: UserRole | null
+  plan_name: string | null
+  subscription_status: string | null
+  stripe_subscription_id: string | null
 }
 
-// Subset of Supabase's auth.User we actually use
 type AuthUser = {
   id: string
   email?: string
@@ -31,10 +32,10 @@ export async function GET(request: Request) {
 
     const adminClient = createSupabaseAdminClient()
 
-    // ── 1. DB-level role filter ─────────────────────────────────────────────
+    // ── 1. Fetch users WITH subscription fields ──────────────────────────────
     let usersQuery = adminClient
       .from("users")
-      .select("id, name, role")   // only fetch what we need
+      .select("id, name, role, plan_name, subscription_status, stripe_subscription_id")
 
     if (role) {
       usersQuery = usersQuery.eq("role", role)
@@ -52,7 +53,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ users: [], total: 0, totalPages: 0 })
     }
 
-    // ── 2. Auth users — build a typed map keyed by id ───────────────────────
+    // ── 2. Auth users map ────────────────────────────────────────────────────
     const userIds = customUsers.map((u) => u.id)
 
     const { data: authUsersResponse, error: authError } =
@@ -68,8 +69,8 @@ export async function GET(request: Request) {
         .map((u) => [u.id, u])
     )
 
-    // ── 3. JS-level search (name lives in custom table, email in auth) ──────
-    const filteredUsers = customUsers.filter((customUser: CustomUser) => {
+    // ── 3. JS-level search ───────────────────────────────────────────────────
+    const filteredUsers = customUsers.filter((customUser) => {
       const authUser = authUsersMap.get(customUser.id)
       if (!authUser) return false
       if (!search) return true
@@ -80,22 +81,21 @@ export async function GET(request: Request) {
       )
     })
 
-    // ── 4. Batch counts — 2 queries regardless of user count ────────────────
+    // ── 4. Batch counts ──────────────────────────────────────────────────────
     const filteredIds = filteredUsers.map((u) => u.id)
 
-  const [assetsResult, identitiesResult] = await Promise.all([
-  adminClient
-    .from("assets")
-    .select("user_id")
-    .in("user_id", filteredIds)
-    .eq("is_deleted", false),
-
-  adminClient
-    .from("identities")
-    .select("user_id")
-    .in("user_id", filteredIds)
-    .eq("is_deleted", false),
-])
+    const [assetsResult, identitiesResult] = await Promise.all([
+      adminClient
+        .from("assets")
+        .select("user_id")
+        .in("user_id", filteredIds)
+        .eq("is_deleted", false),
+      adminClient
+        .from("identities")
+        .select("user_id")
+        .in("user_id", filteredIds)
+        .eq("is_deleted", false),
+    ])
 
     const assetCountMap = new Map<string, number>()
     for (const row of (assetsResult.data ?? []) as { user_id: string }[]) {
@@ -107,18 +107,21 @@ export async function GET(request: Request) {
       identityCountMap.set(row.user_id, (identityCountMap.get(row.user_id) ?? 0) + 1)
     }
 
-    // ── 5. Assemble ─────────────────────────────────────────────────────────
-    const userData = filteredUsers.map((customUser: CustomUser) => {
+    // ── 5. Assemble with plan fields ─────────────────────────────────────────
+    const userData = filteredUsers.map((customUser) => {
       const authUser = authUsersMap.get(customUser.id) as AuthUser
       return {
-        id:             customUser.id,
-        email:          authUser.email ?? "",
-        name:           customUser.name ?? "—",
-        role:           customUser.role ?? "client",
-        created_at:     authUser.created_at,
-        asset_count:    assetCountMap.get(customUser.id)    ?? 0,
-        identity_count: identityCountMap.get(customUser.id) ?? 0,
-        last_login:     null,
+        id:                     customUser.id,
+        email:                  authUser.email ?? "",
+        name:                   customUser.name ?? "—",
+        role:                   customUser.role ?? "client",
+        plan_name:              customUser.plan_name ?? "free",
+        subscription_status:    customUser.subscription_status ?? "free",
+        stripe_subscription_id: customUser.stripe_subscription_id ?? null,
+        created_at:             authUser.created_at,
+        asset_count:            assetCountMap.get(customUser.id)    ?? 0,
+        identity_count:         identityCountMap.get(customUser.id) ?? 0,
+        last_login:             null,
       }
     })
 
@@ -127,7 +130,7 @@ export async function GET(request: Request) {
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
 
-    // ── 6. Paginate ─────────────────────────────────────────────────────────
+    // ── 6. Paginate ──────────────────────────────────────────────────────────
     const total = userData.length
     const start = (page - 1) * limit
 

@@ -1,4 +1,4 @@
-// app/admin/users/page.tsx
+// app/admin/(dashboard)/users/page.tsx
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
@@ -7,7 +7,8 @@ import type { UserWithAssets } from "@/lib/admin-types"
 import {
   Users, Search, Filter, ChevronLeft, ChevronRight,
   User, Mail, Calendar, FolderOpen, Shield, MoreVertical,
-  Eye, Download, RefreshCw, ChevronDown, Trash2, AlertTriangle,
+  Eye, RefreshCw, ChevronDown, Trash2, AlertTriangle,
+  CreditCard, Crown, Zap,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -31,6 +32,17 @@ import { useAuth } from "@/context"
 
 import type { UserRole as Role } from "@/lib/admin-types"
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+// Extend UserWithAssets to include subscription fields
+interface UserWithPlan extends UserWithAssets {
+  plan_name?: string | null
+  subscription_status?: string | null
+  stripe_subscription_id?: string | null
+}
+
+// ── Config ────────────────────────────────────────────────────────────────────
+
 const ROLE_CONFIG: Record<Role, { label: string; color: string }> = {
   client: {
     label: "User",
@@ -53,11 +65,62 @@ const ROLE_FILTER_OPTIONS: { value: Role | "all"; label: string }[] = [
   { value: "super_admin", label: "Super Admin" },
 ]
 
+const PLAN_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+  free: {
+    label: "Free",
+    color: "border-border text-muted-foreground bg-muted/50",
+    icon: <Zap className="w-3 h-3" />,
+  },
+  start: {
+    label: "Start",
+    color: "border-sky-500/50 text-sky-600 dark:text-sky-400 bg-sky-500/10",
+    icon: <Crown className="w-3 h-3" />,
+  },
+  launch: {
+    label: "Launch",
+    color: "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
+    icon: <Crown className="w-3 h-3" />,
+  },
+  grow: {
+    label: "Grow",
+    color: "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10",
+    icon: <Crown className="w-3 h-3" />,
+  },
+  dominate: {
+    label: "Dominate",
+    color: "border-violet-500/50 text-violet-600 dark:text-violet-400 bg-violet-500/10",
+    icon: <Crown className="w-3 h-3" />,
+  },
+  enterprise: {
+    label: "Enterprise",
+    color: "border-indigo-500/50 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
+    icon: <Crown className="w-3 h-3" />,
+  },
+}
+
+// ── Small reusable badges ─────────────────────────────────────────────────────
+
 function RoleBadge({ role }: { role: string }) {
   const cfg = ROLE_CONFIG[role as Role] ?? ROLE_CONFIG.client
   return (
     <Badge variant="outline" className={`capitalize text-xs ${cfg.color}`}>
       {cfg.label}
+    </Badge>
+  )
+}
+
+function PlanBadge({ plan, status }: { plan?: string | null; status?: string | null }) {
+  const key = (plan ?? "free").toLowerCase()
+  const cfg = PLAN_CONFIG[key] ?? PLAN_CONFIG.free
+  const isActive = status === "active"
+
+  return (
+    <Badge variant="outline" className={`capitalize text-xs flex items-center gap-1 ${cfg.color}`}>
+      {cfg.icon}
+      {cfg.label}
+      {isActive && key !== "free" && (
+        <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" title="Active" />
+      )}
     </Badge>
   )
 }
@@ -70,7 +133,7 @@ function DeleteUserDialog({
   onClose,
   onDeleted,
 }: {
-  user: UserWithAssets | null
+  user: UserWithPlan | null
   open: boolean
   onClose: () => void
   onDeleted: (userId: string) => void
@@ -117,7 +180,6 @@ function DeleteUserDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Cascade warning */}
         <div className="mt-1 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5 shrink-0" />
           <div className="text-sm text-rose-600 dark:text-rose-300 leading-relaxed space-y-1">
@@ -172,14 +234,14 @@ function DeleteUserDialog({
   )
 }
 
-// ── Role change UI — only shown to super_admins ───────────────────────────────
+// ── Role change menu — only in the actions dropdown, super_admin only ─────────
 
 function RoleChangeMenu({
   user,
   currentUserRole,
   onRoleChanged,
 }: {
-  user: UserWithAssets
+  user: UserWithPlan
   currentUserRole: string | undefined
   onRoleChanged: (userId: string, newRole: Role) => void
 }) {
@@ -238,20 +300,16 @@ function RoleChangeMenu({
   )
 }
 
-// ── User detail modal ─────────────────────────────────────────────────────────
+// ── User detail modal — VIEW ONLY, no role editing ────────────────────────────
 
 function UserDetailModal({
   user,
   open,
   onClose,
-  currentUserRole,
-  onRoleChanged,
 }: {
-  user: UserWithAssets | null
+  user: UserWithPlan | null
   open: boolean
   onClose: () => void
-  currentUserRole: string | undefined
-  onRoleChanged: (userId: string, newRole: Role) => void
 }) {
   const [assets, setAssets] = useState<any[]>([])
   const [identities, setIdentities] = useState<any[]>([])
@@ -259,6 +317,7 @@ function UserDetailModal({
 
   useEffect(() => {
     if (open && user) loadUserDetails()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user])
 
   const loadUserDetails = async () => {
@@ -280,184 +339,127 @@ function UserDetailModal({
 
   if (!user) return null
 
+  const planKey = (user.plan_name ?? "free").toLowerCase()
+  const planCfg = PLAN_CONFIG[planKey] ?? PLAN_CONFIG.free
+  const isActivePlan = user.subscription_status === "active"
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border text-foreground max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <Avatar className="w-12 h-12 border-2 border-indigo-500/30">
-              <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold">
-                {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-lg font-semibold text-foreground">{user.name || "Unnamed User"}</p>
-              <p className="text-sm text-muted-foreground font-normal">{user.email}</p>
-            </div>
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            User details for {user.name || user.email}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="bg-card border-border text-foreground max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogDescription className="sr-only">
+          User details for {user.name || user.email}
+        </DialogDescription>
 
-        <div className="mt-6 space-y-6">
-          <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase">Basic Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="p-4 rounded-xl bg-muted/30 border border-border"
-              >
-                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">Role</p>
-                <div className="flex items-center gap-2 mb-3">
-                  <Shield className="w-4 h-4 text-indigo-500" />
-                  <RoleBadge role={user.role} />
-                </div>
-                {currentUserRole === "super_admin" && (
-                  <div className="space-y-1 mt-2 pt-2 border-t border-border">
-                    <p className="text-muted-foreground text-xs mb-1">Change role</p>
-                    {(["client", "admin", "super_admin"] as Role[]).map((role) => (
-                      <button
-                        key={role}
-                        onClick={async () => {
-                          if (role === user.role) return
-                          try {
-                            const res = await fetch(`/api/admin/users/${user.id}/role`, {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ role }),
-                            })
-                            const data = await res.json()
-                            if (!res.ok) throw new Error(data.error)
-                            toast.success(`Role updated to ${ROLE_CONFIG[role].label}`)
-                            onRoleChanged(user.id, role)
-                          } catch (err: unknown) {
-                            toast.error(err instanceof Error ? err.message : "Failed")
-                          }
-                        }}
-                        className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-colors flex items-center gap-2
-                          ${role === user.role
-                            ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 cursor-default"
-                            : "hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
-                          }`}
-                      >
-                        <span className={`w-2 h-2 rounded-full ${role === user.role ? "bg-indigo-500" : "bg-border"}`} />
-                        {ROLE_CONFIG[role].label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="p-4 rounded-xl bg-muted/30 border border-border"
-              >
-                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Joined</p>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-emerald-500" />
-                  <span className="text-foreground font-medium">
-                    {new Date(user.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-              </motion.div>
+        {/* Header */}
+        <div className="flex items-center gap-4 pb-4 border-b border-border">
+          <Avatar className="w-14 h-14 border-2 border-indigo-500/20 shrink-0">
+            <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-lg font-semibold">
+              {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <DialogTitle className="text-base font-semibold text-foreground truncate">
+              {user.name || "Unnamed User"}
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+            <div className="flex items-center gap-2 mt-1.5">
+              <RoleBadge role={user.role} />
+              <PlanBadge plan={user.plan_name} status={user.subscription_status} />
             </div>
           </div>
+        </div>
 
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase">Assets ({assets.length})</h3>
+        <div className="space-y-5 pt-1">
+
+          {/* Meta row */}
+          <div className="flex items-center gap-6 text-sm">
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <Calendar className="w-3.5 h-3.5" />
+              Joined {new Date(user.created_at).toLocaleDateString()}
+            </span>
+            {isActivePlan && planKey !== "free" && (
+              <span className="flex items-center gap-1.5 text-emerald-500">
+                <CreditCard className="w-3.5 h-3.5" />
+                {planCfg.label} — active
+              </span>
+            )}
+          </div>
+
+          {/* Assets */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <FolderOpen className="w-3.5 h-3.5" />
+              Assets
+              <span className="font-normal normal-case tracking-normal text-muted-foreground/60">
+                ({loadingDetails ? "…" : assets.length})
+              </span>
+            </p>
             {loadingDetails ? (
-              <div className="flex justify-center py-4">
-                <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
+              <div className="flex items-center gap-2 text-muted-foreground text-sm py-2">
+                <RefreshCw className="w-4 h-4 animate-spin" /> Loading…
               </div>
             ) : assets.length > 0 ? (
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {assets.map((asset, idx) => (
-                  <motion.div
-                    key={asset.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="p-3 rounded-lg bg-muted/30 border border-border hover:bg-muted/60 transition-colors"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-foreground font-medium text-sm">{asset.name}</p>
-                        <p className="text-muted-foreground text-xs mt-0.5">Type: {asset.type}</p>
-                        {asset.location_country && (
-                          <p className="text-muted-foreground text-xs mt-0.5">Location: {asset.location_country}</p>
-                        )}
-                      </div>
-                      {asset.latest_valuation && (
-                        <p className="text-emerald-600 dark:text-emerald-400 font-semibold text-sm">
-                          ${asset.latest_valuation.toLocaleString()}
-                        </p>
-                      )}
+              <div className="space-y-px max-h-44 overflow-y-auto rounded-lg border border-border divide-y divide-border">
+                {assets.map((asset) => (
+                  <div key={asset.id} className="flex items-center justify-between px-3 py-2 hover:bg-muted/40 transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-foreground text-sm font-medium truncate">{asset.name}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {asset.type}{asset.location_country ? ` · ${asset.location_country}` : ""}
+                      </p>
                     </div>
-                  </motion.div>
+                    {asset.latest_valuation && (
+                      <p className="text-emerald-600 dark:text-emerald-400 text-sm font-semibold shrink-0 ml-3">
+                        ${asset.latest_valuation.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-sm py-4">No assets found for this user</p>
+              <p className="text-muted-foreground text-sm">No assets</p>
             )}
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase">Identities ({identities.length})</h3>
-            {identities.length > 0 ? (
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {identities.map((identity, idx) => (
-                  <motion.div
-                    key={identity.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="p-3 rounded-lg bg-muted/30 border border-border hover:bg-muted/60 transition-colors"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-foreground font-medium text-sm">{identity.name}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="capitalize bg-indigo-500/10 border-indigo-500/50 text-indigo-600 dark:text-indigo-400 text-xs">
-                            {identity.type}
-                          </Badge>
-                          <Badge
-                            variant="outline"
-                            className={`capitalize text-xs ${identity.risk_profile === "low"
-                              ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
-                              : identity.risk_profile === "medium"
-                                ? "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10"
-                                : "border-rose-500/50 text-rose-600 dark:text-rose-400 bg-rose-500/10"
-                              }`}
-                          >
-                            {identity.risk_profile}
-                          </Badge>
-                        </div>
-                      </div>
+          {/* Identities */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5" />
+              Identities
+              <span className="font-normal normal-case tracking-normal text-muted-foreground/60">
+                ({loadingDetails ? "…" : identities.length})
+              </span>
+            </p>
+            {loadingDetails ? null : identities.length > 0 ? (
+              <div className="space-y-px max-h-44 overflow-y-auto rounded-lg border border-border divide-y divide-border">
+                {identities.map((identity) => (
+                  <div key={identity.id} className="flex items-center justify-between px-3 py-2 hover:bg-muted/40 transition-colors">
+                    <p className="text-foreground text-sm font-medium truncate">{identity.name}</p>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-3">
+                      <Badge variant="outline" className="capitalize bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 text-xs">
+                        {identity.type}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={`capitalize text-xs ${
+                          identity.risk_profile === "low"
+                            ? "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                            : identity.risk_profile === "medium"
+                              ? "border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+                              : "border-rose-500/30 text-rose-600 dark:text-rose-400 bg-rose-500/10"
+                        }`}
+                      >
+                        {identity.risk_profile}
+                      </Badge>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-sm py-4">No identities found for this user</p>
+              <p className="text-muted-foreground text-sm">No identities</p>
             )}
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="p-4 rounded-xl bg-muted/30 border border-border"
-          >
-            <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">User ID</p>
-            <code className="text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded break-all">
-              {user.id}
-            </code>
-          </motion.div>
         </div>
       </DialogContent>
     </Dialog>
@@ -474,10 +476,10 @@ function UserTableRow({
   currentUserRole,
   onRoleChanged,
 }: {
-  user: UserWithAssets
+  user: UserWithPlan
   index: number
-  onView: (user: UserWithAssets) => void
-  onDelete: (user: UserWithAssets) => void
+  onView: (user: UserWithPlan) => void
+  onDelete: (user: UserWithPlan) => void
   currentUserRole: string | undefined
   onRoleChanged: (userId: string, newRole: Role) => void
 }) {
@@ -490,6 +492,7 @@ function UserTableRow({
       transition={{ delay: index * 0.03 }}
       className="group hover:bg-muted/40 transition-colors"
     >
+      {/* User */}
       <TableCell>
         <div className="flex items-center gap-3">
           <Avatar className="w-10 h-10 border-2 border-border group-hover:border-indigo-500/30 transition-colors">
@@ -506,9 +509,18 @@ function UserTableRow({
           </div>
         </div>
       </TableCell>
+
+      {/* Role */}
       <TableCell>
         <RoleBadge role={user.role} />
       </TableCell>
+
+      {/* Plan */}
+      <TableCell>
+        <PlanBadge plan={user.plan_name} status={user.subscription_status} />
+      </TableCell>
+
+      {/* Assets */}
       <TableCell>
         <button
           onClick={() => onView(user)}
@@ -518,6 +530,8 @@ function UserTableRow({
           <span>{user.asset_count}</span>
         </button>
       </TableCell>
+
+      {/* Identities */}
       <TableCell>
         <button
           onClick={() => onView(user)}
@@ -527,9 +541,13 @@ function UserTableRow({
           <span>{user.identity_count}</span>
         </button>
       </TableCell>
+
+      {/* Joined */}
       <TableCell className="text-muted-foreground">
         {new Date(user.created_at).toLocaleDateString()}
       </TableCell>
+
+      {/* Actions */}
       <TableCell>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -549,16 +567,15 @@ function UserTableRow({
               <Eye className="w-4 h-4 mr-2" />
               View Details
             </DropdownMenuItem>
-            {/* <DropdownMenuItem className="cursor-pointer hover:bg-muted">
-              <Download className="w-4 h-4 mr-2" />
-              Export Data
-            </DropdownMenuItem> */}
+
+            {/* Role change — super_admin only, lives only here */}
             <RoleChangeMenu
               user={user}
               currentUserRole={currentUserRole}
               onRoleChanged={onRoleChanged}
             />
-            {/* Delete — super_admin only, cannot delete self */}
+
+            {/* Delete — super_admin only */}
             {isSuperAdmin && (
               <>
                 <DropdownMenuSeparator className="bg-border" />
@@ -582,14 +599,14 @@ function UserTableRow({
 
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth()
-  const [users, setUsers] = useState<UserWithAssets[]>([])
+  const [users, setUsers] = useState<UserWithPlan[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState<Role | "all">("all")
   const [loading, setLoading] = useState(true)
-  const [selectedUser, setSelectedUser] = useState<UserWithAssets | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<UserWithAssets | null>(null)
+  const [selectedUser, setSelectedUser] = useState<UserWithPlan | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<UserWithPlan | null>(null)
   const limit = 10
 
   const loadUsers = useCallback(async () => {
@@ -616,6 +633,7 @@ export default function AdminUsersPage() {
     setUsers((prev) =>
       prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
     )
+    // If the detail modal is open for this user, update it too (read-only, so just reflect new role)
     if (selectedUser?.id === userId) {
       setSelectedUser((prev) => prev ? { ...prev, role: newRole } : prev)
     }
@@ -755,6 +773,7 @@ export default function AdminUsersPage() {
                   <TableRow className="border-border hover:bg-transparent">
                     <TableHead className="text-muted-foreground">User</TableHead>
                     <TableHead className="text-muted-foreground">Role</TableHead>
+                    <TableHead className="text-muted-foreground">Plan</TableHead>
                     <TableHead className="text-muted-foreground">Assets</TableHead>
                     <TableHead className="text-muted-foreground">Identities</TableHead>
                     <TableHead className="text-muted-foreground">Joined</TableHead>
@@ -766,7 +785,7 @@ export default function AdminUsersPage() {
                     {loading ? (
                       [...Array(5)].map((_, i) => (
                         <TableRow key={i} className="border-border">
-                          <TableCell colSpan={6}>
+                          <TableCell colSpan={7}>
                             <div className="h-12 bg-muted/50 rounded animate-pulse" />
                           </TableCell>
                         </TableRow>
@@ -785,7 +804,7 @@ export default function AdminUsersPage() {
                       ))
                     ) : (
                       <TableRow className="border-border">
-                        <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                           <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
                           <p>No users found</p>
                           {search && <p className="text-sm mt-1">Try a different search term</p>}
@@ -833,13 +852,11 @@ export default function AdminUsersPage() {
         </Card>
       </motion.div>
 
-      {/* Detail modal */}
+      {/* Detail modal — view only */}
       <UserDetailModal
         user={selectedUser}
         open={!!selectedUser}
         onClose={() => setSelectedUser(null)}
-        currentUserRole={currentUser?.role}
-        onRoleChanged={handleRoleChanged}
       />
 
       {/* Delete confirmation */}
