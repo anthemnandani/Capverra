@@ -34,12 +34,9 @@ import type { UserRole as Role } from "@/lib/admin-types"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-// Extend UserWithAssets to include subscription fields
-interface UserWithPlan extends UserWithAssets {
-  plan_name?: string | null
-  subscription_status?: string | null
-  stripe_subscription_id?: string | null
-}
+// UserWithAssets already includes plan_name, subscription_status, and
+// stripe_subscription_id — no need to re-declare them here.
+type UserWithPlan = UserWithAssets
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -110,19 +107,30 @@ function RoleBadge({ role }: { role: string }) {
 }
 
 function PlanBadge({ plan, status }: { plan?: string | null; status?: string | null }) {
-  const key = (plan ?? "free").toLowerCase()
-  const cfg = PLAN_CONFIG[key] ?? PLAN_CONFIG.free
-  const isActive = status === "active"
+  // TEMP: forcing static "Free" plan for all users regardless of actual plan/status.
+  // Original dynamic logic left commented below for easy revert later.
+  const cfg = PLAN_CONFIG.free
 
   return (
     <Badge variant="outline" className={`capitalize text-xs flex items-center gap-1 ${cfg.color}`}>
       {cfg.icon}
       {cfg.label}
-      {isActive && key !== "free" && (
-        <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" title="Active" />
-      )}
     </Badge>
   )
+
+  // const key = (plan ?? "free").toLowerCase()
+  // const cfg = PLAN_CONFIG[key] ?? PLAN_CONFIG.free
+  // const isActive = status === "active"
+  //
+  // return (
+  //   <Badge variant="outline" className={`capitalize text-xs flex items-center gap-1 ${cfg.color}`}>
+  //     {cfg.icon}
+  //     {cfg.label}
+  //     {isActive && key !== "free" && (
+  //       <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" title="Active" />
+  //     )}
+  //   </Badge>
+  // )
 }
 
 // ── Delete confirmation dialog ────────────────────────────────────────────────
