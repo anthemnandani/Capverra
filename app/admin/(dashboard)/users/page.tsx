@@ -35,11 +35,7 @@ import type { UserRole as Role } from "@/lib/admin-types"
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 // Extend UserWithAssets to include subscription fields
-interface UserWithPlan extends UserWithAssets {
-  plan_name?: string | null
-  subscription_status?: string | null
-  stripe_subscription_id?: string | null
-}
+type UserWithPlan = UserWithAssets
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
