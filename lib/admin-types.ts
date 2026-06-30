@@ -76,6 +76,7 @@ export interface UserWithAssets {
   asset_count: number
   identity_count: number
   last_login: string | null
+  avatar_url: string | null
   // Plan / subscription info (from public.users)
   plan_name: string | null
   subscription_status: string | null

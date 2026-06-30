@@ -13,7 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage  } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -348,8 +348,9 @@ function UserDetailModal({
 
         {/* Header */}
         <div className="flex items-center gap-4 pb-4 border-b border-border">
-          <Avatar className="w-14 h-14 border-2 border-indigo-500/20 shrink-0">
-            <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-lg font-semibold">
+           <Avatar className="w-10 h-10 border-2 border-border group-hover:border-indigo-500/30 transition-colors">
+            {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name || user.email} />}
+            <AvatarFallback className="bg-gradient-to-br from-indigo-500/80 to-purple-500/80 text-white text-sm font-semibold">
               {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
             </AvatarFallback>
           </Avatar>
@@ -491,8 +492,9 @@ function UserTableRow({
       {/* User */}
       <TableCell>
         <div className="flex items-center gap-3">
-          <Avatar className="w-10 h-10 border-2 border-border group-hover:border-indigo-500/30 transition-colors">
-            <AvatarFallback className="bg-gradient-to-br from-indigo-500/80 to-purple-500/80 text-white text-sm font-semibold">
+            <Avatar className="w-14 h-14 border-2 border-indigo-500/20 shrink-0">
+            {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name || user.email} />}
+            <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-lg font-semibold">
               {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
             </AvatarFallback>
           </Avatar>

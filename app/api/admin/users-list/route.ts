@@ -13,6 +13,7 @@ type CustomUser = {
   plan_name: string | null
   subscription_status: string | null
   stripe_subscription_id: string | null
+  avatar_url: string | null   
 }
 
 type AuthUser = {
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
     // ── 1. Fetch users WITH subscription fields ──────────────────────────────
     let usersQuery = adminClient
       .from("users")
-      .select("id, name, role, plan_name, subscription_status, stripe_subscription_id")
+      .select("id, name, role, plan_name, subscription_status, stripe_subscription_id, avatar_url")
 
     if (role) {
       usersQuery = usersQuery.eq("role", role)
@@ -118,6 +119,7 @@ export async function GET(request: Request) {
         plan_name:              customUser.plan_name ?? "free",
         subscription_status:    customUser.subscription_status ?? "free",
         stripe_subscription_id: customUser.stripe_subscription_id ?? null,
+         avatar_url:             customUser.avatar_url ?? null,
         created_at:             authUser.created_at,
         asset_count:            assetCountMap.get(customUser.id)    ?? 0,
         identity_count:         identityCountMap.get(customUser.id) ?? 0,
